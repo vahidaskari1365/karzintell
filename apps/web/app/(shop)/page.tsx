@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion';
@@ -18,8 +17,6 @@ import {
   CountUp, GradientText, Magnetic, Marquee, Parallax, Reveal, RevealGroup, ScrollProgress, TiltCard, revealItem,
 } from '@/components/cinematic/fx';
 
-const HeroScene = dynamic(() => import('@/components/cinematic/scene3d').then((m) => m.HeroScene), { ssr: false });
-
 /* فرار از قاب max-w-7xl برای سکشن‌های تمام‌قد سینمایی */
 const FULL = 'relative left-1/2 right-1/2 -mx-[50vw] w-screen';
 
@@ -27,23 +24,37 @@ const CATEGORY_ICONS: Record<string, typeof Smartphone> = {
   mobile: Smartphone, smartwatch: Watch, audio: Headphones, laptop: Laptop, accessories: Cpu,
 };
 
-// --------------------------------------------------------------- هیرو سه‌بعدی
+// --------------------------------------------------------------- هیرو با پس‌زمینه تصویر نئونی متحرک
+const HERO_SEEDS: Array<[string, string, string]> = [
+  ['8%', '20%', '0s'], ['15%', '55%', '.6s'], ['12%', '78%', '1.1s'], ['22%', '35%', '1.7s'],
+  ['28%', '65%', '.4s'], ['36%', '25%', '2s'], ['42%', '70%', '.9s'], ['50%', '40%', '1.4s'],
+  ['58%', '60%', '2.2s'], ['66%', '30%', '.2s'], ['74%', '55%', '1.8s'], ['82%', '25%', '1s'],
+  ['88%', '70%', '.7s'], ['94%', '45%', '2.4s'], ['48%', '85%', '1.5s'], ['70%', '88%', '.8s'],
+];
+
 function CinematicHero() {
   return (
     <section className={`${FULL} cinema cinema-grain min-h-[94svh] overflow-hidden`}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک</h1>
-      {/* هاله‌های نور */}
-      <div className="pointer-events-none absolute -top-40 right-1/4 h-96 w-96 rounded-full bg-emerald-500/25 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-0 left-1/4 h-96 w-96 rounded-full bg-cyan-500/20 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/3 left-10 h-64 w-64 rounded-full bg-emerald-600/20 blur-[110px]" />
 
-      {/* صحنه Three.js */}
-      <div className="absolute inset-0 opacity-80"><HeroScene /></div>
+      {/* پس‌زمینه: تصویر K نئونی با دریفت آرام */}
+      <div aria-hidden className="absolute inset-0">
+        <div className="animate-neon-drift absolute inset-0 bg-[url('/assets/neon-k-bg.jpg')] bg-cover bg-center opacity-55" />
+        {/* ذرات سبز درخشان شناور */}
+        {HERO_SEEDS.map(([x, y, d], i) => (
+          <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d }} />
+        ))}
+        {/* هاله‌های نبض‌دار ملایم */}
+        <div className="animate-neon-pulse pointer-events-none absolute top-1/4 right-1/4 h-80 w-80 rounded-full bg-emerald-500/15 blur-[130px]" />
+        <div className="animate-neon-pulse pointer-events-none absolute bottom-10 left-1/5 h-72 w-72 rounded-full bg-cyan-500/10 blur-[120px]" style={{ animationDelay: '2s' }} />
+        {/* محو تدریجی لبه‌ها برای خوانایی و اتصال نرم به سکشن بعدی */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#05080f]/55 via-transparent to-[#05080f]" />
+      </div>
 
       {/* محتوای متنی */}
       <div className="relative z-10 mx-auto flex min-h-[94svh] max-w-6xl flex-col items-center justify-center px-6 text-center">
         <Reveal delay={0.1} y={30}>
-          <p className="max-w-2xl text-base leading-9 text-slate-300 sm:text-xl sm:leading-10">
+          <p className="max-w-2xl text-base leading-9 text-slate-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-xl sm:leading-10">
             موبایل، ساعت هوشمند، هدفون و هزاران قطعه‌ی الکترونیک اورجینال — با ضمانت اصالت کالا،
             ارسال سریع سراسری و پشتیبانی واقعی.
           </p>
@@ -72,7 +83,7 @@ function CinematicHero() {
 
         {/* نشانگر اسکرول */}
         <motion.div
-          className="absolute bottom-8 flex flex-col items-center gap-1 text-slate-500"
+          className="absolute bottom-8 flex flex-col items-center gap-1 text-slate-400"
           animate={{ y: [0, 10, 0] }}
           transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
         >
