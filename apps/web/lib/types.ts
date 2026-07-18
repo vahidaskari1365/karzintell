@@ -156,6 +156,11 @@ export interface AddressType {
   isDefault: boolean;
 }
 
+export const ORDER_STATUSES = [
+  'pending_payment', 'paid', 'processing', 'ready_to_ship',
+  'shipped', 'delivered', 'cancelled', 'refunded',
+] as const;
+
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   pending_payment: 'در انتظار پرداخت',
   paid: 'پرداخت‌شده',

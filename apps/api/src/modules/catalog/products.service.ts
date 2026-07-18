@@ -167,6 +167,15 @@ export class ProductsService {
         })),
       })),
       specs: [...specsGrouped.entries()].map(([group, items]) => ({ group, items })),
+      ...(forAdmin
+        ? {
+            specsRaw: specRows.map((r) => ({
+              attributeId: r.attributeId,
+              attributeValueId: r.attributeValueId,
+              customValue: r.customValue,
+            })),
+          }
+        : {}),
       tags: tagRows.length
         ? (await this.tags.findBy({ id: In(tagRows.map((t) => t.tagId)) })).map((t) => ({ id: t.id, name: t.name, slug: t.slug }))
         : [],
