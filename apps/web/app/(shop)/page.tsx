@@ -148,7 +148,7 @@ function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNod
             initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="mt-4 text-5xl font-black leading-tight text-slate-50 sm:text-7xl"
           >
-            {cat.name}
+            <Link href={`/categories/${cat.slug}`} className="transition-colors hover:text-emerald-300">{cat.name}</Link>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
@@ -194,7 +194,15 @@ function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNod
 }
 
 function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
-  const cats = (tree || []).slice(0, 6);
+  // ترتیب ثابت: موبایل → ساعت هوشمند → صوتی/ایرپاد → بعد هر دسته جدیدی که در سایت اضافه شود (اتوماتیک)
+  const PRIORITY = ['mobile', 'smartwatch', 'audio'];
+  const cats = [...(tree || [])]
+    .sort((a, b) => {
+      const pa = PRIORITY.indexOf(a.slug);
+      const pb = PRIORITY.indexOf(b.slug);
+      return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+    })
+    .slice(0, 8);
   const n = Math.max(cats.length, 1);
   const targetRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
