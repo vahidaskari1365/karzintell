@@ -198,6 +198,7 @@ CREATE TABLE attributes (
   code          VARCHAR(100) NOT NULL COMMENT 'شناسه ماشینی: color, storage',
   type          ENUM('text','number','select','multiselect','boolean') NOT NULL DEFAULT 'select',
   unit          VARCHAR(20) NULL COMMENT 'GB, mAh, ...',
+  group_name    VARCHAR(100) NULL COMMENT 'گروه‌بندی مشخصات فنی (عمومی، نمایشگر، ...)',
   is_filterable TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'در فیلترهای فروشگاه بیاید',
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -229,12 +230,14 @@ CREATE TABLE category_attribute (
 
 CREATE TABLE products (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  code              VARCHAR(50)  NULL COMMENT 'کد محصول (مبنای فاکتور؛ با SKU تنوع متفاوت است)',
   category_id       INT UNSIGNED NOT NULL,
   brand_id          INT UNSIGNED NULL,
   name              VARCHAR(190) NOT NULL,
   slug              VARCHAR(220) NOT NULL,
   short_description VARCHAR(500) NULL,
   description       LONGTEXT NULL COMMENT 'توضیحات کامل (HTML امن‌شده)',
+  features          JSON NULL COMMENT 'ویژگی‌های کلیدی (آرایه رشته‌ای بولت‌ها)',
   status            ENUM('draft','pending','published','archived') NOT NULL DEFAULT 'draft',
   published_at      DATETIME NULL,
   weight_g          INT UNSIGNED NULL,
@@ -255,6 +258,7 @@ CREATE TABLE products (
   deleted_at        DATETIME NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_products_slug (slug),
+  UNIQUE KEY uq_products_code (code),
   KEY idx_products_cat_status (category_id, status),
   KEY idx_products_brand (brand_id),
   KEY idx_products_published (status, published_at),
@@ -309,6 +313,65 @@ CREATE TABLE product_images (
   CONSTRAINT fk_pimg_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
   CONSTRAINT fk_pimg_variant FOREIGN KEY (variant_id) REFERENCES product_variants (id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='گالری تصاویر';
+
+CREATE TABLE product_videos (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  product_id  BIGINT UNSIGNED NOT NULL,
+  title       VARCHAR(190) NULL,
+  provider    ENUM('upload','youtube','aparat') NOT NULL DEFAULT 'upload',
+  source_url  VARCHAR(500) NOT NULL COMMENT 'کلید فایل در S3 یا لینک خارجی',
+  poster_path VARCHAR(500) NULL,
+  sort_order  INT NOT NULL DEFAULT 0,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_pvid_product (product_id, sort_order),
+  CONSTRAINT fk_pvid_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='ویدئوهای محصول';
+
+CREATE TABLE tags (
+  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name       VARCHAR(80)  NOT NULL,
+  slug       VARCHAR(120) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_tags_name (name),
+  UNIQUE KEY uq_tags_slug (slug)
+) ENGINE=InnoDB COMMENT='تگ‌های محصولات';
+
+CREATE TABLE product_tags (
+  product_id BIGINT UNSIGNED NOT NULL,
+  tag_id     INT UNSIGNED NOT NULL,
+  PRIMARY KEY (product_id, tag_id),
+  KEY idx_pt_tag (tag_id),
+  CONSTRAINT fk_pt_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+  CONSTRAINT fk_pt_tag FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE product_relations (
+  product_id         BIGINT UNSIGNED NOT NULL,
+  related_product_id BIGINT UNSIGNED NOT NULL,
+  type               ENUM('related','accessory','similar') NOT NULL DEFAULT 'related',
+  sort_order         INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (product_id, related_product_id, type),
+  KEY idx_prel_related (related_product_id),
+  CONSTRAINT chk_prel_not_self CHECK (product_id <> related_product_id),
+  CONSTRAINT fk_prel_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+  CONSTRAINT fk_prel_related FOREIGN KEY (related_product_id) REFERENCES products (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='محصولات مرتبط / لوازم جانبی مرتبط';
+
+CREATE TABLE product_attributes (
+  id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  product_id         BIGINT UNSIGNED NOT NULL,
+  attribute_id       INT UNSIGNED NOT NULL,
+  attribute_value_id INT UNSIGNED NULL COMMENT 'برای صفت‌های select',
+  custom_value       VARCHAR(500) NULL COMMENT 'مقدار آزاد (متن/عدد) — مشخصات فنی',
+  sort_order         INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY idx_pattr_product (product_id, sort_order),
+  CONSTRAINT fk_pattr_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+  CONSTRAINT fk_pattr_attr FOREIGN KEY (attribute_id) REFERENCES attributes (id) ON DELETE CASCADE,
+  CONSTRAINT fk_pattr_value FOREIGN KEY (attribute_value_id) REFERENCES attribute_values (id) ON DELETE SET NULL
+) ENGINE=InnoDB COMMENT='مشخصات فنی محصول (مقادیر صفت‌ها)';
 
 -- ============================================================================
 -- 3) انبار و موجودی (Inventory)
@@ -494,8 +557,9 @@ CREATE TABLE order_status_histories (
 
 CREATE TABLE payments (
   id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  order_id    BIGINT UNSIGNED NOT NULL,
-  gateway     ENUM('zarinpal','idpay','zibal','nextpay','manual','cod') NOT NULL,
+  order_id    BIGINT UNSIGNED NULL COMMENT 'پرداخت سفارش؛ NULL برای شارژ کیف پول',
+  purpose     ENUM('order','wallet_charge') NOT NULL DEFAULT 'order',
+  gateway     ENUM('zarinpal','idpay','zibal','nextpay','manual','wallet','cod') NOT NULL,
   amount      BIGINT UNSIGNED NOT NULL,
   currency    CHAR(3) NOT NULL DEFAULT 'IRR',
   status      ENUM('initiated','pending','paid','failed','cancelled','refunded') NOT NULL DEFAULT 'initiated',
@@ -544,6 +608,33 @@ CREATE TABLE coupon_usages (
   CONSTRAINT fk_cu_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_cu_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- 5-الف) کیف پول (Wallet — اختیاری)
+CREATE TABLE wallets (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    BIGINT UNSIGNED NOT NULL,
+  balance    BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'موجودی (ریال)',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_wallets_user (user_id),
+  CONSTRAINT fk_wallets_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='کیف پول کاربران';
+
+CREATE TABLE wallet_transactions (
+  id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  wallet_id      BIGINT UNSIGNED NOT NULL,
+  type           ENUM('charge','debit','refund','withdraw') NOT NULL,
+  amount         BIGINT UNSIGNED NOT NULL,
+  balance_after  BIGINT UNSIGNED NOT NULL,
+  reference_type VARCHAR(30) NULL COMMENT 'order | payment',
+  reference_id   BIGINT UNSIGNED NULL,
+  description    VARCHAR(300) NULL,
+  created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_wt_wallet (wallet_id, created_at),
+  CONSTRAINT fk_wt_wallet FOREIGN KEY (wallet_id) REFERENCES wallets (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='تراکنش‌های کیف پول';
 
 -- ============================================================================
 -- 6) بازخورد و تعامل (Reviews / Q&A / Wishlist)
@@ -735,13 +826,15 @@ CREATE TABLE audit_logs (
 -- 9) داده‌های اولیه (Seeds)
 -- ============================================================================
 
--- 9-1) نقش‌ها
+-- 9-1) نقش‌ها (پنل اپراتور: هر نقش دسترسی مخصوص خود را دارد)
 INSERT INTO roles (id, name, label, description, is_system) VALUES
-  (1, 'super_admin', 'سوپر ادمین', 'دسترسی کامل به همه بخش‌ها؛ قابل حذف نیست', 1),
-  (2, 'manager',     'مدیر فروشگاه', 'مدیریت محصولات، سفارش‌ها و بازاریابی', 1),
-  (3, 'support',     'پشتیبانی', 'پاسخ به تیکت‌ها و مشاهده سفارش‌ها', 1),
-  (4, 'warehouse',   'انباردار', 'مدیریت موجودی و انبار', 1),
-  (5, 'customer',    'مشتری', 'کاربر عادی فروشگاه (بدون دسترسی پنل ادمین)', 1);
+  (1, 'super_admin',    'مدیر ارشد (Admin)', 'دسترسی کامل به همه بخش‌ها؛ قابل حذف نیست', 1),
+  (2, 'product_manager','مدیر محصول', 'ثبت و ویرایش محصولات، دسته‌ها، برندها و موجودی', 1),
+  (3, 'order_manager',  'مدیر سفارش', 'مدیریت سفارش‌ها، پرداخت‌ها و بازپرداخت', 1),
+  (4, 'support',        'پشتیبانی', 'پاسخ به تیکت‌ها و مشاهده سفارش‌ها و مشتریان', 1),
+  (5, 'content_manager','مدیر محتوا', 'مدیریت بنرها، صفحات سایت، دیدگاه‌ها و پرسش‌ها', 1),
+  (6, 'warehouse',      'انباردار', 'مدیریت موجودی و انبار', 1),
+  (7, 'customer',       'مشتری', 'کاربر عادی فروشگاه (بدون دسترسی پنل ادمین)', 1);
 
 -- 9-2) مجوزها
 INSERT INTO permissions (name, label, group_name) VALUES
@@ -788,35 +881,44 @@ INSERT INTO permissions (name, label, group_name) VALUES
 INSERT INTO permission_role (permission_id, role_id)
   SELECT p.id, 1 FROM permissions p;
 
--- 9-4) مدیر فروشگاه
+-- 9-4) مدیر محصول (فقط محصولات/کاتالوگ/موجودی)
 INSERT INTO permission_role (permission_id, role_id)
   SELECT p.id, 2 FROM permissions p WHERE p.name IN (
     'dashboard.view',
-    'products.view','products.create','products.update','products.publish',
+    'products.view','products.create','products.update','products.delete','products.publish',
     'categories.manage','brands.manage','attributes.manage',
-    'inventory.view',
-    'orders.view','orders.update_status','orders.cancel','payments.view',
-    'customers.view',
-    'reviews.moderate','questions.moderate',
-    'coupons.manage','banners.manage','pages.manage',
-    'tickets.view','tickets.reply',
-    'reports.view'
+    'inventory.view','inventory.manage',
+    'files.manage'
   );
 
--- 9-5) پشتیبانی
+-- 9-5) مدیر سفارش
 INSERT INTO permission_role (permission_id, role_id)
   SELECT p.id, 3 FROM permissions p WHERE p.name IN (
-    'dashboard.view','orders.view','customers.view','customers.manage',
-    'tickets.view','tickets.reply'
+    'dashboard.view',
+    'orders.view','orders.update_status','orders.cancel','orders.refund',
+    'payments.view','customers.view','inventory.view','reports.view'
   );
 
--- 9-6) انباردار
+-- 9-6) پشتیبانی
 INSERT INTO permission_role (permission_id, role_id)
   SELECT p.id, 4 FROM permissions p WHERE p.name IN (
+    'dashboard.view','orders.view','customers.view','tickets.view','tickets.reply'
+  );
+
+-- 9-7) مدیر محتوا (بنر/صفحات/دیدگاه‌ها)
+INSERT INTO permission_role (permission_id, role_id)
+  SELECT p.id, 5 FROM permissions p WHERE p.name IN (
+    'dashboard.view','banners.manage','pages.manage',
+    'reviews.moderate','questions.moderate','files.manage'
+  );
+
+-- 9-8) انباردار
+INSERT INTO permission_role (permission_id, role_id)
+  SELECT p.id, 6 FROM permissions p WHERE p.name IN (
     'dashboard.view','products.view','orders.view','inventory.view','inventory.manage'
   );
 
--- 9-7) کاربر ادمین پیش‌فرض
+-- 9-9) کاربر ادمین پیش‌فرض
 --     phone: 09000000000 | email: admin@karzintell.ir | رمز عبور: Admin@123456
 --     ⚠️ must_change_password=1 → در اولین ورود باید رمز عوض شود.
 INSERT INTO users (id, full_name, email, phone, password_hash, status, must_change_password, email_verified_at, phone_verified_at) VALUES
@@ -826,11 +928,11 @@ INSERT INTO users (id, full_name, email, phone, password_hash, status, must_chan
 
 INSERT INTO role_user (role_id, user_id, assigned_by) VALUES (1, 1, 1);
 
--- 9-8) انبار پیش‌فرض
+-- 9-10) انبار پیش‌فرض
 INSERT INTO warehouses (id, name, code, province, city) VALUES
   (1, 'انبار مرکزی', 'MAIN', 'تهران', 'تهران');
 
--- 9-9) نمونه دسته‌بندی‌ها (فروشگاه قطعات الکترونیک)
+-- 9-11) نمونه دسته‌بندی‌ها (فروشگاه قطعات الکترونیک)
 INSERT INTO categories (id, parent_id, name, slug, is_active, sort_order) VALUES
   (1, NULL, 'موبایل',            'mobile',           1, 1),
   (2, NULL, 'کامپیوتر و لپ‌تاپ', 'computer-laptop',  1, 2),
@@ -840,7 +942,7 @@ INSERT INTO categories (id, parent_id, name, slug, is_active, sort_order) VALUES
   (6, 1,    'گوشی هوشمند',        'smartphones',     1, 1),
   (7, 1,    'قطعات و تعمیرات موبایل','mobile-parts', 1, 2);
 
--- 9-10) نمونه برندها
+-- 9-12) نمونه برندها
 INSERT INTO brands (name, slug, is_active, sort_order) VALUES
   ('اپل',    'apple',   1, 1),
   ('سامسونگ','samsung', 1, 2),
@@ -848,7 +950,7 @@ INSERT INTO brands (name, slug, is_active, sort_order) VALUES
   ('هوآوی',  'huawei',  1, 4),
   ('انکر',   'anker',   1, 5);
 
--- 9-11) نمونه صفت‌ها و مقادیر
+-- 9-13) نمونه صفت‌ها و مقادیر
 INSERT INTO attributes (id, name, code, type, unit, is_filterable) VALUES
   (1, 'رنگ',          'color',     'select', NULL, 1),
   (2, 'حافظه داخلی',  'storage',   'select', 'GB', 1),
@@ -868,7 +970,7 @@ INSERT INTO category_attribute (category_id, attribute_id, is_variant, is_requir
   (6, 4, 0, 0, 4),
   (3, 1, 1, 0, 1);
 
--- 9-12) تنظیمات پایه فروشگاه
+-- 9-14) تنظیمات پایه فروشگاه
 INSERT INTO settings (`key`, `value`, `group`, type, is_public) VALUES
   ('store.name',            'کارزینتل',          'general', 'string', 1),
   ('store.name_en',         'Karzintell',        'general', 'string', 1),
@@ -880,5 +982,5 @@ INSERT INTO settings (`key`, `value`, `group`, type, is_public) VALUES
   ('search.engine',         'meilisearch',       'infra',   'string', 0);
 
 -- ============================================================================
--- پایان اسکیما — 41 جدول
+-- پایان اسکیما — 48 جدول
 -- ============================================================================
