@@ -204,10 +204,19 @@ function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNod
   );
 }
 
+/** دسته‌های پیش‌فرض — اگر API هنوز دسته‌ای برنگرداند، اسکرول فروشگاه با این‌ها نمایش داده می‌شود */
+const FALLBACK_CATS: CategoryNode[] = [
+  { id: -1, name: 'موبایل', slug: 'mobile', children: [] },
+  { id: -2, name: 'ساعت هوشمند', slug: 'smartwatch', children: [] },
+  { id: -3, name: 'هدفون و ایرپاد', slug: 'audio', children: [] },
+  { id: -4, name: 'لوازم جانبی', slug: 'accessories', children: [] },
+];
+
 function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
   // ترتیب ثابت: موبایل → ساعت هوشمند → صوتی/ایرپاد → بعد هر دسته جدیدی که در سایت اضافه شود (اتوماتیک)
   const PRIORITY = ['mobile', 'smartwatch', 'audio'];
-  const cats = [...(tree || [])]
+  const source = tree && tree.length ? tree : FALLBACK_CATS;
+  const cats = [...source]
     .sort((a, b) => {
       const pa = PRIORITY.indexOf(a.slug);
       const pb = PRIORITY.indexOf(b.slug);
