@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { use } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
@@ -7,7 +8,7 @@ import { OrderDetailType, ORDER_STATUS_COLORS } from '@/lib/types';
 import { Button, Card, PageLoading } from '@/components/ui';
 import { faDateTime, toToman, faNumber } from '@/lib/format';
 import { toast } from '@/lib/auth-store';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, FileText } from 'lucide-react';
 
 const ALL_STEPS = ['pending_payment', 'paid', 'processing', 'ready_to_ship', 'shipped', 'delivered'];
 const STEP_LABELS: Record<string, string> = {
@@ -46,9 +47,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
           <h1 className="text-xl font-black" dir="ltr">سفارش {order.code}</h1>
           <span className="text-xs text-slate-400">{faDateTime(order.createdAt)}</span>
         </div>
-        <span className={`rounded-full px-4 py-1.5 text-sm font-bold ${ORDER_STATUS_COLORS[order.status]}`}>
-          {order.statusLabel}
-        </span>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/account/orders/${order.code}/invoice`}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-slate-900 hover:text-slate-900"
+          >
+            <FileText className="h-4 w-4" /> مشاهده و چاپ فاکتور
+          </Link>
+          <span className={`rounded-full px-4 py-1.5 text-sm font-bold ${ORDER_STATUS_COLORS[order.status]}`}>
+            {order.statusLabel}
+          </span>
+        </div>
       </div>
 
       {/* استیپر */}

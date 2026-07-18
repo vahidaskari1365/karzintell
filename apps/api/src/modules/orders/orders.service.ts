@@ -14,11 +14,14 @@ import { CartService } from '../cart/cart.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ShippingService } from '../shipping/shipping.service';
+import { SettingsService } from '../settings/settings.service';
 import { AuthUser } from '../../common/types';
 
 export interface CheckoutInput {
   addressId: number;
   shippingMethod?: string;
+  shippingMethodId?: number;
   customerNote?: string;
   couponCode?: string;
 }
@@ -39,6 +42,8 @@ export class OrdersService {
     private readonly coupons: CouponsService,
     private readonly inventory: InventoryService,
     private readonly notifications: NotificationsService,
+    private readonly shipping: ShippingService,
+    private readonly settings: SettingsService,
     private readonly redis: RedisService,
   ) {}
 
@@ -63,7 +68,8 @@ export class OrdersService {
     const variantIds = view.items.map((i) => i.variantId);
     const freshVariants = await this.em.query(
       `SELECT v.id, v.price, v.sku, v.title, v.product_id AS productId, v.is_active AS isActive,
-              p.name AS productName, p.status AS productStatus, p.warranty_months AS warrantyMonths
+              p.name AS productName, p.status AS productStatus, p.warranty_months AS warrantyMonths,
+              p.category_id AS categoryId
        FROM product_variants v JOIN products p ON p.id = v.product_id
        WHERE v.id IN (${variantIds.map(() => '?').join(',')}) AND v.deleted_at IS NULL AND p.deleted_at IS NULL`,
       variantIds,
@@ -83,13 +89,33 @@ export class OrdersService {
     let coupon: any = null;
     const couponCode = input.couponCode || view.couponCode;
     if (couponCode) {
-      const result = await this.coupons.validate(couponCode, user.id, subtotal);
+      const couponLines = lines.map((l) => ({
+        productId: Number(l.row.productId),
+        categoryId: l.row.categoryId != null ? Number(l.row.categoryId) : null,
+        amount: l.unitPrice * l.quantity,
+      }));
+      const result = await this.coupons.validate(couponCode, user.id, subtotal, couponLines);
       coupon = result.coupon;
       discount = result.discount;
     }
-    const tax = Math.round(((subtotal - discount) * env.order.taxPercent) / 100);
-    const shippingCost = 0; // تعرفه ارسال در مرحله‌های بعد (روش‌های ارسال)
-    const grandTotal = subtotal - discount + tax + shippingCost;
+    const payable = subtotal - discount;
+    const tax = Math.round((payable * env.order.taxPercent) / 100);
+
+    // هزینه ارسال: روش انتخابی کاربر، یا قانون کلی فروشگاه
+    let shippingCost = 0;
+    let shippingMethodName = input.shippingMethod || 'پست پیشتاز';
+    if (input.shippingMethodId) {
+      const resolved = await this.shipping.resolveForCheckout(
+        input.shippingMethodId, address.province, address.city, payable,
+      );
+      shippingCost = resolved.cost;
+      shippingMethodName = resolved.method.name;
+    } else {
+      const freeOver = Number(await this.settings.get('store.free_shipping_threshold', 0)) || 0;
+      const flat = Number(await this.settings.get('store.shipping_flat', 250000)) || 0;
+      shippingCost = payable <= 0 || (freeOver > 0 && payable >= freeOver) ? 0 : flat;
+    }
+    const grandTotal = payable + tax + shippingCost;
 
     const addressSnapshot = {
       receiverName: address.receiverName,
@@ -116,7 +142,7 @@ export class OrdersService {
           grandTotal,
           couponId: coupon?.id ?? null,
           couponCode: coupon?.code ?? null,
-          shippingMethod: input.shippingMethod || 'پست پیشتاز',
+          shippingMethod: shippingMethodName,
           addressJson: addressSnapshot,
           customerNote: input.customerNote ?? null,
           ip: ip ?? null,
@@ -155,7 +181,35 @@ export class OrdersService {
     });
 
     if (idemKey) await this.redis.set(`idem:checkout:${user.id}:${idemKey}`, order.code, 86400);
+
+    // اعلان ثبت سفارش (درون‌برنامه + پیامک + ایمیل)
+    await this.notifyOrderEvent(
+      order,
+      'order.placed',
+      'سفارش شما ثبت شد',
+      `سفارش ${order.code} با مبلغ ${order.grandTotal.toLocaleString('fa-IR')} ریال ثبت شد و در انتظار پرداخت است.`,
+    );
     return this.detailForUser(user.id, order.code);
+  }
+
+  /** اعلان رویداد سفارش: نوتیف درون‌برنامه + پیامک به گیرنده + ایمیل به کاربر */
+  private async notifyOrderEvent(order: Order, type: string, title: string, body: string) {
+    try {
+      await this.notifications.notify(order.userId, type, title, body, { orderCode: order.code });
+    } catch {
+      /* ignore */
+    }
+    const tasks: Promise<unknown>[] = [];
+    const addr = order.addressJson as any;
+    if (addr?.receiverPhone) tasks.push(this.notifications.sendSms(addr.receiverPhone, `کارزینتل\n${body}`));
+    try {
+      const rows = await this.em.query(`SELECT email FROM users WHERE id = ? LIMIT 1`, [order.userId]);
+      const email = rows?.[0]?.email as string | undefined;
+      if (email) tasks.push(this.notifications.sendEmail(email, `${title} — کارزینتل`, body));
+    } catch {
+      /* ignore */
+    }
+    await Promise.allSettled(tasks);
   }
 
   /** علامت‌گذاری پرداخت‌شده (از ماژول پرداخت صدا زده می‌شود) */
@@ -177,13 +231,26 @@ export class OrdersService {
   }
 
   async notifyPaid(order: Order) {
-    await this.notifications.notify(
-      order.userId,
+    await this.notifyOrderEvent(
+      order,
       'order.paid',
       'سفارش شما پرداخت شد',
       `سفارش ${order.code} با موفقیت پرداخت شد و در حال پردازش است.`,
-      { orderCode: order.code },
     );
+  }
+
+  /** اعلان تغییر وضعیت سفارش به مشتری (با کد رهگیری در صورت ارسال) */
+  async notifyStatusChanged(orderId: number) {
+    const order = await this.orders.findOne({ where: { id: orderId } });
+    if (!order) return;
+    let body = `وضعیت سفارش ${order.code} به «${ORDER_STATUS_LABELS[order.status]}» تغییر کرد.`;
+    if (order.status === 'shipped') {
+      const shipment = await this.shipments.findOne({ where: { orderId: order.id } });
+      if (shipment?.trackingCode) body = `سفارش ${order.code} ارسال شد. کد رهگیری: ${shipment.trackingCode}`;
+    }
+    const type = `order.${order.status}`;
+    const title = `سفارش ${ORDER_STATUS_LABELS[order.status]}`;
+    await this.notifyOrderEvent(order, type, title, body);
   }
 
   // -------------------------------------------------------------- کاربر
@@ -289,7 +356,7 @@ export class OrdersService {
 
   /** تغییر وضعیت با state machine + اثرات انبار */
   async changeStatus(id: number, to: OrderStatus, note: string | undefined, adminId: number) {
-    return this.em.transaction(async (tx) => {
+    const result = await this.em.transaction(async (tx) => {
       const order = await tx.getRepository(Order)
         .createQueryBuilder('o')
         .setLock('pessimistic_write')
@@ -325,6 +392,10 @@ export class OrdersService {
       await this.addHistory(id, order.status, to, note ?? null, adminId, tx);
       return this.adminDetail(id);
     });
+
+    // اعلان به مشتری بعد از کامیت تراکنش (غیرمسدودکننده)
+    this.notifyStatusChanged(id).catch(() => {});
+    return result;
   }
 
   async setAdminNote(id: number, note: string) {

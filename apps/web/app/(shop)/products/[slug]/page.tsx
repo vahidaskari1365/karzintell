@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { use, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Expand, Heart, Minus, Plus, Share2, ShoppingCart, ShieldCheck, Truck, X } from 'lucide-react';
+import { CheckCircle2, Expand, Heart, Minus, Plus, Scale, Share2, ShoppingCart, ShieldCheck, Truck, X } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { ProductDetailType, ProductVariantType } from '@/lib/types';
 import { PageLoading, Button, Badge, Card, Textarea, Input, Select } from '@/components/ui';
@@ -11,6 +11,48 @@ import { PriceTag, RatingStars } from '@/components/display';
 import { ProductGrid } from '@/components/product-card';
 import { faNumber, toToman } from '@/lib/format';
 import { getCartSession, toast, useAuthStore } from '@/lib/auth-store';
+import { getCompareIds, toggleCompareId } from '@/lib/compare';
+
+// ------------------------------------------------------ دکمه مقایسه
+function CompareButton({ productId }: { productId: number }) {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [ids, setIds] = useState<number[]>(() => getCompareIds());
+  const { data: serverIds } = useQuery({
+    queryKey: ['compare-ids'],
+    queryFn: async () => (await api<number[]>('/me/compare')).data,
+    enabled: !!user,
+  });
+  const active = user ? (serverIds || []).includes(productId) : ids.includes(productId);
+
+  const toggle = useMutation({
+    mutationFn: async () => {
+      if (user) return (await api<{ inCompare: boolean; ids: number[] }>('/me/compare/toggle', { method: 'POST', body: { productId } })).data;
+      const r = toggleCompareId(productId);
+      if (r.full) throw new Error('حداکثر ۴ محصول را می‌توانید مقایسه کنید');
+      setIds(r.ids);
+      window.dispatchEvent(new Event('compare:changed'));
+      return r;
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ['compare-ids'] });
+      toast.success(r.inCompare ? 'به لیست مقایسه اضافه شد' : 'از لیست مقایسه حذف شد');
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  return (
+    <button
+      onClick={() => toggle.mutate()}
+      className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs transition ${
+        active ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
+      }`}
+      title="مقایسه"
+    >
+      <Scale className="h-4 w-4" /> {active ? 'در لیست مقایسه' : 'مقایسه'}
+    </button>
+  );
+}
 
 // ---------------------------------------------------------------- گالری
 function Gallery({ images, videos }: { images: ProductDetailType['images']; videos: ProductDetailType['videos'] }) {
@@ -219,9 +261,21 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const { data: wishlistIds } = useQuery({
+    queryKey: ['wishlist-ids', product?.id],
+    queryFn: async () => (await api<number[]>(`/me/wishlist/check?ids=${product!.id}`)).data,
+    enabled: !!product && hydrated && !!user,
+  });
+  const inWishlist = (wishlistIds || []).includes(product?.id ?? -1);
+
   const wishlist = useMutation({
-    mutationFn: async () => api(`/me/wishlist/${product!.id}`, { method: 'POST' }),
-    onSuccess: () => toast.success('به علاقه‌مندی‌ها اضافه شد'),
+    mutationFn: async () =>
+      (await api<{ inWishlist: boolean }>('/me/wishlist/toggle', { method: 'POST', body: { productId: product!.id } })).data,
+    onSuccess: (r) => {
+      toast.success(r.inWishlist ? 'به علاقه‌مندی‌ها اضافه شد ❤️' : 'از علاقه‌مندی‌ها حذف شد');
+      queryClient.invalidateQueries({ queryKey: ['wishlist-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+    },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -229,8 +283,31 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
   const inStock = (selected?.stock ?? 0) > 0;
 
+  // داده ساخت‌یافته گوگل (Schema.org Product)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.shortDescription || product.name,
+    image: product.images.map((i) => i.url).filter(Boolean),
+    brand: product.brand ? { '@type': 'Brand', name: product.brand.name } : undefined,
+    sku: selected?.sku || product.code || undefined,
+    aggregateRating:
+      product.ratingCount > 0
+        ? { '@type': 'AggregateRating', ratingValue: product.ratingAvg, reviewCount: product.ratingCount }
+        : undefined,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'IRR',
+      price: selected?.price ?? product.minPrice ?? 0,
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+    },
+  };
+
   return (
     <div className="py-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* مسیر */}
       <nav className="mb-5 flex items-center gap-2 text-xs text-slate-400">
         <Link href="/" className="hover:text-slate-700">خانه</Link>
@@ -253,15 +330,20 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               {product.brand && <span className="text-sm text-slate-400">{product.brand.name}</span>}
               <div className="mt-1 flex items-start justify-between gap-3">
                 <h1 className="text-xl font-black leading-9 text-slate-900">{product.name}</h1>
-                <ShareButton name={product.name} />
+                <div className="flex shrink-0 items-center gap-2">
+                  <CompareButton productId={product.id} />
+                  <ShareButton name={product.name} />
+                </div>
               </div>
             </div>
             <button
               onClick={() => (hydrated && user ? wishlist.mutate() : toast.info('ابتدا وارد حساب شوید'))}
-              className="rounded-xl border border-slate-200 p-2.5 text-slate-400 hover:border-rose-300 hover:text-rose-500"
+              className={`rounded-xl border p-2.5 transition ${
+                inWishlist ? 'border-rose-300 bg-rose-50 text-rose-500' : 'border-slate-200 text-slate-400 hover:border-rose-300 hover:text-rose-500'
+              }`}
               title="علاقه‌مندی"
             >
-              <Heart className="h-5 w-5" />
+              <Heart className={`h-5 w-5 ${inWishlist ? 'fill-rose-500' : ''}`} />
             </button>
           </div>
 

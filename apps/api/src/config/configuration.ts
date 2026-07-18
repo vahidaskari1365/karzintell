@@ -93,9 +93,22 @@ export const env = {
     defaultGateway: process.env.PAYMENT_GATEWAY || "manual",
     zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || "",
     zarinpalSandbox: bool(process.env.ZARINPAL_SANDBOX, true),
+    idpayApiKey: process.env.IDPAY_API_KEY || "",
+    idpaySandbox: bool(process.env.IDPAY_SANDBOX, true),
+    nextpayApiKey: process.env.NEXTPAY_API_KEY || "",
+    mellatTerminalId: process.env.MELLAT_TERMINAL_ID || "",
+    mellatUsername: process.env.MELLAT_USERNAME || "",
+    mellatPassword: process.env.MELLAT_PASSWORD || "",
+    samanTerminalId: process.env.SAMAN_TERMINAL_ID || "",
     callbackUrl:
       process.env.PAYMENT_CALLBACK_BASE || "http://localhost:4000/api/v1/payments/callback",
     frontendResultUrl: process.env.PAYMENT_FRONT_RESULT_URL || "http://localhost:3000/checkout/callback",
+  },
+
+  webpush: {
+    subject: process.env.VAPID_SUBJECT || "mailto:no-reply@karzintell.ir",
+    publicKey: process.env.VAPID_PUBLIC_KEY || "",
+    privateKey: process.env.VAPID_PRIVATE_KEY || "",
   },
 } as const;
 

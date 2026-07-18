@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X, Zap } from 'lucide-react';
+import { ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, Scale, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X, Zap } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { useAuthStore, hasPermission, toast } from '@/lib/auth-store';
 import { CategoryNode } from '@/lib/types';
@@ -117,6 +117,7 @@ export function Header() {
                 <Link href="/account" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><UserIcon className="h-4 w-4" /> حساب کاربری</Link>
                 <Link href="/account/orders" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Package className="h-4 w-4" /> سفارش‌ها</Link>
                 <Link href="/account/wishlist" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Heart className="h-4 w-4" /> علاقه‌مندی‌ها</Link>
+                <Link href="/compare" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Scale className="h-4 w-4" /> مقایسه محصولات</Link>
                 <Link href="/account/wallet" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Wallet className="h-4 w-4" /> کیف پول</Link>
                 <Link href="/account/tickets" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"><Ticket className="h-4 w-4" /> تیکت‌ها</Link>
                 {canAdmin && (

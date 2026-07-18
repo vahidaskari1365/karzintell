@@ -213,6 +213,19 @@ async function main() {
       [key, value, group, type, pub],
     );
 
+  // 6-ب) مناطق و روش‌های ارسال پیش‌فرض
+  await ds.query(
+    `INSERT IGNORE INTO shipping_zones (id, name, provinces, cities, is_active, sort_order)
+     VALUES (1, 'سراسر کشور', NULL, NULL, 1, 10),
+            (2, 'تهران', JSON_ARRAY('تهران'), NULL, 1, 1)`,
+  );
+  await ds.query(
+    `INSERT IGNORE INTO shipping_methods (id, zone_id, name, type, cost, free_above, eta, is_active, sort_order)
+     VALUES (1, 1, 'پست پیشتاز', 'post', 250000, NULL, '۲ تا ۵ روز کاری', 1, 1),
+            (2, 1, 'تیپاکس', 'tipax', 350000, NULL, '۱ تا ۳ روز کاری', 1, 2),
+            (3, 2, 'پیک (تهران)', 'courier', 180000, NULL, 'همان‌روز تا ۲۴ ساعت', 1, 1)`,
+  );
+
   // 7) محصول نمونه (برای دمو) — فقط اگر SAMPLE_DATA=1
   if (process.env.SAMPLE_DATA !== '0' && (await ds.query('SELECT COUNT(*) AS c FROM products'))[0].c === 0) {
     const colorValues = await ds.query(`SELECT av.id, av.value FROM attribute_values av WHERE av.attribute_id = 1 LIMIT 2`);

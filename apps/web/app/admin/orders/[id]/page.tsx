@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { use, useState } from 'react';
-import { ArrowRight, Ban, CheckCircle2, MapPin, StickyNote, Truck } from 'lucide-react';
+import { ArrowRight, Ban, CheckCircle2, FileText, MapPin, StickyNote, Truck } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { faDateTime, faNumber, toToman } from '@/lib/format';
 import { ORDER_STATUS_LABELS } from '@/lib/types';
@@ -13,8 +13,8 @@ import { Dialog, ConfirmDialog } from '@/components/dialog';
 import { PageHeader, tableCls, Pill, labelOf } from '../../_shared';
 
 const GATEWAY_LABELS: Record<string, string> = {
-  zarinpal: 'زرین‌پال', wallet: 'کیف پول', manual: 'دستی/توسعه', cod: 'حضوری',
-  idpay: 'آیدی‌پی', zibal: 'زیبال', nextpay: 'نکست‌پی',
+  zarinpal: 'زرین‌پال', idpay: 'آیدی‌پی', nextpay: 'نکست‌پی', mellat: 'بانک ملت', saman: 'بانک سامان',
+  zibal: 'زیبال', wallet: 'کیف پول', manual: 'دستی/توسعه', cod: 'حضوری',
 };
 
 export default function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -89,6 +89,12 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
           </div>
           <p className="mt-0.5 text-xs text-slate-400">ثبت: {faDateTime(o.createdAt)}{o.paidAt && ` · پرداخت: ${faDateTime(o.paidAt)}`}</p>
         </div>
+        <Link
+          href={`/admin/orders/${id}/invoice`}
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 hover:border-slate-900 hover:text-slate-900"
+        >
+          <FileText className="h-4 w-4" /> صدور و چاپ فاکتور
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

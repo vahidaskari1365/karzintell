@@ -41,6 +41,18 @@ export class Coupon {
   @Column({ name: 'used_count', type: 'int', unsigned: true, default: 0 })
   usedCount: number;
 
+  /** نام کمپین (گروه‌بندی کوپن‌ها) */
+  @Column({ length: 120, nullable: true })
+  campaign: string | null;
+
+  /** فقط روی این محصول‌ها؛ NULL = همه */
+  @Column({ name: 'product_ids', type: 'json', nullable: true })
+  productIds: number[] | null;
+
+  /** فقط روی این دسته‌ها؛ NULL = همه */
+  @Column({ name: 'category_ids', type: 'json', nullable: true })
+  categoryIds: number[] | null;
+
   @Column({ name: 'starts_at', type: 'datetime', nullable: true })
   startsAt: Date | null;
 

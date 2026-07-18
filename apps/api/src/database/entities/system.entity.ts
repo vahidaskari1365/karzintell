@@ -127,3 +127,25 @@ export class FileRecord {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }
+
+@Entity('push_subscriptions')
+export class PushSubscription {
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  id: number;
+
+  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Index()
+  userId: number;
+
+  @Column({ length: 500 })
+  endpoint: string;
+
+  @Column({ length: 255 })
+  p256dh: string;
+
+  @Column({ length: 255 })
+  auth: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}

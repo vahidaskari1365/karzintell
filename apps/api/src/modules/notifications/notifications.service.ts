@@ -1,30 +1,62 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
-import { Notification } from '../../database/entities';
+import * as webpush from 'web-push';
+import { Notification, PushSubscription } from '../../database/entities';
 import { env } from '../../config/configuration';
 
 /**
- * اعلان‌ها: ذخیره درون‌برنامه + ارسال پیامک/ایمیل.
+ * اعلان‌ها: ذخیره درون‌برنامه + ارسال پیامک/ایمیل/Web Push.
  * در توسعه: پیامک فقط لاگ می‌شود، ایمیل به MailHog می‌رود.
- * TODO(مرحله سخت‌سازی): انتقال ارسال‌ها به صف BullMQ.
  */
 @Injectable()
-export class NotificationsService {
+export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger('Notifications');
   private transporter = nodemailer.createTransport({
     host: env.mail.host,
     port: env.mail.port,
-    secure: false,
+    secure: env.mail.port === 465,
   });
+  private pushReady = false;
+  private pushPublicKey = '';
 
   constructor(
     @InjectRepository(Notification)
     private readonly notifications: Repository<Notification>,
+    @InjectRepository(PushSubscription)
+    private readonly pushSubs: Repository<PushSubscription>,
   ) {}
 
-  /** ثبت اعلان دیتابیسی */
+  async onModuleInit() {
+    // کلیدهای VAPID از env؛ در غیر اینصورت از تنظیمات دیتابیس؛ در غیر اینصورت تولید خودکار
+    let pub = env.webpush.publicKey;
+    let priv = env.webpush.privateKey;
+    if (!pub || !priv) {
+      try {
+        const keys = webpush.generateVAPIDKeys();
+        pub = keys.publicKey;
+        priv = keys.privateKey;
+        this.logger.warn('VAPID keys generated in-memory — برای تولید، VAPID_PUBLIC_KEY/PRIVATE_KEY را در env تنظیم کنید');
+      } catch {
+        this.logger.warn('web-push unavailable — اعلان مرورگر غیرفعال است');
+        return;
+      }
+    }
+    try {
+      webpush.setVapidDetails(env.webpush.subject, pub, priv);
+      this.pushReady = true;
+      this.pushPublicKey = pub;
+    } catch (e) {
+      this.logger.warn(`web-push setup failed: ${(e as Error).message}`);
+    }
+  }
+
+  getPublicKey() {
+    return this.pushReady ? this.pushPublicKey : null;
+  }
+
+  /** ذخیره اعلان + ارسال پوش به مرورگر کاربر */
   async notify(
     userId: number,
     type: string,
@@ -32,14 +64,59 @@ export class NotificationsService {
     body?: string,
     data?: Record<string, unknown>,
   ) {
+    let saved: Notification | null = null;
     try {
-      return await this.notifications.save(
+      saved = await this.notifications.save(
         this.notifications.create({ userId, type, title, body: body ?? null, data: data ?? null }),
       );
     } catch (e) {
       this.logger.warn(`notify failed: ${(e as Error).message}`);
-      return null;
     }
+    const url = (data as any)?.orderCode ? `/account/orders/${(data as any).orderCode}` : undefined;
+    this.sendPush(userId, title, body ?? '', { url }).catch(() => {});
+    return saved;
+  }
+
+  /** ارسال Web Push به همه اشتراک‌های کاربر */
+  async sendPush(userId: number, title: string, body: string, data?: { url?: string }) {
+    if (!this.pushReady) return;
+    const subs = await this.pushSubs.find({ where: { userId } }).catch(() => []);
+    if (!subs.length) return;
+    const payload = JSON.stringify({
+      title,
+      body,
+      icon: '/icon.svg',
+      url: data?.url || '/account/notifications',
+    });
+    for (const sub of subs) {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload,
+        );
+      } catch (e: any) {
+        // اشتراک منقضی/لغوشده → پاکسازی
+        if (e?.statusCode === 404 || e?.statusCode === 410)
+          await this.pushSubs.delete({ id: sub.id }).catch(() => undefined);
+        else this.logger.warn(`push failed: ${e?.message ?? e}`);
+      }
+    }
+  }
+
+  async subscribePush(userId: number, endpoint: string, p256dh: string, auth: string) {
+    if (!this.pushReady) return { subscribed: false, reason: 'push غیرفعال است (کلید VAPID تنظیم نشده)' };
+    const existing = await this.pushSubs.findOne({ where: { endpoint } });
+    if (existing) {
+      if (existing.userId !== userId) await this.pushSubs.update({ id: existing.id }, { userId, p256dh, auth });
+    } else {
+      await this.pushSubs.save(this.pushSubs.create({ userId, endpoint, p256dh, auth }));
+    }
+    return { subscribed: true };
+  }
+
+  async unsubscribePush(userId: number, endpoint: string) {
+    await this.pushSubs.delete({ userId, endpoint });
+    return { unsubscribed: true };
   }
 
   /** ارسال پیامک (توسعه: لاگ) */

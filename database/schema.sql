@@ -441,6 +441,9 @@ CREATE TABLE coupons (
   usage_limit      INT UNSIGNED NULL COMMENT 'حداکثر استفاده کل',
   per_user_limit   INT UNSIGNED NOT NULL DEFAULT 1,
   used_count       INT UNSIGNED NOT NULL DEFAULT 0,
+  campaign         VARCHAR(120) NULL COMMENT 'نام کمپین (گروه‌بندی کوپن‌ها)',
+  product_ids      JSON NULL COMMENT 'فقط روی این محصول‌ها؛ NULL = همه',
+  category_ids     JSON NULL COMMENT 'فقط روی این دسته‌ها؛ NULL = همه',
   starts_at        DATETIME NULL,
   expires_at       DATETIME NULL,
   is_active        TINYINT(1) NOT NULL DEFAULT 1,
@@ -559,7 +562,7 @@ CREATE TABLE payments (
   id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   order_id    BIGINT UNSIGNED NULL COMMENT 'پرداخت سفارش؛ NULL برای شارژ کیف پول',
   purpose     ENUM('order','wallet_charge') NOT NULL DEFAULT 'order',
-  gateway     ENUM('zarinpal','idpay','zibal','nextpay','manual','wallet','cod') NOT NULL,
+  gateway     ENUM('zarinpal','idpay','zibal','nextpay','mellat','saman','manual','wallet','cod') NOT NULL,
   amount      BIGINT UNSIGNED NOT NULL,
   currency    CHAR(3) NOT NULL DEFAULT 'IRR',
   status      ENUM('initiated','pending','paid','failed','cancelled','refunded') NOT NULL DEFAULT 'initiated',
@@ -690,6 +693,48 @@ CREATE TABLE wishlists (
   CONSTRAINT fk_wl_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='علاقه‌مندی‌ها';
 
+CREATE TABLE product_compares (
+  user_id    BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, product_id),
+  CONSTRAINT fk_cmp_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  CONSTRAINT fk_cmp_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='لیست مقایسه (حداکثر ۴ محصول)';
+
+-- ============================================================================
+-- 6-الف) حمل‌ونقل (Shipping)
+-- ============================================================================
+
+CREATE TABLE shipping_zones (
+  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name       VARCHAR(120) NOT NULL COMMENT 'مثال: تهران، شهرستان‌ها، سراسر کشور',
+  provinces  JSON NULL COMMENT 'آرایه نام استان‌ها؛ NULL = همه استان‌ها (منطقه پیش‌فرض)',
+  cities     JSON NULL COMMENT 'آرایه نام شهرها؛ NULL = همه شهرهای منطقه',
+  is_active  TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0 COMMENT 'اولویت تطبیق — کوچک‌تر = مهم‌تر',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB COMMENT='مناطق ارسال';
+
+CREATE TABLE shipping_methods (
+  id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  zone_id     INT UNSIGNED NOT NULL,
+  name        VARCHAR(120) NOT NULL COMMENT 'مثال: پست پیشتاز، تیپاکس، پیک',
+  type        ENUM('post','tipax','courier','custom') NOT NULL DEFAULT 'post',
+  cost        BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'هزینه ارسال (ریال)',
+  free_above  BIGINT UNSIGNED NULL COMMENT 'بالای این مبلغ سبد → رایگان (ریال)',
+  eta         VARCHAR(100) NULL COMMENT 'مثال: ۲ تا ۴ روز کاری',
+  is_active   TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order  INT NOT NULL DEFAULT 0,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_sm_zone (zone_id),
+  CONSTRAINT fk_sm_zone FOREIGN KEY (zone_id) REFERENCES shipping_zones (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='روش‌های ارسال هر منطقه';
+
 -- ============================================================================
 -- 7) بازاریابی و مدیریت محتوا (CMS)
 -- ============================================================================
@@ -792,6 +837,19 @@ CREATE TABLE notifications (
   KEY idx_notif_user (user_id, read_at, created_at),
   CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+CREATE TABLE push_subscriptions (
+  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    BIGINT UNSIGNED NOT NULL,
+  endpoint   VARCHAR(500) NOT NULL,
+  p256dh     VARCHAR(255) NOT NULL,
+  auth       VARCHAR(255) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_push_endpoint (endpoint(255)),
+  KEY idx_push_user (user_id),
+  CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='اشتراک‌های Web Push مرورگر';
 
 CREATE TABLE settings (
   `key`       VARCHAR(100) NOT NULL,

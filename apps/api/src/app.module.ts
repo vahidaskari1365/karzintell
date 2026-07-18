@@ -25,7 +25,10 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { ShippingModule } from './modules/shipping/shipping.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { CompareModule } from './modules/compare/compare.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { CmsModule } from './modules/cms/cms.module';
@@ -75,7 +78,10 @@ import { HealthModule } from './modules/health/health.module';
     CartModule,
     CouponsModule,
     WalletModule,
+    ShippingModule,
     OrdersModule,
+    WishlistModule,
+    CompareModule,
 
     UsersModule,
     AdminUsersModule,

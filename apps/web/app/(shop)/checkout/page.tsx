@@ -3,13 +3,19 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { MapPin, Plus, Wallet as WalletIcon, CreditCard } from 'lucide-react';
+import { MapPin, Plus, Truck, Wallet as WalletIcon, CreditCard } from 'lucide-react';
 import { api, newIdempotencyKey } from '@/lib/api-client';
 import { AddressType, CartType, OrderDetailType } from '@/lib/types';
 import { getCartSession, toast, useAuthStore } from '@/lib/auth-store';
 import { Button, Card, Field, Input, PageLoading, Textarea } from '@/components/ui';
 import { AuthGuard } from '@/components/auth-guard';
 import { faNumber, toToman } from '@/lib/format';
+
+type GatewayInfo = { key: string; title: string; description?: string };
+type ShippingMethodInfo = {
+  id: number; name: string; typeLabel: string; eta: string | null;
+  cost: number; finalCost: number; isFree: boolean;
+};
 
 function NewAddressForm({ onCreated }: { onCreated: (a: AddressType) => void }) {
   const [form, setForm] = useState({ receiverName: '', receiverPhone: '', province: '', city: '', address: '', postalCode: '' });
@@ -42,7 +48,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { user, hydrated } = useAuthStore();
   const [addressId, setAddressId] = useState<number | null>(null);
-  const [gateway, setGateway] = useState<'manual' | 'zarinpal' | 'wallet'>('manual');
+  const [gateway, setGateway] = useState<string>('');
+  const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [showNewAddress, setShowNewAddress] = useState(false);
 
@@ -64,21 +71,71 @@ export default function CheckoutPage() {
     enabled: hydrated && !!user,
   });
 
+  const { data: gatewaysData } = useQuery({
+    queryKey: ['gateways'],
+    queryFn: async () =>
+      (await api<{ items: GatewayInfo[]; default: string }>('/payments/gateways')).data,
+  });
+
+  const payable = useMemo(
+    () => (cart ? cart.subtotal - cart.couponDiscount : 0),
+    [cart],
+  );
+
+  const selectedAddress = (addresses || []).find((a) => a.id === addressId);
+
+  // روش‌های ارسال بر اساس آدرس انتخاب‌شده
+  const { data: shippingData, isFetching: shippingLoading } = useQuery({
+    queryKey: ['shipping-methods', selectedAddress?.province, selectedAddress?.city, payable],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        province: selectedAddress!.province,
+        city: selectedAddress!.city,
+        subtotal: String(payable),
+      });
+      return (await api<{ zone: string | null; items: ShippingMethodInfo[] }>(`/shipping/methods?${params}`)).data;
+    },
+    enabled: !!selectedAddress,
+  });
+
   useEffect(() => {
     if (addresses?.length && !addressId) {
       setAddressId((addresses.find((a) => a.isDefault) || addresses[0]).id);
     }
   }, [addresses, addressId]);
 
-  const tax = useMemo(() => (cart ? Math.round((cart.grandTotal * 9) / 100) : 0), [cart]);
-  const grand = (cart?.grandTotal || 0) + tax;
+  useEffect(() => {
+    if (gatewaysData && !gateway) setGateway(gatewaysData.default);
+  }, [gatewaysData, gateway]);
+
+  // انتخاب خودکار ارزان‌ترین روش ارسال
+  useEffect(() => {
+    const methods = shippingData?.items || [];
+    if (methods.length && !methods.some((m) => m.id === shippingMethodId)) {
+      const cheapest = [...methods].sort((a, b) => a.finalCost - b.finalCost)[0];
+      setShippingMethodId(cheapest.id);
+    }
+    if (!methods.length) setShippingMethodId(null);
+  }, [shippingData, shippingMethodId]);
+
+  const selectedMethod = (shippingData?.items || []).find((m) => m.id === shippingMethodId);
+  const tax = cart?.tax ?? 0;
+  const shippingCost = selectedMethod ? selectedMethod.finalCost : 0;
+  const grand = payable + tax + shippingCost;
+
+  const gateways: GatewayInfo[] = gatewaysData?.items || [{ key: 'manual', title: 'درگاه آزمایشی' }];
 
   const placeOrder = useMutation({
     mutationFn: async () => {
       if (!addressId) throw new Error('ابتدا آدرس تحویل را انتخاب کنید');
+      if (!shippingMethodId && (shippingData?.items?.length ?? 0) > 0) throw new Error('روش ارسال را انتخاب کنید');
       const { data: order } = await api<OrderDetailType>('/checkout', {
         method: 'POST',
-        body: { addressId, customerNote: note || undefined },
+        body: {
+          addressId,
+          shippingMethodId: shippingMethodId ?? undefined,
+          customerNote: note || undefined,
+        },
         headers: { 'X-Cart-Session': getCartSession() },
         idempotencyKey: newIdempotencyKey(),
       });
@@ -133,31 +190,61 @@ export default function CheckoutPage() {
               {(showNewAddress || !addresses?.length) && <NewAddressForm onCreated={(a) => setAddressId(a.id)} />}
             </Card>
 
+            {/* روش ارسال */}
+            <Card>
+              <h2 className="mb-3 flex items-center gap-2 font-bold">
+                <Truck className="h-5 w-5 text-slate-400" /> روش ارسال
+                {shippingData?.zone && <span className="text-xs font-normal text-slate-400">(منطقه: {shippingData.zone})</span>}
+              </h2>
+              {!selectedAddress && <p className="text-sm text-slate-400">ابتدا آدرس تحویل را انتخاب کنید.</p>}
+              {selectedAddress && shippingLoading && <p className="text-sm text-slate-400">در حال محاسبه روش‌های ارسال…</p>}
+              {selectedAddress && !shippingLoading && (shippingData?.items?.length ?? 0) === 0 && (
+                <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-700">
+                  برای منطقه شما روش ارسال فعالی تعریف نشده است؛ هزینه ارسال پس از ثبت سفارش محاسبه می‌شود.
+                </p>
+              )}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(shippingData?.items || []).map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setShippingMethodId(m.id)}
+                    className={`rounded-2xl border-2 p-4 text-center transition-colors ${shippingMethodId === m.id ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
+                  >
+                    <div className="text-sm font-bold">{m.name}</div>
+                    <div className="mt-1 text-xs text-slate-400">{m.typeLabel}{m.eta ? ` — ${m.eta}` : ''}</div>
+                    <div className={`mt-2 text-sm font-black ${m.isFree ? 'text-emerald-600' : ''}`}>
+                      {m.isFree ? 'رایگان!' : toToman(m.finalCost)}
+                    </div>
+                    {m.isFree && m.cost > 0 && <div className="text-xs text-slate-400 line-through">{toToman(m.cost)}</div>}
+                  </button>
+                ))}
+              </div>
+            </Card>
+
             {/* درگاه پرداخت */}
             <Card>
               <h2 className="mb-3 flex items-center gap-2 font-bold"><CreditCard className="h-5 w-5 text-slate-400" /> روش پرداخت</h2>
               <div className="grid gap-3 sm:grid-cols-3">
-                <button
-                  onClick={() => setGateway('zarinpal')}
-                  className={`rounded-2xl border-2 p-4 text-center text-sm font-bold ${gateway === 'zarinpal' ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
-                >
-                  زرین‌پال
-                </button>
-                <button
-                  onClick={() => setGateway('wallet')}
-                  className={`rounded-2xl border-2 p-4 text-center ${gateway === 'wallet' ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
-                >
-                  <div className="flex items-center justify-center gap-1.5 text-sm font-bold"><WalletIcon className="h-4 w-4" /> کیف پول</div>
-                  <span className="mt-1 block text-xs text-slate-400">موجودی: {toToman(wallet?.balance || 0)}</span>
-                  {wallet && wallet.balance < grand && <span className="mt-1 block text-xs text-rose-500">موجودی ناکافی</span>}
-                </button>
-                <button
-                  onClick={() => setGateway('manual')}
-                  className={`rounded-2xl border-2 p-4 text-center ${gateway === 'manual' ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
-                >
-                  <div className="text-sm font-bold">درگاه تست</div>
-                  <span className="mt-1 block text-xs text-slate-400">توسعه/دموی پرداخت</span>
-                </button>
+                {gateways.map((g) => (
+                  <button
+                    key={g.key}
+                    onClick={() => setGateway(g.key)}
+                    className={`rounded-2xl border-2 p-4 text-center transition-colors ${gateway === g.key ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
+                  >
+                    <div className="flex items-center justify-center gap-1.5 text-sm font-bold">
+                      {g.key === 'wallet' && <WalletIcon className="h-4 w-4" />}
+                      {g.title}
+                    </div>
+                    {g.key === 'wallet' ? (
+                      <>
+                        <span className="mt-1 block text-xs text-slate-400">موجودی: {toToman(wallet?.balance || 0)}</span>
+                        {wallet && wallet.balance < grand && <span className="mt-1 block text-xs text-rose-500">موجودی ناکافی</span>}
+                      </>
+                    ) : (
+                      g.description && <span className="mt-1 block text-xs text-slate-400">{g.description}</span>
+                    )}
+                  </button>
+                ))}
               </div>
             </Card>
 
@@ -182,8 +269,12 @@ export default function CheckoutPage() {
             <div className="space-y-2 border-t border-slate-100 pt-3 text-sm">
               <div className="flex justify-between text-slate-500"><span>جمع اقلام</span><span>{toToman(cart.subtotal)}</span></div>
               {cart.couponDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600"><span>تخفیف کوپن</span><span>{toToman(cart.couponDiscount)}-</span></div>
+                <div className="flex justify-between text-emerald-600"><span>تخفیف{cart.couponCode ? ` (${cart.couponCode})` : ''}</span><span>{toToman(cart.couponDiscount)}-</span></div>
               )}
+              <div className="flex justify-between text-slate-500">
+                <span>هزینه ارسال{selectedMethod ? ` (${selectedMethod.name})` : ''}</span>
+                <span className={shippingCost === 0 ? 'text-emerald-600 font-bold' : ''}>{shippingCost === 0 ? 'رایگان' : toToman(shippingCost)}</span>
+              </div>
               <div className="flex justify-between text-slate-500"><span>مالیات (۹٪)</span><span>{toToman(tax)}</span></div>
               <div className="flex justify-between border-t border-slate-100 pt-3 text-base font-black">
                 <span>مبلغ نهایی</span><span>{toToman(grand)}</span>
@@ -194,7 +285,7 @@ export default function CheckoutPage() {
               className="w-full"
               onClick={() => placeOrder.mutate()}
               loading={placeOrder.isPending}
-              disabled={!addressId || (gateway === 'wallet' && (wallet?.balance || 0) < grand)}
+              disabled={!addressId || !gateway || (gateway === 'wallet' && (wallet?.balance || 0) < grand)}
             >
               ثبت سفارش و پرداخت
             </Button>

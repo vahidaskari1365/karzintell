@@ -12,7 +12,7 @@ export default function WishlistPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['wishlist'],
-    queryFn: async () => api<any[]>('/me/wishlist'),
+    queryFn: async () => (await api<{ items: any[]; ids: number[] }>('/me/wishlist')).data,
   });
 
   const remove = useMutation({
@@ -20,11 +20,12 @@ export default function WishlistPage() {
     onSuccess: () => {
       toast.success('از علاقه‌مندی‌ها حذف شد');
       queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist-ids'] });
     },
   });
 
   if (isLoading) return <PageLoading />;
-  const items = data?.data || [];
+  const items = data?.items || [];
 
   return (
     <div className="space-y-4">

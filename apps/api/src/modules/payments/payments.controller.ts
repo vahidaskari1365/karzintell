@@ -1,17 +1,17 @@
 import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { CurrentUser, Public, RequirePermissions } from '../../common/decorators';
 import { AuthUser } from '../../common/types';
 import { PaymentsService } from './payments.service';
-import { PaymentGateway } from '../../database/entities';
+import { PaymentGateway, PAYMENT_GATEWAYS } from '../../database/entities';
 
 class InitPaymentDto {
   @IsString()
   orderCode: string;
 
-  @IsEnum(['zarinpal', 'manual', 'wallet'] as const)
+  @IsEnum(PAYMENT_GATEWAYS)
   gateway: PaymentGateway;
 }
 
@@ -19,7 +19,7 @@ class WalletChargeDto {
   @IsNumber() @Min(1000)
   amount: number;
 
-  @IsEnum(['zarinpal', 'manual'] as const)
+  @IsEnum(PAYMENT_GATEWAYS)
   gateway: PaymentGateway;
 }
 
@@ -33,17 +33,37 @@ class RefundDto {
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
+  /** درگاه‌های فعال برای چک‌اوت */
+  @Public()
+  @Get('payments/gateways')
+  gateways(@CurrentUser() user?: AuthUser) {
+    return { data: this.payments.listGateways(user?.id) };
+  }
+
   @Post('payments/init')
   async init(@CurrentUser() user: AuthUser, @Body() dto: InitPaymentDto) {
     return { data: await this.payments.init(user.id, dto.orderCode, dto.gateway) };
   }
 
-  /** بازگشت از درگاه → ریدایرکت به نتیجه در فرانت */
+  /** بازگشت از درگاه (GET) → ریدایرکت به نتیجه در فرانت */
   @Public()
   @Get('payments/callback/:gateway')
   async callback(@Param('gateway') gateway: string, @Query() query: Record<string, string>, @Res() res: Response) {
     const { redirectUrl } = await this.payments.handleCallback(gateway, query);
     return res.redirect(302, redirectUrl);
+  }
+
+  /** بازگشت از درگاه (POST) — شاپرک (ملت/سامان) فرم POST می‌فرستد */
+  @Public()
+  @Post('payments/callback/:gateway')
+  async callbackPost(
+    @Param('gateway') gateway: string,
+    @Body() body: Record<string, string>,
+    @Query() query: Record<string, string>,
+    @Res() res: Response,
+  ) {
+    const { redirectUrl } = await this.payments.handleCallback(gateway, { ...query, ...(body || {}) });
+    return res.redirect(303, redirectUrl);
   }
 
   @Post('me/wallet/charge')

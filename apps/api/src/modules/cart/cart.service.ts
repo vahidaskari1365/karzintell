@@ -12,7 +12,7 @@ export interface CartView {
   id: number;
   items: Array<{
     id: number; variantId: number; quantity: number; unitPrice: number;
-    productId: number; productName: string; variantTitle: string | null;
+    productId: number; categoryId: number | null; productName: string; variantTitle: string | null;
     image: string | null; sku: string; available: number;
   }>;
   couponCode: string | null;
@@ -56,6 +56,7 @@ export class CartService {
     const rows = await this.em.query(
       `SELECT ci.id, ci.variant_id AS variantId, ci.quantity, ci.unit_price AS unitPrice,
               v.sku, v.title AS variantTitle, v.product_id AS productId, p.name AS productName,
+              p.category_id AS categoryId,
               (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image,
               (SELECT COALESCE(SUM(quantity - reserved),0) FROM inventory WHERE variant_id = v.id) AS available
        FROM cart_items ci
@@ -72,6 +73,7 @@ export class CartService {
       quantity: Number(r.quantity),
       unitPrice: Number(r.unitPrice),
       productId: Number(r.productId),
+      categoryId: r.categoryId != null ? Number(r.categoryId) : null,
       productName: r.productName,
       variantTitle: r.variantTitle,
       image: this.files.publicUrl(r.image),
@@ -86,7 +88,8 @@ export class CartService {
       try {
         const coupon = await this.em.getRepository(Coupon).findOne({ where: { id: cart.couponId } });
         if (coupon) {
-          const { discount } = await this.coupons.validate(coupon.code, userId, subtotal);
+          const lines = items.map((i: { productId: number; categoryId: number | null; unitPrice: number; quantity: number }) => ({ productId: i.productId, categoryId: i.categoryId, amount: i.unitPrice * i.quantity }));
+          const { discount } = await this.coupons.validate(coupon.code, userId, subtotal, lines);
           couponDiscount = discount;
           couponCode = coupon.code;
         }
@@ -156,7 +159,8 @@ export class CartService {
   async applyCoupon(userId: number, sessionId: string | null, code: string) {
     const cart = await this.getOrCreateCart(userId, sessionId);
     const view = await this.view(userId, sessionId);
-    const { coupon } = await this.coupons.validate(code, userId, view.subtotal);
+    const lines = view.items.map((i) => ({ productId: i.productId, categoryId: i.categoryId, amount: i.unitPrice * i.quantity }));
+    const { coupon } = await this.coupons.validate(code, userId, view.subtotal, lines);
     cart.couponId = coupon.id;
     await this.carts.save(cart);
     return this.view(userId, sessionId);

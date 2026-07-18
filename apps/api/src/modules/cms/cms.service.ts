@@ -56,6 +56,15 @@ export class CmsService {
   }
 
   // ------------------------------------------------------------ صفحات
+  /** لیست صفحات منتشرشده (برای SEO/سایت‌مپ) */
+  publishedPages() {
+    return this.pages.find({
+      where: { status: 'published' },
+      select: ['id', 'slug', 'title', 'metaTitle', 'metaDescription', 'updatedAt'] as any,
+      order: { id: 'ASC' },
+    });
+  }
+
   async publishedPage(slug: string) {
     const page = await this.pages.findOne({ where: { slug, status: 'published' } });
     if (!page) throw new NotFoundException('صفحه یافت نشد');

@@ -5,6 +5,7 @@ export * from './product.entity';
 export * from './inventory.entity';
 export * from './cart.entity';
 export * from './order.entity';
+export * from './shipping.entity';
 export * from './engagement.entity';
 export * from './cms.entity';
 export * from './system.entity';
@@ -27,9 +28,10 @@ import {
 import { Warehouse, Inventory, StockMovement } from './inventory.entity';
 import { Coupon, Cart, CartItem, CouponUsage } from './cart.entity';
 import { Order, OrderItem, OrderStatusHistory, Payment, Shipment } from './order.entity';
-import { Review, ProductQuestion, Wishlist } from './engagement.entity';
+import { ShippingZone, ShippingMethod } from './shipping.entity';
+import { Review, ProductQuestion, Wishlist, ProductCompare } from './engagement.entity';
 import { Banner, Page, Ticket, TicketMessage } from './cms.entity';
-import { Notification, Setting, AuditLog, FileRecord } from './system.entity';
+import { Notification, PushSubscription, Setting, AuditLog, FileRecord } from './system.entity';
 import { Wallet, WalletTransaction } from './wallet.entity';
 
 export const ALL_ENTITIES = [
@@ -41,8 +43,9 @@ export const ALL_ENTITIES = [
   Warehouse, Inventory, StockMovement,
   Coupon, Cart, CartItem, CouponUsage,
   Order, OrderItem, OrderStatusHistory, Payment, Shipment,
-  Review, ProductQuestion, Wishlist,
+  ShippingZone, ShippingMethod,
+  Review, ProductQuestion, Wishlist, ProductCompare,
   Banner, Page, Ticket, TicketMessage,
-  Notification, Setting, AuditLog, FileRecord,
+  Notification, PushSubscription, Setting, AuditLog, FileRecord,
   Wallet, WalletTransaction,
 ];

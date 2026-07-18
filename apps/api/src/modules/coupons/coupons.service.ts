@@ -5,6 +5,13 @@ import { Coupon, CouponUsage } from '../../database/entities';
 import { DomainException } from '../../common/http-exception.filter';
 import { paginate } from '../../common/utils';
 
+/** یک قلم سبد برای محاسبه دامنه کوپن (محصول/دسته) */
+export interface CouponLine {
+  productId: number;
+  categoryId: number | null;
+  amount: number; // unitPrice * quantity
+}
+
 @Injectable()
 export class CouponsService {
   constructor(
@@ -12,7 +19,12 @@ export class CouponsService {
     @InjectRepository(CouponUsage) private readonly usages: Repository<CouponUsage>,
   ) {}
 
-  async validate(code: string, userId: number, subtotal: number): Promise<{ coupon: Coupon; discount: number }> {
+  async validate(
+    code: string,
+    userId: number,
+    subtotal: number,
+    lines: CouponLine[] = [],
+  ): Promise<{ coupon: Coupon; discount: number }> {
     const coupon = await this.coupons.findOne({ where: { code: code.trim().toUpperCase() } });
     const now = new Date();
 
@@ -31,7 +43,23 @@ export class CouponsService {
     if (userUsages >= coupon.perUserLimit)
       throw new DomainException('COUPON_INVALID', 'شما قبلاً از این کد استفاده کرده‌اید', 400);
 
-    const discount = this.computeDiscount(coupon, subtotal);
+    // دامنه کوپن: محصول/دسته مشخص → تخفیف فقط روی همان اقلام
+    let base = subtotal;
+    const productIds = Array.isArray(coupon.productIds) ? coupon.productIds.map(Number) : [];
+    const categoryIds = Array.isArray(coupon.categoryIds) ? coupon.categoryIds.map(Number) : [];
+    if (productIds.length || categoryIds.length) {
+      base = lines
+        .filter(
+          (l) =>
+            productIds.includes(l.productId) ||
+            (l.categoryId != null && categoryIds.includes(l.categoryId)),
+        )
+        .reduce((s, l) => s + l.amount, 0);
+      if (base <= 0)
+        throw new DomainException('COUPON_INVALID', 'این کد روی اقلام سبد شما قابل اعمال نیست', 400);
+    }
+
+    const discount = this.computeDiscount(coupon, base);
     if (discount <= 0) throw new DomainException('COUPON_INVALID', 'کد تخفیف برای این سبد قابل اعمال نیست', 400);
     return { coupon, discount };
   }

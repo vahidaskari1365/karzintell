@@ -7,11 +7,13 @@ import {
 import { OrdersService } from './orders.service';
 import { OrdersController, CheckoutController } from './orders.controller';
 import { OrderExpiryCron } from './order-expiry.cron';
+import { ShippingModule } from '../shipping/shipping.module';
 
 @Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem, OrderStatusHistory, Payment, Shipment, UserAddress, Coupon, CouponUsage]),
+    ShippingModule,
   ],
   controllers: [CheckoutController, OrdersController],
   providers: [OrdersService, OrderExpiryCron],

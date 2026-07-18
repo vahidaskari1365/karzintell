@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { faDate, faNumber, toToman } from '@/lib/format';
@@ -14,17 +14,20 @@ interface Coupon {
   id: number; code: string; title: string | null; type: 'percent' | 'fixed'; value: number;
   maxDiscount: number | null; minCartAmount: number; usageLimit: number | null; perUserLimit: number;
   usedCount: number; startsAt: string | null; expiresAt: string | null; isActive: boolean;
+  campaign?: string | null; productIds?: number[] | null; categoryIds?: number[] | null;
 }
 
 interface CouponForm {
   id?: number; code: string; title: string; type: 'percent' | 'fixed';
   valueToman: string; maxDiscountToman: string; minCartToman: string;
   usageLimit: string; perUserLimit: string; startsAt: string; expiresAt: string; isActive: boolean;
+  campaign: string; productIds: number[]; categoryIds: number[];
 }
 
 const emptyForm: CouponForm = {
   code: '', title: '', type: 'percent', valueToman: '', maxDiscountToman: '', minCartToman: '0',
   usageLimit: '', perUserLimit: '1', startsAt: '', expiresAt: '', isActive: true,
+  campaign: '', productIds: [], categoryIds: [],
 };
 
 const toForm = (c: Coupon): CouponForm => ({
@@ -37,7 +40,110 @@ const toForm = (c: Coupon): CouponForm => ({
   startsAt: c.startsAt ? c.startsAt.slice(0, 10) : '',
   expiresAt: c.expiresAt ? c.expiresAt.slice(0, 10) : '',
   isActive: c.isActive,
+  campaign: c.campaign || '',
+  productIds: c.productIds || [],
+  categoryIds: c.categoryIds || [],
 });
+
+/** انتخابگر محصول (جستجو + چیپ) */
+function ProductPicker({ value, onChange }: { value: number[]; onChange: (ids: number[]) => void }) {
+  const [q, setQ] = useState('');
+  const [options, setOptions] = useState<Array<{ id: number; name: string }>>([]);
+  const [selected, setSelected] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!q.trim()) { setOptions([]); return; }
+      api<any>(`/admin/products?q=${encodeURIComponent(q)}&limit=8`)
+        .then((r) => {
+          const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
+          setOptions(list.map((p: any) => ({ id: p.id, name: p.name })));
+        })
+        .catch(() => setOptions([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // نام محصولات انتخاب‌شده را بیار (در حالت ویرایش)
+  useEffect(() => {
+    const missing = value.filter((id) => !selected[id]);
+    if (!missing.length) return;
+    api<any>(`/admin/products?ids=${missing.join(',')}&limit=50`)
+      .then((r) => {
+        const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
+        const map: Record<number, string> = { ...selected };
+        for (const p of list) map[p.id] = p.name;
+        for (const id of missing) if (!map[id]) map[id] = `#${id}`;
+        setSelected(map);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.join(',')]);
+
+  return (
+    <div>
+      {value.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {value.map((id) => (
+            <span key={id} className="flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] text-blue-700">
+              {selected[id] || `#${id}`}
+              <button type="button" onClick={() => onChange(value.filter((x) => x !== id))} className="text-blue-400 hover:text-blue-800">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="جستجوی محصول برای افزودن…" />
+      {options.length > 0 && (
+        <div className="mt-1 max-h-40 overflow-y-auto rounded-xl border border-slate-200">
+          {options.filter((o) => !value.includes(o.id)).map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => { onChange([...value, o.id]); setSelected((s) => ({ ...s, [o.id]: o.name })); setQ(''); setOptions([]); }}
+              className="block w-full px-3 py-2 text-right text-xs hover:bg-slate-50"
+            >
+              {o.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** چک‌باکس درخت دسته‌ها */
+function CategoryPicker({ value, onChange }: { value: number[]; onChange: (ids: number[]) => void }) {
+  const { data } = useQuery({
+    queryKey: ['admin-categories-flat'],
+    queryFn: async () => (await api<any>('/admin/categories')).data,
+  });
+  const flat: Array<{ id: number; name: string; depth?: number; children?: any[] }> = [];
+  const walk = (nodes: any[], depth = 0) => {
+    const list = Array.isArray(nodes) ? nodes : [];
+    for (const n of list) {
+      flat.push({ id: n.id, name: n.name, depth });
+      if (n.children?.length) walk(n.children, depth + 1);
+    }
+  };
+  walk(Array.isArray(data) ? data : (data as any)?.items || []);
+
+  return (
+    <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 p-2">
+      {flat.length === 0 && <p className="p-2 text-xs text-slate-400">دسته‌ای یافت نشد</p>}
+      {flat.map((c) => (
+        <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-slate-50" style={{ paddingRight: `${(c.depth || 0) * 14 + 8}px` }}>
+          <input
+            type="checkbox"
+            checked={value.includes(c.id)}
+            onChange={(e) => onChange(e.target.checked ? [...value, c.id] : value.filter((x) => x !== c.id))}
+            className="h-3.5 w-3.5 accent-slate-900"
+          />
+          {c.name}
+        </label>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminCouponsPage() {
   const qc = useQueryClient();
@@ -59,6 +165,9 @@ export default function AdminCouponsPage() {
         minCartAmount: Number(f.minCartToman || 0) * 10,
         usageLimit: f.usageLimit ? Number(f.usageLimit) : null,
         perUserLimit: Number(f.perUserLimit || 1),
+        campaign: f.campaign.trim() || null,
+        productIds: f.productIds,
+        categoryIds: f.categoryIds,
         startsAt: f.startsAt || null, expiresAt: f.expiresAt || null, isActive: f.isActive,
       };
       return f.id
@@ -110,6 +219,12 @@ export default function AdminCouponsPage() {
                   <td className={tableCls.td}>
                     <code className="rounded bg-slate-100 px-2 py-1 text-xs font-black" dir="ltr">{c.code}</code>
                     {c.title && <p className="mt-0.5 text-2xs text-slate-400">{c.title}</p>}
+                    {c.campaign && <p className="mt-0.5 text-2xs font-bold text-fuchsia-600">کمپین: {c.campaign}</p>}
+                    {(c.productIds?.length || c.categoryIds?.length) ? (
+                      <p className="mt-0.5 text-2xs text-blue-600">
+                        محدود به: {[c.productIds?.length ? `${faNumber(c.productIds.length)} محصول` : '', c.categoryIds?.length ? `${faNumber(c.categoryIds.length)} دسته` : ''].filter(Boolean).join(' + ')}
+                      </p>
+                    ) : null}
                   </td>
                   <td className={tableCls.td}>
                     {c.type === 'percent' ? `${faNumber(c.value)}٪` : `${toToman(c.value)} تومان`}
@@ -154,7 +269,16 @@ export default function AdminCouponsPage() {
               <Field label="حد استفاده هر کاربر"><Input inputMode="numeric" value={form.perUserLimit} onChange={(e) => setForm({ ...form, perUserLimit: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
               <Field label="شروع"><Input type="date" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></Field>
               <Field label="انقضا"><Input type="date" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} /></Field>
+              <Field label="نام کمپین (اختیاری)" hint="کوپن‌های هم‌کمپین گروه‌بندی می‌شوند">
+                <Input value={form.campaign} onChange={(e) => setForm({ ...form, campaign: e.target.value })} placeholder="مثلا: جشنواره تابستانه" />
+              </Field>
             </div>
+            <Field label="فقط روی محصول‌های خاص (اختیاری)" hint="خالی = همه محصول‌ها">
+              <ProductPicker value={form.productIds} onChange={(ids) => setForm({ ...form, productIds: ids })} />
+            </Field>
+            <Field label="فقط روی دسته‌های خاص (اختیاری)" hint="خالی = همه دسته‌ها">
+              <CategoryPicker value={form.categoryIds} onChange={(ids) => setForm({ ...form, categoryIds: ids })} />
+            </Field>
             <Switch label="فعال" checked={form.isActive} onChange={(v) => setForm({ ...form, isActive: v })} />
             <Button className="w-full" loading={save.isPending} disabled={!form.code || !form.valueToman} onClick={() => save.mutate(form)}>
               ذخیره کد تخفیف

@@ -8,11 +8,12 @@ import { DomainException } from '../../common/http-exception.filter';
 import { OrdersService } from '../orders/orders.service';
 import { WalletService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { gatewayAdapter, GATEWAY_ADAPTERS } from './gateways';
 
 /**
  * پرداخت: آداپتور چنددرگاهی.
  * - manual: درگاه توسعه — فوری موفق می‌شود (برای تست بدون مرچنت)
- * - zarinpal: درگاه واقعی (سندباکس/تولید)
+ * - zarinpal / idpay / nextpay / mellat (به‌پرداخت) / saman (SEP): درگاه‌های واقعی
  * - wallet: پرداخت از کیف پول (داخلی)
  */
 @Injectable()
@@ -28,10 +29,15 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  private zarinpalBase() {
-    return env.payment.zarinpalSandbox
-      ? 'https://sandbox.zarinpal.com/pg/v4/payment'
-      : 'https://payment.zarinpal.com/pg/v4/payment';
+  /** درگاه‌های فعال و قابل استفاده برای چک‌اوت */
+  listGateways(userId?: number) {
+    const list: Array<{ key: string; title: string; description?: string }> = [];
+    for (const [key, adapter] of Object.entries(GATEWAY_ADAPTERS)) {
+      if (adapter.isConfigured()) list.push({ key, title: adapter.title, description: 'پرداخت آنلاین امن' });
+    }
+    if (env.isDev || !list.length) list.push({ key: 'manual', title: 'درگاه آزمایشی', description: 'تست توسعه — فوری موفق می‌شود' });
+    list.push({ key: 'wallet', title: 'کیف پول', description: 'پرداخت از موجودی کیف پول کارزینتل' });
+    return { items: list, default: list[0]?.key ?? 'manual' };
   }
 
   /** شروع پرداخت برای سفارش */
@@ -42,62 +48,45 @@ export class PaymentsService {
       throw new DomainException('ORDER_NOT_PAYABLE', 'این سفارش قابل پرداخت نیست', 409);
 
     // بستن پرداخت‌های ناتمام قبلی
-    await this.payments.update(
-      { orderId: order.id, status: 'initiated' },
-      { status: 'cancelled' },
-    );
+    await this.payments.update({ orderId: order.id, status: 'initiated' }, { status: 'cancelled' });
+    await this.payments.update({ orderId: order.id, status: 'pending' }, { status: 'cancelled' });
 
-    if (gateway === 'wallet') {
-      return this.payWithWallet(order);
-    }
-
-    const payment = await this.payments.save(
-      this.payments.create({
-        orderId: order.id,
-        purpose: 'order',
-        gateway,
-        amount: order.grandTotal,
-        status: gateway === 'manual' ? 'pending' : 'initiated',
-        authority: gateway === 'manual' ? `MAN-${uuid()}` : null,
-      }),
-    );
+    if (gateway === 'wallet') return this.payWithWallet(order);
 
     if (gateway === 'manual') {
-      // درگاه توسعه: مستقیم به callback می‌رویم
-      return {
-        paymentId: payment.id,
-        gateway,
-        redirectUrl: `${env.payment.callbackUrl}/manual?authority=${payment.authority}`,
-      };
-    }
-
-    if (gateway === 'zarinpal') {
-      if (!env.payment.zarinpalMerchantId)
-        throw new DomainException('GATEWAY_NOT_CONFIGURED', 'مرچنت‌کد زرین‌پال تنظیم نشده است — از manual استفاده کنید', 400);
-
-      const res = await fetch(`${this.zarinpalBase()}/request.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          merchant_id: env.payment.zarinpalMerchantId,
-          amount: Number(order.grandTotal),
-          callback_url: `${env.payment.callbackUrl}/zarinpal`,
-          description: `پرداخت سفارش ${order.code} - کارزینتل`,
+      const payment = await this.payments.save(
+        this.payments.create({
+          orderId: order.id, purpose: 'order', gateway, amount: order.grandTotal,
+          status: 'pending', authority: `MAN-${uuid()}`,
         }),
-      });
-      const json: any = await res.json().catch(() => ({}));
-      const authority = json?.data?.authority;
-      const code = json?.data?.code;
-      if (!authority || code !== 100) {
-        await this.payments.update(payment.id, { status: 'failed', payload: json });
-        throw new DomainException('PAYMENT_FAILED', json?.errors?.message || 'خطا در اتصال به درگاه پرداخت', 402);
-      }
-      await this.payments.update(payment.id, { authority, status: 'pending', payload: json });
-      const base = env.payment.zarinpalSandbox ? 'https://sandbox.zarinpal.com/pg/StartPay' : 'https://payment.zarinpal.com/pg/StartPay';
-      return { paymentId: payment.id, gateway, redirectUrl: `${base}/${authority}` };
+      );
+      return { paymentId: payment.id, gateway, redirectUrl: `${env.payment.callbackUrl}/manual?authority=${payment.authority}` };
     }
 
-    throw new DomainException('BAD_REQUEST', 'درگاه پرداخت پشتیبانی نمی‌شود', 400);
+    const adapter = gatewayAdapter(gateway);
+    if (!adapter) throw new DomainException('BAD_REQUEST', 'درگاه پرداخت پشتیبانی نمی‌شود', 400);
+    if (!adapter.isConfigured())
+      throw new DomainException('GATEWAY_NOT_CONFIGURED', `درگاه «${adapter.title}» هنوز تنظیم نشده است`, 400);
+
+    const addr = order.addressJson as any;
+    const payment = await this.payments.save(
+      this.payments.create({ orderId: order.id, purpose: 'order', gateway, amount: order.grandTotal, status: 'initiated' }),
+    );
+
+    try {
+      const start = await adapter.request({
+        paymentId: payment.id,
+        amount: Number(order.grandTotal),
+        description: `پرداخت سفارش ${order.code} - کارزینتل`,
+        callbackUrl: env.payment.callbackUrl,
+        mobile: addr?.receiverPhone ?? null,
+      });
+      await this.payments.update(payment.id, { authority: start.authority, status: 'pending', payload: start.payload as any });
+      return { paymentId: payment.id, gateway, redirectUrl: start.redirectUrl };
+    } catch (e) {
+      await this.payments.update(payment.id, { status: 'failed', payload: { error: (e as Error).message } });
+      throw new DomainException('PAYMENT_FAILED', (e as Error).message || 'خطا در اتصال به درگاه پرداخت', 402);
+    }
   }
 
   /** پرداخت از کیف پول — در یک تراکنش */
@@ -106,13 +95,8 @@ export class PaymentsService {
       await this.wallet.debit({ userId: order.userId, amount: order.grandTotal, orderId: order.id }, tx);
       const payment = await tx.getRepository(Payment).save(
         tx.getRepository(Payment).create({
-          orderId: order.id,
-          purpose: 'order',
-          gateway: 'wallet',
-          amount: order.grandTotal,
-          status: 'paid',
-          authority: `WLT-${uuid()}`,
-          paidAt: new Date(),
+          orderId: order.id, purpose: 'order', gateway: 'wallet', amount: order.grandTotal,
+          status: 'paid', authority: `WLT-${uuid()}`, paidAt: new Date(),
         }),
       );
       const paid = await this.ordersService.markPaid(order.id, tx);
@@ -120,12 +104,25 @@ export class PaymentsService {
     });
   }
 
-  /** callback درگاه‌ها (GET) → تایید و ریدایرکت به فرانت */
+  /** callback درگاه‌ها (GET یا POST) → تایید و ریدایرکت به فرانت */
   async handleCallback(gateway: string, query: Record<string, string>) {
-    const authority = query.authority || query.Authority;
-    const status = query.status || query.Status;
+    let authority = query.authority || query.Authority || null;
+    const adapter = gatewayAdapter(gateway);
+    if (!authority && adapter) authority = adapter.extractAuthority(query);
 
-    const payment = await this.payments.findOne({ where: { gateway: gateway as PaymentGateway, authority } });
+    let payment: Payment | null = null;
+    if (authority) payment = await this.payments.findOne({ where: { gateway: gateway as PaymentGateway, authority } });
+    // ملت/سامان: authority گاهی در callback نمی‌آید → از روی شناسه سفارش درگاه (= payment.id)
+    if (!payment) {
+      const pid = Number(query.SaleOrderId || query.ResNum || query.order_id);
+      if (pid) {
+        payment = await this.payments.findOne({ where: { id: pid, gateway: gateway as PaymentGateway } });
+        if (payment && !payment.authority && authority) {
+          await this.payments.update(payment.id, { authority });
+          payment.authority = authority;
+        }
+      }
+    }
     if (!payment) return { redirectUrl: this.resultUrl('', 'failed', 'تراکنش یافت نشد') };
 
     // تکراری → فقط ریدایرکت
@@ -141,40 +138,28 @@ export class PaymentsService {
     if (gateway === 'manual') {
       success = true;
       refId = `DEV-${Date.now()}`;
-    } else if (gateway === 'zarinpal') {
-      if (status === 'OK') {
-        try {
-          const res = await fetch(`${this.zarinpalBase()}/verify.json`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              merchant_id: env.payment.zarinpalMerchantId,
-              amount: Number(payment.amount),
-              authority: payment.authority,
-            }),
-          });
-          const json: any = await res.json().catch(() => ({}));
-          verifyPayload = json;
-          success = json?.data?.code === 100 || json?.data?.code === 101;
-          refId = json?.data?.ref_id ? String(json.data.ref_id) : null;
-        } catch (e) {
-          this.logger.warn(`zarinpal verify failed: ${(e as Error).message}`);
-        }
+    } else if (adapter) {
+      try {
+        const result = await adapter.verify(payment, query);
+        success = result.success;
+        refId = result.refId;
+        verifyPayload = result.payload ?? null;
+      } catch (e) {
+        this.logger.warn(`${gateway} verify failed: ${(e as Error).message}`);
       }
     }
 
     if (!success) {
-      await this.payments.update(payment.id, { status: 'failed', payload: verifyPayload });
+      await this.payments.update(payment.id, { status: 'failed', payload: verifyPayload ?? query });
       const order = payment.orderId ? await this.orders.findOne({ where: { id: payment.orderId } }) : null;
       return { redirectUrl: this.resultUrl(order?.code || '', 'failed', 'پرداخت ناموفق یا لغو شد') };
     }
 
     const finalOrderCode = await this.em.transaction(async (tx) => {
       await tx.getRepository(Payment).update(payment.id, {
-        status: 'paid', refId, paidAt: new Date(), payload: verifyPayload,
+        status: 'paid', refId, paidAt: new Date(), payload: verifyPayload ?? query,
       });
       if (payment.purpose === 'wallet_charge') {
-        // userId واقعی در payload زمان init ذخیره شده است
         const meta = (payment.payload as any) || {};
         if (meta.walletUserId)
           await this.wallet.credit({
@@ -198,47 +183,46 @@ export class PaymentsService {
   /** شارژ کیف پول از طریق درگاه */
   async initWalletCharge(userId: number, amount: number, gateway: PaymentGateway) {
     if (amount < 1000) throw new DomainException('BAD_REQUEST', 'حداقل مبلغ شارژ ۱۰۰۰ ریال است', 400);
-    const payment = await this.payments.save(
-      this.payments.create({
-        orderId: null,
-        purpose: 'wallet_charge',
-        gateway,
-        amount,
-        status: gateway === 'manual' ? 'pending' : 'initiated',
-        authority: gateway === 'manual' ? `MAN-${uuid()}` : null,
-        payload: { walletUserId: userId },
-      }),
-    );
+
     if (gateway === 'manual') {
-      // توسعه: فوری شارژ می‌شود
+      const payment = await this.payments.save(
+        this.payments.create({
+          orderId: null, purpose: 'wallet_charge', gateway, amount,
+          status: 'pending', authority: `MAN-${uuid()}`, payload: { walletUserId: userId },
+        }),
+      );
       await this.em.transaction(async (tx) => {
         await tx.getRepository(Payment).update(payment.id, { status: 'paid', paidAt: new Date(), refId: `DEV-${Date.now()}` });
         await this.wallet.credit({ userId, amount, type: 'charge', referenceType: 'payment', referenceId: payment.id, description: 'شارژ کیف پول' }, tx);
       });
       return { paymentId: payment.id, gateway, redirectUrl: this.resultUrl('', 'success') };
     }
-    if (gateway === 'zarinpal') {
-      if (!env.payment.zarinpalMerchantId)
-        throw new DomainException('GATEWAY_NOT_CONFIGURED', 'مرچنت‌کد زرین‌پال تنظیم نشده است', 400);
-      const res = await fetch(`${this.zarinpalBase()}/request.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          merchant_id: env.payment.zarinpalMerchantId,
-          amount,
-          callback_url: `${env.payment.callbackUrl}/zarinpal`,
-          description: 'شارژ کیف پول کارزینتل',
-        }),
+
+    const adapter = gatewayAdapter(gateway);
+    if (!adapter || !adapter.isConfigured())
+      throw new DomainException('GATEWAY_NOT_CONFIGURED', 'این درگاه برای شارژ کیف پول در دسترس نیست', 400);
+
+    const payment = await this.payments.save(
+      this.payments.create({
+        orderId: null, purpose: 'wallet_charge', gateway, amount,
+        status: 'initiated', payload: { walletUserId: userId },
+      }),
+    );
+    try {
+      const start = await adapter.request({
+        paymentId: payment.id, amount,
+        description: 'شارژ کیف پول کارزینتل',
+        callbackUrl: env.payment.callbackUrl,
       });
-      const json: any = await res.json().catch(() => ({}));
-      if (json?.data?.code === 100 && json.data.authority) {
-        await this.payments.update(payment.id, { authority: json.data.authority, status: 'pending', payload: { ...json, walletUserId: userId } });
-        const base = env.payment.zarinpalSandbox ? 'https://sandbox.zarinpal.com/pg/StartPay' : 'https://payment.zarinpal.com/pg/StartPay';
-        return { paymentId: payment.id, gateway, redirectUrl: `${base}/${json.data.authority}` };
-      }
+      await this.payments.update(payment.id, {
+        authority: start.authority, status: 'pending',
+        payload: { ...((start.payload as any) || {}), walletUserId: userId },
+      });
+      return { paymentId: payment.id, gateway, redirectUrl: start.redirectUrl };
+    } catch (e) {
+      await this.payments.update(payment.id, { status: 'failed' });
       throw new DomainException('PAYMENT_FAILED', 'خطا در اتصال به درگاه', 402);
     }
-    throw new DomainException('BAD_REQUEST', 'درگاه پشتیبانی نمی‌شود', 400);
   }
 
   /** بازپرداخت (ادمین): به کیف پول کاربر برمی‌گردد + سفارش refunded */

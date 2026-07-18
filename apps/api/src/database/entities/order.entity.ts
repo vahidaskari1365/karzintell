@@ -45,7 +45,8 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 };
 
 export type PaymentStatus = 'unpaid' | 'paid' | 'failed' | 'partially_refunded' | 'refunded';
-export type PaymentGateway = 'zarinpal' | 'idpay' | 'zibal' | 'nextpay' | 'manual' | 'wallet' | 'cod';
+export const PAYMENT_GATEWAYS = ['zarinpal', 'idpay', 'nextpay', 'mellat', 'saman', 'zibal', 'manual', 'wallet', 'cod'] as const;
+export type PaymentGateway = (typeof PAYMENT_GATEWAYS)[number];
 
 @Entity('orders')
 export class Order {
@@ -220,7 +221,10 @@ export class Payment {
   @Column({ type: 'enum', enum: ['order', 'wallet_charge'], default: 'order' })
   purpose: 'order' | 'wallet_charge';
 
-  @Column({ type: 'enum', enum: ['zarinpal', 'idpay', 'zibal', 'nextpay', 'manual', 'wallet', 'cod'] })
+  @Column({
+    type: 'enum',
+    enum: ['zarinpal', 'idpay', 'zibal', 'nextpay', 'mellat', 'saman', 'manual', 'wallet', 'cod'],
+  })
   gateway: PaymentGateway;
 
   @Column({ type: 'bigint', unsigned: true, transformer: bigint })

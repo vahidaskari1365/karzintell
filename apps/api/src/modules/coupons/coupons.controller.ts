@@ -2,7 +2,7 @@ import {
   Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { RequirePermissions } from '../../common/decorators';
 import { CouponsService } from './coupons.service';
 
@@ -16,6 +16,11 @@ export class CouponDto {
   @IsOptional() @IsNumber() @Min(0) minCartAmount?: number;
   @IsOptional() @IsInt() @Min(1) usageLimit?: number;
   @IsOptional() @IsInt() @Min(1) perUserLimit?: number;
+  @IsOptional() @IsString() @MaxLength(120) campaign?: string;
+  /** فقط روی این محصول‌ها؛ خالی/undefined = همه */
+  @IsOptional() @IsArray() @IsInt({ each: true }) productIds?: number[];
+  /** فقط روی این دسته‌ها؛ خالی/undefined = همه */
+  @IsOptional() @IsArray() @IsInt({ each: true }) categoryIds?: number[];
   @IsOptional() @IsString() startsAt?: string;
   @IsOptional() @IsString() expiresAt?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
@@ -54,6 +59,8 @@ export class CouponsController {
   private normalize(dto: Partial<CouponDto>) {
     return {
       ...dto,
+      productIds: dto.productIds?.length ? dto.productIds : null,
+      categoryIds: dto.categoryIds?.length ? dto.categoryIds : null,
       startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
       expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
     } as any;

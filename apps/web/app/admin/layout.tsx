@@ -6,7 +6,7 @@ import { ReactNode, useState } from 'react';
 import {
   Award, BarChart3, Boxes, FileText, FolderTree, Image as ImageIcon, LayoutDashboard,
   ListChecks, Menu, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star,
-  Store, Ticket, TicketPercent, UserCog, Users, X,
+  Store, Ticket, TicketPercent, Truck, UserCog, Users, X,
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth-guard';
 import { useAuthStore, hasPermission } from '@/lib/auth-store';
@@ -22,6 +22,7 @@ const MENU: MenuItem[] = [
   { href: '/admin/attributes', label: 'ویژگی‌ها', icon: <ListChecks className="h-4.5 w-4.5" />, perm: 'attributes.manage' },
   { href: '/admin/inventory', label: 'موجودی انبار', icon: <Boxes className="h-4.5 w-4.5" />, perm: 'inventory.view' },
   { href: '/admin/orders', label: 'سفارش‌ها', icon: <ShoppingBag className="h-4.5 w-4.5" />, perm: 'orders.view' },
+  { href: '/admin/shipping', label: 'حمل‌ونقل', icon: <Truck className="h-4.5 w-4.5" />, perm: 'settings.manage' },
   { href: '/admin/customers', label: 'مشتریان', icon: <Users className="h-4.5 w-4.5" />, perm: 'customers.view' },
   { href: '/admin/users', label: 'کاربران', icon: <UserCog className="h-4.5 w-4.5" />, perm: 'users.view' },
   { href: '/admin/roles', label: 'نقش‌ها و دسترسی', icon: <ShieldCheck className="h-4.5 w-4.5" />, perm: 'roles.view' },

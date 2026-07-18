@@ -108,3 +108,15 @@ export class Wishlist {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }
+
+@Entity('product_compares')
+export class ProductCompare {
+  @PrimaryColumn({ name: 'user_id', type: 'bigint', unsigned: true })
+  userId: number;
+
+  @PrimaryColumn({ name: 'product_id', type: 'bigint', unsigned: true })
+  productId: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+}

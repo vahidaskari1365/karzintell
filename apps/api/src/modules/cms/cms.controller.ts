@@ -44,6 +44,12 @@ export class CmsController {
   }
 
   @Public()
+  @Get('pages')
+  async pages() {
+    return { data: await this.cms.publishedPages() };
+  }
+
+  @Public()
   @Get('pages/:slug')
   async page(@Param('slug') slug: string) {
     return { data: await this.cms.publishedPage(slug) };
