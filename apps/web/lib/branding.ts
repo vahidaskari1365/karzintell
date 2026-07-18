@@ -20,8 +20,8 @@ export interface Branding {
 
 export const DEFAULT_BRANDING: Branding = {
   name: 'کارزینتل',
-  logo: null,
-  primaryColor: '#0f172a',
+  logo: '/logo-mark.svg',
+  primaryColor: '#10b981',
   supportPhone: '',
   socials: {},
 };
@@ -30,6 +30,7 @@ export const DEFAULT_BRANDING: Branding = {
 export function mediaUrl(path?: string | null): string | null {
   if (!path) return null;
   if (/^https?:\/\//.test(path)) return path;
+  if (path.startsWith('/')) return path; // فایل‌های public خود سایت
   const base = process.env.NEXT_PUBLIC_STORAGE_URL || 'http://localhost:9000/karzintell';
   return `${base}/${path.replace(/^\/+/, '')}`;
 }

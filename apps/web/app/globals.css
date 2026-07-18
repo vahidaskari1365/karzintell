@@ -42,7 +42,7 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 :root {
   --cinema-bg: #05080f;          /* مشکی-آبی عمیق */
   --cinema-surface: #0b1120;
-  --cinema-amber: #f59e0b;       /* کهربایی برند */
+  --cinema-green: #10b981;       /* سبز برند */
   --cinema-cyan: #22d3ee;
   --cinema-violet: #8b5cf6;
 }
@@ -62,11 +62,11 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
   border: 1px solid rgba(255,255,255,.09);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
 }
-.ring-glow { box-shadow: 0 0 0 1px rgba(245,158,11,.25), 0 8px 40px -8px rgba(245,158,11,.35); }
+.ring-glow { box-shadow: 0 0 0 1px rgba(16,185,129,.3), 0 8px 40px -8px rgba(16,185,129,.4); }
 
 /* متن گرادیانی متحرک */
 .text-aurora {
-  background: linear-gradient(92deg, #fbbf24, #f97316, #22d3ee, #a78bfa, #fbbf24);
+  background: linear-gradient(92deg, #4ade80, #10b981, #22d3ee, #e2e8f0, #4ade80);
   background-size: 300% 100%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: aurora-slide 9s linear infinite;
@@ -82,7 +82,7 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .float-y { animation: float-y 6s ease-in-out infinite; }
 
 /* نبض نور (pulse glow) برای CTA */
-@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 24px 0 rgba(245,158,11,.35); } 50% { box-shadow: 0 0 44px 6px rgba(245,158,11,.55); } }
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 24px 0 rgba(16,185,129,.4); } 50% { box-shadow: 0 0 44px 6px rgba(16,185,129,.6); } }
 .pulse-glow { animation: pulse-glow 2.8s ease-in-out infinite; }
 
 /* کارت با دنبال‌کردن موس (tilt) */
@@ -93,7 +93,7 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .orbit-border { position: relative; overflow: hidden; border-radius: 1.25rem; }
 .orbit-border::before {
   content: ''; position: absolute; inset: -150%;
-  background: conic-gradient(from 0deg, transparent 0 80%, var(--cinema-amber) 88%, #22d3ee 94%, transparent 100%);
+  background: conic-gradient(from 0deg, transparent 0 80%, var(--cinema-green) 88%, #22d3ee 94%, transparent 100%);
   animation: orbit 5s linear infinite; z-index: 0;
 }
 .orbit-border > .orbit-inner { position: relative; z-index: 1; border-radius: inherit; }

@@ -203,7 +203,7 @@ async function main() {
     ['store.name_en', 'Karzintell', 'general', 'string', 1],
     ['store.currency', 'IRR', 'general', 'string', 1],
     ['store.logo', '', 'general', 'string', 1],
-    ['store.primary_color', '#0f172a', 'general', 'string', 1],
+    ['store.primary_color', '#10b981', 'general', 'string', 1],
     ['store.socials', '{"instagram":"","telegram":"","whatsapp":"","aparat":""}', 'general', 'json', 1],
     ['store.tax_percent', '9', 'billing', 'number', 0],
     ['store.free_shipping_threshold', '0', 'shipping', 'number', 1],

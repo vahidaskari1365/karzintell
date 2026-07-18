@@ -4,14 +4,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, Scale, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X, Zap } from 'lucide-react';
+import { ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, Scale, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { useAuthStore, hasPermission, toast } from '@/lib/auth-store';
 import { CategoryNode } from '@/lib/types';
 import { faNumber } from '@/lib/format';
 import { NotificationsBell } from './notifications-bell';
 import { SearchBox } from './search-box';
-import { useBranding } from '@/lib/branding';
+import { BrandMark, BrandName } from './brand-logo';
+
 
 function useCartCount() {
   const { user, hydrated } = useAuthStore();
@@ -40,7 +41,6 @@ export function Header() {
   const { user, hydrated, clearAuth } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const cartCount = useCartCount();
-  const brand = useBranding();
 
   const { data: tree } = useQuery({
     queryKey: ['categories-tree'],
@@ -64,16 +64,9 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link href="/" className="group flex items-center gap-2">
-          {brand.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={brand.logo} alt={brand.name} className="h-9 w-auto max-w-32 object-contain" />
-          ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-950 via-slate-800 to-slate-900 ring-1 ring-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.35)] transition-shadow group-hover:shadow-[0_0_28px_rgba(245,158,11,0.55)]">
-              <Zap className="h-5 w-5 text-amber-400" />
-            </span>
-          )}
-          <span className="text-xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-slate-700">{brand.name}</span>
+        <Link href="/" className="group flex items-center gap-2.5 transition-transform hover:scale-[1.03]">
+          <BrandMark className="h-10 w-10 transition-transform duration-500 group-hover:rotate-[360deg]" />
+          <BrandName />
         </Link>
 
         {/* دسته‌بندی‌ها - دسکتاپ */}

@@ -32,7 +32,7 @@ function CinematicHero() {
   return (
     <section className={`${FULL} cinema cinema-grain -mt-6 min-h-[94svh] overflow-hidden`}>
       {/* هاله‌های نور */}
-      <div className="pointer-events-none absolute -top-40 right-1/4 h-96 w-96 rounded-full bg-amber-500/25 blur-[120px]" />
+      <div className="pointer-events-none absolute -top-40 right-1/4 h-96 w-96 rounded-full bg-emerald-500/25 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-0 left-1/4 h-96 w-96 rounded-full bg-cyan-500/20 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 left-10 h-64 w-64 rounded-full bg-violet-600/20 blur-[110px]" />
 
@@ -42,7 +42,7 @@ function CinematicHero() {
       {/* محتوای متنی */}
       <div className="relative z-10 mx-auto flex min-h-[94svh] max-w-6xl flex-col items-center justify-center px-6 text-center">
         <Reveal y={26}>
-          <span className="glass-dark inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-amber-300">
+          <span className="glass-dark inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-emerald-300">
             <Sparkles className="h-3.5 w-3.5" /> جدیدترین گجت‌های ۲۰۲۶ رسید
           </span>
         </Reveal>
@@ -67,7 +67,7 @@ function CinematicHero() {
             <Magnetic>
               <Link
                 href="/search"
-                className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-600 px-7 py-3.5 text-sm font-black text-slate-950 transition-transform hover:scale-105"
+                className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-black text-slate-950 transition-transform hover:scale-105"
               >
                 <Zap className="h-4.5 w-4.5" /> شروع خرید
               </Link>
@@ -75,9 +75,9 @@ function CinematicHero() {
             <Magnetic>
               <Link
                 href="/blog"
-                className="glass-dark inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+                className="glass-dark inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-slate-200 transition hover:border-emerald-400/40 hover:text-emerald-300"
               >
-                <Flame className="h-4.5 w-4.5 text-orange-400" /> راهنمای خرید
+                <Flame className="h-4.5 w-4.5 text-green-400" /> راهنمای خرید
               </Link>
             </Magnetic>
           </div>
@@ -105,7 +105,7 @@ function BrandStrip() {
       <Marquee>
         {brands.map((b) => (
           <span key={b} className="flex shrink-0 items-center gap-2 text-sm font-bold text-slate-500">
-            <Star className="h-3.5 w-3.5 text-amber-500/60" /> {b}
+            <Star className="h-3.5 w-3.5 text-emerald-500/60" /> {b}
           </span>
         ))}
       </Marquee>
@@ -132,10 +132,10 @@ function CategoriesShowcase({ tree }: { tree: CategoryNode[] }) {
                 <TiltCard amount={14}>
                   <Link
                     href={`/categories/${c.slug}`}
-                    className="glass-dark group flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-colors hover:border-amber-400/40"
+                    className="glass-dark group flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-colors hover:border-emerald-400/40"
                   >
                     <span
-                      className="float-y flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-amber-300"
+                      className="float-y flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-emerald-300"
                       style={{
                         backgroundImage: 'linear-gradient(135deg, rgba(245,158,11,.18), rgba(34,211,238,.12))',
                         animationDelay: `${i * 0.4}s`,
@@ -143,7 +143,7 @@ function CategoriesShowcase({ tree }: { tree: CategoryNode[] }) {
                     >
                       <Icon className="h-7 w-7" />
                     </span>
-                    <span className="text-xs font-bold text-slate-200 group-hover:text-amber-300">{c.name}</span>
+                    <span className="text-xs font-bold text-slate-200 group-hover:text-emerald-300">{c.name}</span>
                   </Link>
                 </TiltCard>
               </motion.div>
@@ -160,7 +160,7 @@ function GlassProductCard({ p }: { p: ProductCardType }) {
   return (
     <Link
       href={`/products/${p.slug}`}
-      className="glass-dark group w-64 shrink-0 overflow-hidden rounded-3xl transition hover:border-amber-400/40 sm:w-72"
+      className="glass-dark group w-64 shrink-0 overflow-hidden rounded-3xl transition hover:border-emerald-400/40 sm:w-72"
     >
       <div className="relative h-52 overflow-hidden bg-slate-900/60">
         {p.image ? (
@@ -171,7 +171,7 @@ function GlassProductCard({ p }: { p: ProductCardType }) {
         )}
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0b1120] to-transparent" />
         {!!p.soldCount && (
-          <span className="absolute top-3 right-3 rounded-full bg-amber-500/90 px-2.5 py-1 text-2xs font-black text-slate-950">
+          <span className="absolute top-3 right-3 rounded-full bg-emerald-500/90 px-2.5 py-1 text-2xs font-black text-slate-950">
             🔥 پرفروش
           </span>
         )}
@@ -180,12 +180,12 @@ function GlassProductCard({ p }: { p: ProductCardType }) {
         {p.brandName && <p className="text-2xs text-cyan-400">{p.brandName}</p>}
         <h3 className="mt-1 line-clamp-2 min-h-10 text-sm font-bold leading-6 text-slate-100">{p.name}</h3>
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-base font-black text-amber-400">
+          <span className="text-base font-black text-emerald-400">
             {p.minPrice ? `${toToman(p.minPrice)} تومان` : '—'}
           </span>
           {!!p.ratingAvg && (
             <span className="flex items-center gap-1 text-2xs text-slate-400">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {faNumber(Number(p.ratingAvg).toFixed(1))}
+              <Star className="h-3.5 w-3.5 fill-emerald-400 text-emerald-400" /> {faNumber(Number(p.ratingAvg).toFixed(1))}
             </span>
           )}
         </div>
@@ -219,7 +219,7 @@ function HorizontalRail({ items }: { items: ProductCardType[] }) {
       <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
         <div className="pointer-events-none absolute top-20 left-0 h-80 w-80 rounded-full bg-violet-600/15 blur-[110px]" />
         <div className="mx-auto mb-10 w-full max-w-7xl px-6">
-          <span className="text-xs font-bold tracking-widest text-amber-400">پرفروش‌ترین‌ها</span>
+          <span className="text-xs font-bold tracking-widest text-emerald-400">پرفروش‌ترین‌ها</span>
           <h2 className="mt-3 text-3xl font-black sm:text-4xl">
             با اسکرول، در فروشگاه <GradientText>سفر کن</GradientText>
           </h2>
@@ -228,15 +228,15 @@ function HorizontalRail({ items }: { items: ProductCardType[] }) {
           {items.map((p) => <GlassProductCard key={p.id} p={p} />)}
           <Link
             href="/search?sort=-soldCount"
-            className="glass-dark flex w-56 shrink-0 flex-col items-center justify-center gap-3 rounded-3xl text-sm font-bold text-amber-300"
+            className="glass-dark flex w-56 shrink-0 flex-col items-center justify-center gap-3 rounded-3xl text-sm font-bold text-emerald-300"
           >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/15"><Rocket className="h-6 w-6" /></span>
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15"><Rocket className="h-6 w-6" /></span>
             مشاهده همه ←
           </Link>
         </motion.div>
         {/* خط پیشرفت ریل */}
         <div className="mx-auto mt-10 h-1 w-48 overflow-hidden rounded-full bg-white/10">
-          <motion.div className="h-full origin-right bg-gradient-to-l from-amber-500 to-cyan-400" style={{ scaleX: scrollYProgress }} />
+          <motion.div className="h-full origin-right bg-gradient-to-l from-emerald-500 to-cyan-400" style={{ scaleX: scrollYProgress }} />
         </div>
       </div>
     </section>
@@ -257,7 +257,7 @@ function StatsBand() {
         {stats.map((s, i) => (
           <Reveal key={s.label} delay={i * 0.08}>
             <div className="glass-dark rounded-2xl p-6 text-center">
-              <s.icon className="mx-auto mb-3 h-7 w-7 text-amber-400" />
+              <s.icon className="mx-auto mb-3 h-7 w-7 text-emerald-400" />
               <p className="text-3xl font-black text-slate-50"><CountUp to={s.value} suffix={s.suffix} /></p>
               <p className="mt-1 text-xs text-slate-500">{s.label}</p>
             </div>
@@ -310,7 +310,7 @@ function FinaleCTA() {
             <Magnetic className="mt-9">
               <Link
                 href="/search"
-                className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-600 px-10 py-4 text-base font-black text-slate-950 transition-transform hover:scale-105"
+                className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-10 py-4 text-base font-black text-slate-950 transition-transform hover:scale-105"
               >
                 <Rocket className="h-5 w-5" /> ورود به فروشگاه
               </Link>
@@ -328,7 +328,7 @@ function ShopSection({ title, href, children, idx }: { title: string; href?: str
     <Reveal className="mt-14">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="flex items-center gap-3 text-xl font-black text-slate-900">
-          <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-amber-500 to-orange-600" />
+          <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-emerald-500 to-green-600" />
           {title}
         </h2>
         {href && <Link href={href} className="rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-900 hover:text-white">مشاهده همه ←</Link>}

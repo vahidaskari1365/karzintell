@@ -20,8 +20,8 @@ function CoreShape() {
       <mesh ref={mesh} scale={1.65}>
         <torusKnotGeometry args={[1, 0.32, 220, 40]} />
         <MeshDistortMaterial
-          color="#f59e0b"
-          emissive="#b45309"
+          color="#10b981"
+          emissive="#047857"
           emissiveIntensity={0.55}
           metalness={0.85}
           roughness={0.18}
@@ -94,15 +94,15 @@ export function HeroScene() {
       className="!absolute inset-0"
     >
       <ambientLight intensity={0.35} />
-      <pointLight position={[6, 4, 6]} intensity={60} color="#fbbf24" />
+      <pointLight position={[6, 4, 6]} intensity={60} color="#4ade80" />
       <pointLight position={[-6, -3, -4]} intensity={40} color="#22d3ee" />
       <spotLight position={[0, 8, 4]} angle={0.5} intensity={60} color="#8b5cf6" penumbra={1} />
       <MouseRig>
         <CoreShape />
-        <OrbitRing radius={2.6} color="#f59e0b" tilt={1.15} speed={0.35} />
+        <OrbitRing radius={2.6} color="#10b981" tilt={1.15} speed={0.35} />
         <OrbitRing radius={3.3} color="#22d3ee" tilt={1.35} speed={-0.22} />
         <ParticleField />
-        <Sparkles count={90} scale={[10, 7, 4]} size={2.2} speed={0.35} color="#fde68a" opacity={0.7} />
+        <Sparkles count={90} scale={[10, 7, 4]} size={2.2} speed={0.35} color="#a7f3d0" opacity={0.7} />
       </MouseRig>
     </Canvas>
   );

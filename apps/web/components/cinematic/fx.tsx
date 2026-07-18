@@ -167,7 +167,7 @@ export function ScrollProgress({ className }: { className?: string }) {
   const scaleX = useSpring(scrollYProgress, { stiffness: 140, damping: 26 });
   return (
     <motion.div
-      className={`fixed inset-x-0 top-0 z-50 h-[3px] origin-right bg-gradient-to-l from-amber-500 via-orange-500 to-cyan-400 ${className || ''}`}
+      className={`fixed inset-x-0 top-0 z-50 h-[3px] origin-right bg-gradient-to-l from-emerald-500 via-green-500 to-cyan-400 ${className || ''}`}
       style={{ scaleX }}
     />
   );
