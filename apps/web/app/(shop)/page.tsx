@@ -37,16 +37,28 @@ function CinematicHero() {
     <section className={`${FULL} cinema cinema-grain min-h-[94svh] overflow-hidden`}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک</h1>
 
-      {/* پس‌زمینه: تصویر K نئونی با دریفت آرام */}
+      {/* پس‌زمینه: تصویر K نئونی مداری با دریفت آرام — نئون‌ها نفس می‌کشند و نور سبز ساطع می‌کنند */}
       <div aria-hidden className="absolute inset-0">
-        <div className="animate-neon-drift absolute inset-0 bg-[url('/assets/neon-k-bg.jpg')] bg-cover bg-center opacity-55" />
+        <div className="animate-neon-drift absolute inset-0 bg-[url('/assets/neon-k-bg.jpg')] bg-cover bg-center opacity-60" />
+
+        {/* موج نورانی که هر چند ثانیه روی مدار K جاری می‌شود */}
+        <div className="neon-surge left-[6%] top-[10%] h-[80%] w-[46%] rounded-full" />
+        <div className="neon-surge left-[-4%] top-[22%] h-[58%] w-[30%] rounded-full" style={{ animationDelay: '4.5s' }} />
+
+        {/* رشته‌نورهای شهابی سبز — عبور آرام و بدون آزار چشم */}
+        <i className="neon-comet top-[30%]" style={{ animationDelay: '1s' }} />
+        <i className="neon-comet top-[44%]" style={{ animationDelay: '6s', animationDuration: '15s' }} />
+        <i className="neon-comet top-[21%]" style={{ animationDelay: '9.5s', animationDuration: '10s', width: '160px' }} />
+
         {/* ذرات سبز درخشان شناور */}
         {HERO_SEEDS.map(([x, y, d], i) => (
           <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d }} />
         ))}
-        {/* هاله‌های نبض‌دار ملایم */}
+
+        {/* هاله‌های نبض‌دار سبز ملایم */}
         <div className="animate-neon-pulse pointer-events-none absolute top-1/4 right-1/4 h-80 w-80 rounded-full bg-emerald-500/15 blur-[130px]" />
-        <div className="animate-neon-pulse pointer-events-none absolute bottom-10 left-1/5 h-72 w-72 rounded-full bg-cyan-500/10 blur-[120px]" style={{ animationDelay: '2s' }} />
+        <div className="animate-neon-pulse pointer-events-none absolute bottom-10 left-1/5 h-72 w-72 rounded-full bg-green-400/10 blur-[120px]" style={{ animationDelay: '2s' }} />
+
         {/* محو تدریجی لبه‌ها برای خوانایی و اتصال نرم به سکشن بعدی */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#05080f]/55 via-transparent to-[#05080f]" />
       </div>

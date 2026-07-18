@@ -133,9 +133,46 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 }
 .animate-neon-pulse { animation: neon-pulse 7s ease-in-out infinite; }
 
+/* رشته‌نور شهابی — خط نازک سبز که با سر نورانی به‌آرامی از پس‌زمینه عبور می‌کند */
+.neon-comet {
+  position: absolute;
+  width: 240px; height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, transparent, rgba(52, 211, 153, .55) 65%, #a7f3d0);
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, .65));
+  opacity: 0;
+  animation: neon-comet 12s linear infinite;
+}
+.neon-comet::after {
+  content: '';
+  position: absolute; right: -4px; top: -2.5px;
+  width: 7px; height: 7px; border-radius: 9999px;
+  background: #d1fae5;
+  box-shadow: 0 0 14px 5px rgba(52, 211, 153, .9);
+}
+@keyframes neon-comet {
+  0%   { opacity: 0; transform: translateX(28vw) translateY(0); }
+  10%  { opacity: .85; }
+  72%  { opacity: .85; }
+  100% { opacity: 0; transform: translateX(106vw) translateY(-5px); }
+}
+
+/* موج نورانی که هر چند ثانیه از روی مدار K عبور می‌کند و آن را جان می‌دهد */
+.neon-surge {
+  position: absolute;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle at center, rgba(16, 185, 129, .22), rgba(16, 185, 129, .05) 45%, transparent 68%);
+  animation: neon-surge 9s ease-in-out infinite;
+}
+@keyframes neon-surge {
+  0%, 100% { opacity: .25; transform: scale(1); }
+  50%      { opacity: .8; transform: scale(1.07); }
+}
+
 /* احترام به حساسیت به حرکت */
 @media (prefers-reduced-motion: reduce) {
-  .neon-seed, .animate-neon-drift, .animate-neon-pulse { animation: none !important; }
+  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge { animation: none !important; }
 }
 
 /* سرچ‌باکس شیشه‌ای روی هدر تیره */
