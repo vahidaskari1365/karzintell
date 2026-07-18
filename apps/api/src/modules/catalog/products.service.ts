@@ -39,7 +39,7 @@ export class ProductsService {
   // ================================================== عمومی (فروشگاه)
   async publicList(query: {
     q?: string; category?: string; brand?: string; tag?: string;
-    minPrice?: string; maxPrice?: string; inStock?: string; sort?: string;
+    minPrice?: string; maxPrice?: string; minRating?: string; inStock?: string; sort?: string;
     page?: string; limit?: string;
   }) {
     const p = paginate(query.page, query.limit);
@@ -49,6 +49,7 @@ export class ProductsService {
       brandIds: query.brand ? query.brand.split(',').map(Number) : undefined,
       minPrice: query.minPrice ? Number(query.minPrice) : undefined,
       maxPrice: query.maxPrice ? Number(query.maxPrice) : undefined,
+      minRating: query.minRating ? Number(query.minRating) : undefined,
       inStock: query.inStock === '1',
       sort: query.sort,
       page: p.page,

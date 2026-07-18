@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { use, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Heart, Minus, Plus, ShoppingCart, ShieldCheck, Truck } from 'lucide-react';
+import { CheckCircle2, Expand, Heart, Minus, Plus, Share2, ShoppingCart, ShieldCheck, Truck, X } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { ProductDetailType, ProductVariantType } from '@/lib/types';
 import { PageLoading, Button, Badge, Card, Textarea, Input, Select } from '@/components/ui';
@@ -21,22 +21,59 @@ function Gallery({ images, videos }: { images: ProductDetailType['images']; vide
     return items;
   }, [images, videos]);
   const [active, setActive] = useState(0);
+  const [zoom, setZoom] = useState(false);
+  const [origin, setOrigin] = useState('50% 50%');
+  const [lightbox, setLightbox] = useState(false);
   const current = media[Math.min(active, media.length - 1)];
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-white">
+      <div
+        className="relative flex aspect-square items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-white"
+        onMouseMove={(e) => {
+          if (!zoom) return;
+          const r = e.currentTarget.getBoundingClientRect();
+          setOrigin(`${((e.clientX - r.left) / r.width) * 100}% ${((e.clientY - r.top) / r.height) * 100}%`);
+        }}
+        onMouseEnter={() => current?.type === 'image' && setZoom(true)}
+        onMouseLeave={() => setZoom(false)}
+      >
         {current ? (
           current.type === 'video' ? (
             <video key={current.url} src={current.url} poster={current.poster || undefined} controls className="h-full w-full object-contain" />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={current.url} alt="" className="h-full w-full object-contain" />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={current.url}
+                alt=""
+                onClick={() => setLightbox(true)}
+                className="h-full w-full cursor-zoom-in object-contain transition-transform duration-150"
+                style={zoom ? { transform: 'scale(2.2)', transformOrigin: origin } : undefined}
+              />
+              <button
+                onClick={() => setLightbox(true)}
+                className="absolute bottom-3 end-3 rounded-full bg-white/90 p-2 text-slate-500 shadow hover:text-slate-800"
+                aria-label="بزرگ‌نمایی تصویر"
+              >
+                <Expand className="h-4 w-4" />
+              </button>
+            </>
           )
         ) : (
           <span className="text-slate-300">بدون تصویر</span>
         )}
       </div>
+      {/* لایت‌باکس تمام‌صفحه با زوم */}
+      {lightbox && current?.type === 'image' && (
+        <div className="fixed inset-0 z-90 flex items-center justify-center bg-slate-950/90 p-6" onClick={() => setLightbox(false)}>
+          <button className="absolute end-5 top-5 rounded-full bg-white/10 p-2.5 text-white hover:bg-white/20" aria-label="بستن">
+            <X className="h-6 w-6" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={current.url} alt="" className="max-h-full max-w-full cursor-zoom-out object-contain" />
+        </div>
+      )}
       {media.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {media.map((m, i) => (
@@ -56,6 +93,30 @@ function Gallery({ images, videos }: { images: ProductDetailType['images']; vide
         </div>
       )}
     </div>
+  );
+}
+
+// ------------------------------------------------------ اشتراک‌گذاری
+function ShareButton({ name }: { name: string }) {
+  const share = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: name, url }); return; } catch { /* cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('لینک محصول کپی شد');
+    } catch {
+      toast.error('کپی لینک ممکن نشد');
+    }
+  };
+  return (
+    <button
+      onClick={share}
+      className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+    >
+      <Share2 className="h-4 w-4" /> اشتراک‌گذاری
+    </button>
   );
 }
 
@@ -190,7 +251,10 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           <div className="flex items-start justify-between gap-4">
             <div>
               {product.brand && <span className="text-sm text-slate-400">{product.brand.name}</span>}
-              <h1 className="mt-1 text-xl font-black leading-9 text-slate-900">{product.name}</h1>
+              <div className="mt-1 flex items-start justify-between gap-3">
+                <h1 className="text-xl font-black leading-9 text-slate-900">{product.name}</h1>
+                <ShareButton name={product.name} />
+              </div>
             </div>
             <button
               onClick={() => (hydrated && user ? wishlist.mutate() : toast.info('ابتدا وارد حساب شوید'))}

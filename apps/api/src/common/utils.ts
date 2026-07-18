@@ -1,95 +1,77 @@
-import * as crypto from "crypto";
+import { randomBytes, randomInt, randomUUID, createHash } from 'crypto';
 
-/** تبدیل ارقام فارسی/عربی به لاتین و تمیزکاری رشته */
-export function normalizeDigits(input: string): string {
-  const fa = "۰۱۲۳۴۵۶۷۸۹";
-  const ar = "٠١٢٣٤٥٦٧٨٩";
-  return input.replace(/[۰-۹٠-٩]/g, (ch) => {
-    const fi = fa.indexOf(ch);
-    if (fi >= 0) return String(fi);
-    const ai = ar.indexOf(ch);
-    return ai >= 0 ? String(ai) : ch;
-  });
-}
+/** uuidv4 */
+export const uuid = (): string => randomUUID();
 
-/** نرمال‌سازی شماره موبایل ایران → 09xxxxxxxxx */
-export function normalizePhone(input: string): string {
-  let p = normalizeDigits(input).replace(/[\s\-()]/g, "");
-  if (p.startsWith("+98")) p = "0" + p.slice(3);
-  else if (p.startsWith("0098")) p = "0" + p.slice(4);
-  else if (p.startsWith("98") && p.length === 12) p = "0" + p.slice(2);
-  return p;
-}
+/** sha256 هگز */
+export const sha256 = (input: string): string =>
+  createHash('sha256').update(input).digest('hex');
 
-export const IRAN_MOBILE_RE = /^09\d{9}$/;
+/** کد OTP شش‌رقمی */
+export const otpCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
 
-/** slug سازگار با فارسی: حروف فارسی حفظ، فاصله‌ها خط تیره، نویسه‌های اضافی حذف */
-export function toSlug(input: string): string {
-  return input
+/** رمز موقت برای کاربرانی که ادمین می‌سازد (یک بار نمایش داده می‌شود) */
+export const tempPassword = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < 10; i++) out += chars[randomInt(0, chars.length)];
+  return `Kz${out}!`;
+};
+
+/** کد خوانای انسانی یکتا: KRZ-9F3KQ2 */
+export const humanCode = (prefix = 'KRZ'): string => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < 6; i++) out += alphabet[randomInt(0, alphabet.length)];
+  return `${prefix}-${out}`;
+};
+
+/** slug سازگار با فارسی */
+export const slugify = (input: string): string =>
+  input
     .trim()
     .toLowerCase()
-    .replace(/[‌‎‏‎‎‏‎‏]/g, " ") // نیم‌فاصله و کنترل‌ها → فاصله
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/[\s_]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+    .replace(/[‌‎‏]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 
-export function sha256(input: string): string {
-  return crypto.createHash("sha256").update(input).digest("hex");
-}
+/** صفحه‌بندی استاندارد */
+export const paginate = (page?: number | string, limit?: number | string) => {
+  const p = Math.max(1, Number(page) || 1);
+  const l = Math.min(100, Math.max(1, Number(limit) || 20));
+  return { page: p, limit: l, skip: (p - 1) * l, take: l };
+};
 
-export function randomToken(bytes = 48): string {
-  return crypto.randomBytes(bytes).toString("base64url");
-}
+const ALLOWED_TAGS = new Set([
+  'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'ul', 'ol', 'li', 'a',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'span',
+  'div', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'img', 'figure', 'figcaption', 'hr',
+]);
+const ALLOWED_ATTRS = new Set(['href', 'src', 'alt', 'title', 'class']);
 
-export function randomNumericCode(len = 6): string {
-  let out = "";
-  while (out.length < len) out += crypto.randomInt(0, 10);
+/** sanitize ساده HTML برای توضیحات محصول/صفحات (حذف اسکریپت و رویدادها) */
+export const sanitizeHtml = (html: string): string => {
+  let out = html.replace(/<\s*(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
+  out = out.replace(/<\s*(script|style|iframe|object|embed|form)[^>]*\/?>/gi, '');
+  // حذف attribute های on* و javascript:
+  out = out.replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  out = out.replace(/(href|src)\s*=\s*(["']?)\s*javascript:[^"'>\s]*\2/gi, '$1="#"');
+  // حذف تگ‌های غیرمجاز (نگه داشتن محتوایشان)
+  out = out.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)((?:\s+[a-zA-Z-]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*\/?>/g,
+    (match, tag: string, attrs: string) => {
+      const t = tag.toLowerCase();
+      if (!ALLOWED_TAGS.has(t)) return '';
+      const isClose = match.startsWith('</');
+      if (isClose) return `</${t}>`;
+      const cleanAttrs = String(attrs || '')
+        .replace(/([a-zA-Z-]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/g, (m2, name: string, value: string) =>
+          ALLOWED_ATTRS.has(name.toLowerCase()) ? ` ${name.toLowerCase()}=${value}` : '');
+      return `<${t}${cleanAttrs}>`;
+    });
   return out;
-}
+};
 
-export function hmacSign(secret: string, payload: string): string {
-  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
-}
-
-export function timingSafeEq(a: string, b: string): boolean {
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
-}
-
-/** ساخت کد سفارش: KRZ-2026-000123 */
-export function orderCode(seq: number, date = new Date()): string {
-  return `KRZ-${date.getFullYear()}-${String(seq).padStart(6, "0")}`;
-}
-
-export function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
-
-export function roundRial(n: number): number {
-  return Math.round(n);
-}
-
-/** سقف/کف مبلغ تخفیف کوپن */
-export function computeCouponDiscount(
-  type: "percent" | "fixed",
-  value: number,
-  maxDiscount: number | null,
-  subtotal: number,
-): number {
-  let d = type === "percent" ? Math.floor((subtotal * value) / 100) : Math.floor(value);
-  if (type === "percent" && maxDiscount && maxDiscount > 0) d = Math.min(d, maxDiscount);
-  return clamp(d, 0, subtotal);
-}
-
-/** استخراج IP کلاینت از ریکوئست */
-export function clientIp(req: any): string {
-  return (
-    (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
-    req.ip ||
-    req.socket?.remoteAddress ||
-    ""
-  );
-}
+/** توکن تصادفی url-safe */
+export const randomToken = (bytes = 48): string => randomBytes(bytes).toString('base64url');

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X, Zap } from 'lucide-react';
 import { api } from '@/lib/api-client';
@@ -10,6 +10,7 @@ import { useAuthStore, hasPermission, toast } from '@/lib/auth-store';
 import { CategoryNode } from '@/lib/types';
 import { faNumber } from '@/lib/format';
 import { NotificationsBell } from './notifications-bell';
+import { SearchBox } from './search-box';
 
 function useCartCount() {
   const { user, hydrated } = useAuthStore();
@@ -36,7 +37,6 @@ function useCartCount() {
 export function Header() {
   const router = useRouter();
   const { user, hydrated, clearAuth } = useAuthStore();
-  const [q, setQ] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const cartCount = useCartCount();
 
@@ -45,11 +45,6 @@ export function Header() {
     queryFn: async () => (await api<CategoryNode[]>('/categories')).data,
     staleTime: 300_000,
   });
-
-  const doSearch = (e: FormEvent) => {
-    e.preventDefault();
-    if (q.trim()) router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-  };
 
   const logout = async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch { /* noop */ }
@@ -96,15 +91,9 @@ export function Header() {
         </nav>
 
         {/* جستجو */}
-        <form onSubmit={doSearch} className="relative mx-auto hidden w-full max-w-xl flex-1 md:block">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="جستجو در کارزینتل…"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pe-4 ps-11 text-sm outline-none focus:border-slate-400 focus:bg-white"
-          />
-          <Search className="absolute start-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-        </form>
+        <div className="mx-auto hidden w-full max-w-xl flex-1 md:block">
+          <SearchBox />
+        </div>
 
         <div className="ms-auto flex items-center gap-1">
           {user && <NotificationsBell />}
@@ -151,12 +140,9 @@ export function Header() {
       </div>
 
       {/* جستجوی موبایل */}
-      <form onSubmit={doSearch} className="border-t border-slate-100 px-4 py-2 md:hidden">
-        <div className="relative">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="جستجو…" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pe-4 ps-10 text-sm outline-none" />
-          <Search className="absolute start-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-        </div>
-      </form>
+      <div className="border-t border-slate-100 px-4 py-2 md:hidden">
+        <SearchBox mobile onNavigate={() => setMobileOpen(false)} />
+      </div>
 
       {/* منوی موبایل */}
       {mobileOpen && (

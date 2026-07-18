@@ -24,6 +24,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const [sort, setSort] = useState('-soldCount');
   const [brandIds, setBrandIds] = useState<number[]>([]);
   const [inStock, setInStock] = useState(false);
+  const [minRating, setMinRating] = useState(0);
+  const [priceFrom, setPriceFrom] = useState('');
+  const [priceTo, setPriceTo] = useState('');
+  const [appliedPrice, setAppliedPrice] = useState<{ min?: number; max?: number }>({});
 
   const { data: catData, isLoading } = useQuery({
     queryKey: ['category', slug],
@@ -41,13 +45,16 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     category: slug,
     brand: brandIds.length ? brandIds.join(',') : undefined,
     inStock: inStock ? 1 : undefined,
+    minRating: minRating || undefined,
+    minPrice: appliedPrice.min ? Math.round(appliedPrice.min * 10) : undefined,
+    maxPrice: appliedPrice.max ? Math.round(appliedPrice.max * 10) : undefined,
     sort,
     page,
     limit: 20,
   });
 
   const { data: products, isLoading: loadingProducts } = useQuery({
-    queryKey: ['products', slug, sort, brandIds, inStock, page],
+    queryKey: ['products', slug, sort, brandIds, inStock, minRating, appliedPrice, page],
     queryFn: async () => api<{ items: any[] }>(`/products${params_qs}`),
   });
 
@@ -94,6 +101,54 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             <input type="checkbox" className="h-4 w-4 rounded accent-slate-900" checked={inStock} onChange={(e) => { setPage(1); setInStock(e.target.checked); }} />
             فقط کالاهای موجود
           </label>
+
+          {/* بازه قیمت (تومان) */}
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <p className="mb-2 text-sm font-bold text-slate-700">محدوده قیمت (تومان)</p>
+            <div className="flex items-center gap-2">
+              <input
+                inputMode="numeric"
+                value={priceFrom}
+                onChange={(e) => setPriceFrom(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="از"
+                className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-orange-400"
+              />
+              <input
+                inputMode="numeric"
+                value={priceTo}
+                onChange={(e) => setPriceTo(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="تا"
+                className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-orange-400"
+              />
+            </div>
+            <button
+              onClick={() => { setPage(1); setAppliedPrice({ min: priceFrom ? Number(priceFrom) : undefined, max: priceTo ? Number(priceTo) : undefined }); }}
+              className="mt-2 w-full rounded-lg bg-slate-800 py-1.5 text-xs font-bold text-white hover:bg-slate-700"
+            >
+              اعمال فیلتر قیمت
+            </button>
+          </div>
+
+          {/* حداقل امتیاز */}
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <p className="mb-2 text-sm font-bold text-slate-700">امتیاز</p>
+            {[
+              { v: 0, label: 'همه' },
+              { v: 4, label: '۴ ستاره و بالاتر' },
+              { v: 3, label: '۳ ستاره و بالاتر' },
+            ].map((o) => (
+              <label key={o.v} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-600">
+                <input
+                  type="radio"
+                  name="minRating"
+                  checked={minRating === o.v}
+                  onChange={() => { setPage(1); setMinRating(o.v); }}
+                  className="accent-orange-500"
+                />
+                {o.label}
+              </label>
+            ))}
+          </div>
         </aside>
 
         {/* نتایج */}
@@ -108,6 +163,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               <option value="price">ارزان‌ترین</option>
               <option value="-price">گران‌ترین</option>
               <option value="-ratingAvg">بالاترین امتیاز</option>
+              <option value="-discount">بیشترین تخفیف</option>
             </Select>
           </div>
 

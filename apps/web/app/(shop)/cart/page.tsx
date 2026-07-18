@@ -150,8 +150,14 @@ function CartSummary({ cart, user, invalidate }: { cart: CartType; user: unknown
           </div>
         )}
         <div className="flex justify-between text-slate-500">
-          <span>مالیات (در مرحله پرداخت محاسبه می‌شود)</span>
-          <span>—</span>
+          <span>مالیات بر ارزش افزوده (۹٪)</span>
+          <span>{toToman(cart.tax)}</span>
+        </div>
+        <div className="flex justify-between text-slate-500">
+          <span>هزینه ارسال</span>
+          <span className={cart.shipping === 0 ? 'font-bold text-emerald-600' : ''}>
+            {cart.shipping === 0 ? 'رایگان' : toToman(cart.shipping)}
+          </span>
         </div>
         <div className="flex justify-between border-t border-slate-100 pt-3 text-base font-black text-slate-900">
           <span>مبلغ قابل پرداخت</span>

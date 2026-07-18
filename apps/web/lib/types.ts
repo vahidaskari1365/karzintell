@@ -90,6 +90,8 @@ export interface CartType {
   couponDiscount: number;
   subtotal: number;
   discountTotal: number;
+  tax: number;
+  shipping: number;
   grandTotal: number;
 }
 

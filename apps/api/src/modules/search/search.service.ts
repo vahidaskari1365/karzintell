@@ -13,6 +13,7 @@ export interface ProductSearchQuery {
   tagIds?: number[];
   minPrice?: number;
   maxPrice?: number;
+  minRating?: number;
   inStock?: boolean;
   sort?: string;
   page: number;
@@ -49,12 +50,16 @@ export class SearchService implements OnModuleInit {
     return this.client.index(env.meili.index);
   }
 
+  isAvailable(): boolean {
+    return this.available;
+  }
+
   private async configureIndex() {
     try {
       await this.index().updateSettings({
         searchableAttributes: ['name', 'brandName', 'categoryName', 'code', 'skus', 'shortDescription', 'tags'],
-        filterableAttributes: ['status', 'categoryId', 'categorySlug', 'brandId', 'tagIds', 'minPrice', 'inStock'],
-        sortableAttributes: ['minPrice', 'publishedAt', 'soldCount', 'ratingAvg'],
+        filterableAttributes: ['status', 'categoryId', 'categorySlug', 'brandId', 'tagIds', 'minPrice', 'ratingAvg', 'inStock'],
+        sortableAttributes: ['minPrice', 'publishedAt', 'soldCount', 'ratingAvg', 'maxDiscountPercent'],
         rankingRules: ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness', 'soldCount:desc'],
       });
     } catch (e) {
@@ -95,19 +100,51 @@ export class SearchService implements OnModuleInit {
   }
 
   async suggest(q: string) {
-    if (!this.available || !q) return { items: [] };
-    const res = await this.index().search(q, { limit: 8, attributesToRetrieve: ['name', 'slug', 'image'] });
-    return { items: res.hits };
+    if (!q || q.trim().length < 2) return { items: [], categories: [] };
+    const term = q.trim();
+    if (this.available) {
+      const res = await this.index().search(term, {
+        limit: 8,
+        attributesToRetrieve: ['name', 'slug', 'image', 'minPrice', 'brandName', 'categoryName'],
+      });
+      return { items: res.hits, categories: [] };
+    }
+    // fallback MySQL: پیشنهاد محصول + دسته‌بندی
+    const like = `%${term}%`;
+    const items = await this.products.query(
+      `SELECT p.name, p.slug, p.min_price AS minPrice, b.name AS brandName, c.name AS categoryName,
+              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image
+       FROM products p
+       LEFT JOIN brands b ON b.id = p.brand_id
+       LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.status = 'published' AND (p.name LIKE ? OR p.code LIKE ? OR b.name LIKE ?)
+       ORDER BY p.sold_count DESC
+       LIMIT 8`,
+      [like, like, like],
+    );
+    const categories = await this.products.query(
+      `SELECT name, slug FROM categories WHERE is_active = 1 AND deleted_at IS NULL AND name LIKE ? ORDER BY sort_order LIMIT 4`,
+      [like],
+    );
+    return {
+      items: items.map((i: any) => ({ ...i, image: this.files.publicUrl(i.image) })),
+      categories,
+    };
   }
 
   // ------------------------------------------------------------- Meili
   private async searchMeili(q: ProductSearchQuery) {
     const filters: string[] = ['status = "published"'];
-    if (q.categorySlug) filters.push(`categorySlug = "${q.categorySlug}"`);
+    if (q.categorySlug) {
+      const ids = await this.categorySubtreeIds(q.categorySlug);
+      if (!ids.length) return { items: [], total: 0, page: q.page, limit: q.limit, engine: 'meilisearch' as const };
+      filters.push(`categoryId IN [${ids.join(',')}]`);
+    }
     if (q.brandIds?.length) filters.push(`brandId IN [${q.brandIds.join(',')}]`);
     if (q.tagIds?.length) filters.push(`tagIds IN [${q.tagIds.join(',')}]`);
     if (q.minPrice != null) filters.push(`minPrice >= ${q.minPrice}`);
     if (q.maxPrice != null) filters.push(`minPrice <= ${q.maxPrice}`);
+    if (q.minRating != null) filters.push(`ratingAvg >= ${q.minRating}`);
     if (q.inStock) filters.push('inStock = true');
 
     const sortMap: Record<string, string[]> = {
@@ -116,6 +153,7 @@ export class SearchService implements OnModuleInit {
       '-soldCount': ['soldCount:desc'],
       '-ratingAvg': ['ratingAvg:desc'],
       '-publishedAt': ['publishedAt:desc'],
+      '-discount': ['maxDiscountPercent:desc'],
     };
 
     const res = await this.index().search(q.q || '', {
@@ -154,6 +192,12 @@ export class SearchService implements OnModuleInit {
     const r = rows[0];
     if (!r) return { id: productId, status: 'archived' };
     const tags = await this.products.query(`SELECT t.name FROM product_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.product_id = ?`, [productId]);
+    const discountRows = await this.products.query(
+      `SELECT MAX(ROUND((compare_at_price - price) * 100 / compare_at_price)) AS d
+       FROM product_variants
+       WHERE product_id = ? AND is_active = 1 AND deleted_at IS NULL AND compare_at_price IS NOT NULL AND compare_at_price > price`,
+      [productId],
+    );
     return {
       id: r.id,
       name: r.name,
@@ -169,6 +213,7 @@ export class SearchService implements OnModuleInit {
       publishedAt: r.publishedAt ? Math.floor(new Date(r.publishedAt).getTime() / 1000) : 0,
       soldCount: Number(r.soldCount || 0),
       ratingAvg: Number(r.ratingAvg || 0),
+      maxDiscountPercent: Number(discountRows[0]?.d || 0),
       status: r.status,
       image: this.files.publicUrl(r.image),
       skus: r.skus || '',
@@ -176,6 +221,26 @@ export class SearchService implements OnModuleInit {
       tags: tags.map((t: any) => t.name),
       inStock: !!r.inStock,
     };
+  }
+
+  /** شناسه‌های دسته + تمام زیرمجموعه‌ها (برای فیلتر چندسطحی: دیجیتال ← موبایل ← ...) */
+  private async categorySubtreeIds(slug: string): Promise<number[]> {
+    try {
+      const rows = await this.products.query(
+        `WITH RECURSIVE sub AS (
+           SELECT id FROM categories WHERE slug = ? AND deleted_at IS NULL
+           UNION ALL
+           SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id WHERE c.deleted_at IS NULL
+         )
+         SELECT id FROM sub`,
+        [slug],
+      );
+      return rows.map((r: any) => Number(r.id));
+    } catch {
+      // MySQL قدیمی بدون CTE → فقط خود دسته
+      const rows = await this.products.query(`SELECT id FROM categories WHERE slug = ? AND deleted_at IS NULL`, [slug]);
+      return rows.map((r: any) => Number(r.id));
+    }
   }
 
   // ------------------------------------------------- fallback به MySQL
@@ -195,23 +260,39 @@ export class SearchService implements OnModuleInit {
       .distinct(true);
 
     if (q.q) qb.andWhere('(p.name LIKE :q OR p.code LIKE :q OR b.name LIKE :q)', { q: `%${q.q}%` });
-    if (q.categorySlug) qb.andWhere('c.slug = :cs', { cs: q.categorySlug });
+    if (q.categorySlug) {
+      const ids = await this.categorySubtreeIds(q.categorySlug);
+      if (!ids.length) return { items: [], total: 0, page: q.page, limit: q.limit, engine: 'mysql' as const };
+      qb.andWhere('p.category_id IN (:...catIds)', { catIds: ids });
+    }
     if (q.brandIds?.length) qb.andWhere('b.id IN (:...bids)', { bids: q.brandIds });
     if (q.minPrice != null) qb.andWhere('p.min_price >= :minp', { minp: q.minPrice });
     if (q.maxPrice != null) qb.andWhere('p.min_price <= :maxp', { maxp: q.maxPrice });
+    if (q.minRating != null) qb.andWhere('p.rating_avg >= :minr', { minr: q.minRating });
     if (q.inStock)
       qb.andWhere(`EXISTS(SELECT 1 FROM inventory i JOIN product_variants v ON v.id = i.variant_id
         WHERE v.product_id = p.id AND v.is_active = 1 AND v.deleted_at IS NULL AND (i.quantity - i.reserved) > 0)`);
 
-    const sortMap: Record<string, [string, 'ASC' | 'DESC']> = {
-      '-price': ['p.min_price', 'DESC'],
-      price: ['p.min_price', 'ASC'],
-      '-soldCount': ['p.sold_count', 'DESC'],
-      '-ratingAvg': ['p.rating_avg', 'DESC'],
-      '-publishedAt': ['p.published_at', 'DESC'],
-    };
-    const [col, dir] = sortMap[q.sort || ''] || ['p.sold_count', 'DESC'];
-    qb.orderBy(col, dir);
+    if ((q.sort || '') === '-discount') {
+      qb.addSelect(
+        `(SELECT MAX(ROUND((v2.compare_at_price - v2.price) * 100 / v2.compare_at_price))
+          FROM product_variants v2
+          WHERE v2.product_id = p.id AND v2.is_active = 1 AND v2.deleted_at IS NULL
+            AND v2.compare_at_price IS NOT NULL AND v2.compare_at_price > v2.price)`,
+        'maxDiscountPercent',
+      );
+      qb.orderBy('maxDiscountPercent', 'DESC');
+    } else {
+      const sortMap: Record<string, [string, 'ASC' | 'DESC']> = {
+        '-price': ['p.min_price', 'DESC'],
+        price: ['p.min_price', 'ASC'],
+        '-soldCount': ['p.sold_count', 'DESC'],
+        '-ratingAvg': ['p.rating_avg', 'DESC'],
+        '-publishedAt': ['p.published_at', 'DESC'],
+      };
+      const [col, dir] = sortMap[q.sort || ''] || ['p.sold_count', 'DESC'];
+      qb.orderBy(col, dir);
+    }
 
     const total = await qb.getCount();
     const items = await qb.offset((q.page - 1) * q.limit).limit(q.limit).getRawMany();

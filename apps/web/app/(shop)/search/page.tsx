@@ -14,10 +14,15 @@ function SearchResults() {
   const q = sp.get('q') || '';
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('-soldCount');
+  const [minRating, setMinRating] = useState(0);
+  const [inStock, setInStock] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['search', q, page, sort],
-    queryFn: async () => api<{ items: any[]; engine: string }>(`/search${qs({ q, page, limit: 20, sort })}`),
+    queryKey: ['search', q, page, sort, minRating, inStock],
+    queryFn: async () =>
+      api<{ items: any[]; engine: string }>(
+        `/search${qs({ q, page, limit: 20, sort, minRating: minRating || undefined, inStock: inStock ? 1 : undefined })}`,
+      ),
     enabled: true,
   });
 
@@ -30,12 +35,24 @@ function SearchResults() {
         {data ? `${faNumber(data.meta?.total || 0)} کالا یافت شد` : 'در حال جستجو…'}
       </p>
 
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4 text-sm text-slate-600">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" checked={inStock} onChange={(e) => { setPage(1); setInStock(e.target.checked); }} className="h-4 w-4 accent-orange-500" />
+            فقط موجود
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" checked={minRating === 4} onChange={(e) => { setPage(1); setMinRating(e.target.checked ? 4 : 0); }} className="h-4 w-4 accent-orange-500" />
+            ۴ ستاره و بالاتر
+          </label>
+        </div>
         <Select value={sort} onChange={(e) => { setPage(1); setSort(e.target.value); }} className="max-w-52">
           <option value="-soldCount">پرفروش‌ترین</option>
           <option value="-publishedAt">جدیدترین</option>
           <option value="price">ارزان‌ترین</option>
           <option value="-price">گران‌ترین</option>
+          <option value="-ratingAvg">بالاترین امتیاز</option>
+          <option value="-discount">بیشترین تخفیف</option>
         </Select>
       </div>
 

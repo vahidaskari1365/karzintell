@@ -5,6 +5,8 @@ import { Cart, CartItem, Coupon, Product, ProductVariant } from '../../database/
 import { DomainException } from '../../common/http-exception.filter';
 import { FilesService } from '../files/files.service';
 import { CouponsService } from '../coupons/coupons.service';
+import { SettingsService } from '../settings/settings.service';
+import { env } from '../../config/configuration';
 
 export interface CartView {
   id: number;
@@ -17,6 +19,8 @@ export interface CartView {
   couponDiscount: number;
   subtotal: number;
   discountTotal: number;
+  tax: number;
+  shipping: number;
   grandTotal: number;
 }
 
@@ -30,6 +34,7 @@ export class CartService {
     @InjectEntityManager() private readonly em: EntityManager,
     private readonly files: FilesService,
     private readonly coupons: CouponsService,
+    private readonly settings: SettingsService,
   ) {}
 
   /** یافتن/ساخت سبد باز برای کاربر یا مهمان */
@@ -74,7 +79,7 @@ export class CartService {
       available: Number(r.available),
     }));
 
-    const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const subtotal = items.reduce((s: number, i: { unitPrice: number; quantity: number }) => s + i.unitPrice * i.quantity, 0);
     let couponDiscount = 0;
     let couponCode: string | null = null;
     if (cart.couponId && userId) {
@@ -90,6 +95,13 @@ export class CartService {
       }
     }
 
+    const payable = subtotal - couponDiscount;
+    // مالیات بر ارزش افزوده + هزینه ارسال (از تنظیمات فروشگاه)
+    const tax = payable > 0 ? Math.round((payable * env.order.taxPercent) / 100) : 0;
+    const freeOver = Number(await this.settings.get('store.free_shipping_threshold', 0)) || 0;
+    const flat = Number(await this.settings.get('store.shipping_flat', 250000)) || 0;
+    const shipping = payable <= 0 || (freeOver > 0 && payable >= freeOver) ? 0 : flat;
+
     return {
       id: cart.id,
       items,
@@ -97,7 +109,9 @@ export class CartService {
       couponDiscount,
       subtotal,
       discountTotal: couponDiscount,
-      grandTotal: subtotal - couponDiscount,
+      tax,
+      shipping,
+      grandTotal: payable + tax + shipping,
     };
   }
 
