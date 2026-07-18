@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-100/90 px-4 py-10">
       <Link href="/" className="mb-6 flex items-center gap-2.5 transition-transform hover:scale-105">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-mark.svg" alt="کارزینتل" className="h-11 w-11 drop-shadow-[0_3px_12px_rgba(16,185,129,0.4)]" />
+        <img src="/neon-k-3d.jpg" alt="کارزینتل" className="h-11 w-11 rounded-xl bg-[#020604] object-cover ring-1 ring-emerald-500/30" />
         <span className="text-2xl font-black tracking-tight">
           <span className="bg-gradient-to-l from-emerald-400 to-emerald-600 bg-clip-text text-transparent">کارزین</span>
           <span className="text-slate-900">تل</span>

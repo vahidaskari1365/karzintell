@@ -20,7 +20,7 @@ export interface Branding {
 
 export const DEFAULT_BRANDING: Branding = {
   name: 'کارزینتل',
-  logo: '/logo-mark.svg',
+  logo: '/neon-k-3d.jpg',
   primaryColor: '#10b981',
   supportPhone: '',
   socials: {},

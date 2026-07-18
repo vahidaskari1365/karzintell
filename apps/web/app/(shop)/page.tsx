@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
   BadgeCheck, ChevronDown, Cpu, Flame, Headphones, Laptop, Rocket, ShieldCheck, Smartphone,
-  Sparkles, Star, Truck, Watch, Zap,
+  Star, Truck, Watch, Zap,
 } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { toToman, faNumber } from '@/lib/format';
@@ -30,39 +30,26 @@ const CATEGORY_ICONS: Record<string, typeof Smartphone> = {
 // --------------------------------------------------------------- هیرو سه‌بعدی
 function CinematicHero() {
   return (
-    <section className={`${FULL} cinema cinema-grain -mt-6 min-h-[94svh] overflow-hidden`}>
+    <section className={`${FULL} cinema cinema-grain min-h-[94svh] overflow-hidden`}>
+      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک</h1>
       {/* هاله‌های نور */}
       <div className="pointer-events-none absolute -top-40 right-1/4 h-96 w-96 rounded-full bg-emerald-500/25 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-0 left-1/4 h-96 w-96 rounded-full bg-cyan-500/20 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/3 left-10 h-64 w-64 rounded-full bg-violet-600/20 blur-[110px]" />
+      <div className="pointer-events-none absolute top-1/3 left-10 h-64 w-64 rounded-full bg-emerald-600/20 blur-[110px]" />
 
       {/* صحنه Three.js */}
-      <div className="absolute inset-0 opacity-90"><HeroScene /></div>
+      <div className="absolute inset-0 opacity-80"><HeroScene /></div>
 
       {/* محتوای متنی */}
       <div className="relative z-10 mx-auto flex min-h-[94svh] max-w-6xl flex-col items-center justify-center px-6 text-center">
-        <Reveal y={26}>
-          <span className="glass-dark inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold text-emerald-300">
-            <Sparkles className="h-3.5 w-3.5" /> جدیدترین گجت‌های ۲۰۲۶ رسید
-          </span>
-        </Reveal>
-
-        <Reveal delay={0.12} y={40}>
-          <h1 className="mt-6 text-4xl font-black leading-[1.25] sm:text-6xl sm:leading-[1.2]">
-            آینده‌ی تکنولوژی،
-            <br />
-            <GradientText>همین‌جا شروع می‌شود</GradientText>
-          </h1>
-        </Reveal>
-
-        <Reveal delay={0.24} y={30}>
-          <p className="mt-6 max-w-xl text-sm leading-8 text-slate-400 sm:text-base">
+        <Reveal delay={0.1} y={30}>
+          <p className="max-w-2xl text-base leading-9 text-slate-300 sm:text-xl sm:leading-10">
             موبایل، ساعت هوشمند، هدفون و هزاران قطعه‌ی الکترونیک اورجینال — با ضمانت اصالت کالا،
             ارسال سریع سراسری و پشتیبانی واقعی.
           </p>
         </Reveal>
 
-        <Reveal delay={0.36} y={24}>
+        <Reveal delay={0.25} y={24}>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Magnetic>
               <Link
@@ -113,43 +100,167 @@ function BrandStrip() {
   );
 }
 
-// --------------------------------------------------------------- دسته‌بندی‌ها (تیلت‌کارت سه‌بعدی)
-function CategoriesShowcase({ tree }: { tree: CategoryNode[] }) {
-  return (
-    <section className={`${FULL} cinema cinema-grain py-24`}>
-      <div className="mx-auto max-w-7xl px-6">
-        <Reveal className="text-center">
-          <span className="text-xs font-bold tracking-widest text-cyan-400">دنیای قطعات</span>
-          <h2 className="mt-3 text-3xl font-black sm:text-4xl">هر دسته، یک <GradientText>کهکشان</GradientText></h2>
-          <p className="mt-4 text-sm text-slate-500">روی کارت‌ها حرکت کن — کاملاً سه‌بعدی و زنده‌اند</p>
-        </Reveal>
+// --------------------------------------------------------------- اسکرول سینمایی دسته‌بندی‌ها (ورود به فروشگاه هر دسته)
+const STAGE_AURAS = [
+  'bg-emerald-500/20', 'bg-cyan-500/20', 'bg-emerald-600/20', 'bg-teal-500/20', 'bg-green-500/20', 'bg-lime-500/15',
+];
 
-        <RevealGroup className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" step={0.07}>
-          {(tree || []).slice(0, 10).map((c, i) => {
-            const Icon = CATEGORY_ICONS[c.slug] || Cpu;
-            return (
-              <motion.div key={c.id} variants={revealItem}>
-                <TiltCard amount={14}>
-                  <Link
-                    href={`/categories/${c.slug}`}
-                    className="glass-dark group flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-colors hover:border-emerald-400/40"
-                  >
-                    <span
-                      className="float-y flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-emerald-300"
-                      style={{
-                        backgroundImage: 'linear-gradient(135deg, rgba(245,158,11,.18), rgba(34,211,238,.12))',
-                        animationDelay: `${i * 0.4}s`,
-                      }}
-                    >
-                      <Icon className="h-7 w-7" />
-                    </span>
-                    <span className="text-xs font-bold text-slate-200 group-hover:text-emerald-300">{c.name}</span>
-                  </Link>
-                </TiltCard>
-              </motion.div>
-            );
-          })}
-        </RevealGroup>
+function MiniGlassCard({ p }: { p: ProductCardType }) {
+  return (
+    <Link
+      href={`/products/${p.slug}`}
+      className="glass-dark group overflow-hidden rounded-2xl transition hover:border-emerald-400/50"
+    >
+      <div className="relative h-28 overflow-hidden bg-slate-900/60 sm:h-36">
+        {p.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-3xl">📱</div>
+        )}
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#0b1120] to-transparent" />
+      </div>
+      <div className="p-3">
+        <h3 className="line-clamp-1 text-2xs font-bold text-slate-200 sm:text-xs">{p.name}</h3>
+        <p className="mt-1 text-xs font-black text-emerald-400 sm:text-sm">{p.minPrice ? `${toToman(p.minPrice)} تومان` : '—'}</p>
+      </div>
+    </Link>
+  );
+}
+
+function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNode; items: ProductCardType[]; isLoading: boolean; idx: number; total: number }) {
+  const Icon = CATEGORY_ICONS[cat.slug] || Cpu;
+  return (
+    <div className="absolute inset-0 flex items-center">
+      <div className={`pointer-events-none absolute -top-20 right-10 h-96 w-96 rounded-full blur-[130px] ${STAGE_AURAS[idx % STAGE_AURAS.length]}`} />
+      <div className="pointer-events-none absolute bottom-0 left-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-[120px]" />
+
+      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-6 lg:grid-cols-2">
+        {/* متن و CTA */}
+        <div>
+          <motion.span
+            initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
+            className="text-xs font-bold tracking-widest text-emerald-400"
+          >
+            فروشگاه {cat.name} — مرحله {faNumber(idx + 1)} از {faNumber(total)}
+          </motion.span>
+          <motion.h2
+            initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-4 text-5xl font-black leading-tight text-slate-50 sm:text-7xl"
+          >
+            {cat.name}
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
+            className="mt-5 max-w-md text-sm leading-8 text-slate-400"
+          >
+            بهترین و اورجینال‌ترین مدل‌های {cat.name} با ضمانت اصالت و قیمت رقابتی — همین حالا انتخاب کن.
+          </motion.p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+            <Magnetic className="mt-8">
+              <Link
+                href={`/categories/${cat.slug}`}
+                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-black text-slate-950 transition-transform hover:scale-105"
+              >
+                <Icon className="h-5 w-5" /> ورود به فروشگاه {cat.name}
+              </Link>
+            </Magnetic>
+          </motion.div>
+        </div>
+
+        {/* کارت‌های محصول شناور */}
+        <motion.div
+          initial={{ opacity: 0, y: 90, rotate: 2 }} animate={{ opacity: 1, y: 0, rotate: 0 }}
+          transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="grid grid-cols-2 gap-4"
+        >
+          {isLoading && [1, 2, 3, 4].map((i) => (
+            <div key={i} className="glass-dark h-44 animate-pulse rounded-2xl" />
+          ))}
+          {(items || []).slice(0, 4).map((p, i) => (
+            <motion.div key={p.id} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.09 }}>
+              <MiniGlassCard p={p} />
+            </motion.div>
+          ))}
+          {!isLoading && !(items || []).length && (
+            <div className="glass-dark col-span-2 flex h-44 items-center justify-center rounded-2xl text-sm text-slate-400">
+              به‌زودی محصولات این دسته اضافه می‌شوند
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
+  const cats = (tree || []).slice(0, 6);
+  const n = Math.max(cats.length, 1);
+  const targetRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
+  const [idx, setIdx] = useState(0);
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    setIdx(Math.min(n - 1, Math.max(0, Math.floor(v * n))));
+  });
+
+  // پیش‌بارگذاری محصولات همه مرحله‌ها (موازی)
+  const stageQueries = useQueries({
+    queries: cats.map((c) => ({
+      queryKey: ['stage-products', c.slug],
+      queryFn: async () =>
+        (await api<{ items: ProductCardType[] }>('/products' + qs({ category: c.slug, limit: 4, sort: '-soldCount' }))).data.items,
+      staleTime: 300_000,
+    })),
+  });
+
+  if (!cats.length) return null;
+  return (
+    <section ref={targetRef} className={`${FULL} cinema cinema-grain relative`} style={{ height: `${(n + 1) * 85}vh` }}>
+      <div className="sticky top-0 h-screen overflow-hidden">
+        {/* عنوان ثابت بالای صحنه */}
+        <div className="pointer-events-none absolute inset-x-0 top-8 z-20 text-center">
+          <span className="text-2xs font-bold tracking-[0.3em] text-slate-500">سفر در فروشگاه کارزینتل</span>
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={cats[idx].id}
+            className="absolute inset-0"
+            initial={{ opacity: 0, y: 90, scale: 0.97, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -90, scale: 0.97, filter: 'blur(10px)' }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <CategoryStage
+              cat={cats[idx]}
+              items={stageQueries[idx]?.data || []}
+              isLoading={!!stageQueries[idx]?.isLoading}
+              idx={idx}
+              total={cats.length}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* ریل پیشرفت سمت چپ */}
+        <div className="absolute left-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-4 md:flex">
+          {cats.map((c, i) => (
+            <div key={c.id} className="flex flex-col items-center gap-4">
+              <span
+                className={`rounded-full transition-all duration-500 ${
+                  i === idx ? 'h-8 w-2 bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'h-2 w-2 bg-slate-700'
+                }`}
+              />
+              <span className={`text-2xs transition-colors duration-300 ${i === idx ? 'font-bold text-emerald-300' : 'text-slate-600'}`}>
+                {c.name}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* خط پیشرفت پایین */}
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto h-1 w-56 overflow-hidden rounded-full bg-white/10">
+          <motion.div className="h-full origin-right bg-gradient-to-l from-emerald-500 to-cyan-400" style={{ scaleX: scrollYProgress }} />
+        </div>
       </div>
     </section>
   );
@@ -301,11 +412,11 @@ function FinaleCTA() {
           <div className="orbit-inner glass-dark rounded-3xl p-10 text-center sm:p-16">
             <Parallax speed={0.4}>
               <h2 className="text-3xl font-black leading-normal sm:text-5xl sm:leading-normal">
-                آماده‌ای دنیای <GradientText>کارزینتل</GradientText> رو کشف کنی؟
+                انتخابِ درست، فقط یک <GradientText>قدم</GradientText> با شما فاصله دارد
               </h2>
             </Parallax>
-            <p className="mx-auto mt-5 max-w-md text-sm leading-8 text-slate-400">
-              هزاران محصول اورجینال با بهترین قیمت بازار — اولین خریدت همین امروز!
+            <p className="mx-auto mt-5 max-w-lg text-sm leading-8 text-slate-400">
+              اصالت تضمین‌شده، قیمت رقابتی، ارسال سریع و پشتیبانی واقعی — آنچه یک خرید حرفه‌ای را کامل می‌کند، همین‌جاست.
             </p>
             <Magnetic className="mt-9">
               <Link
@@ -363,7 +474,7 @@ export default function HomePage() {
       {/* 🎬 پرده‌ی اول: سینمایی سه‌بعدی */}
       <CinematicHero />
       <BrandStrip />
-      <CategoriesShowcase tree={tree || []} />
+      <CinematicCategoryScroll tree={tree || []} />
       <HorizontalRail items={bestSellers || []} />
       <StatsBand />
       <TrustRow />

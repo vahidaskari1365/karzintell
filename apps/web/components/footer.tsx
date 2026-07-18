@@ -17,7 +17,7 @@ export function Footer() {
   const socials = SOCIAL_META.filter((s) => brand.socials[s.key]);
 
   return (
-    <footer className="mt-16 border-t border-slate-200 bg-white">
+    <footer className="mt-16 border-t border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="mb-3 flex items-center gap-2.5">
