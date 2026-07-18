@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-100/90 px-4 py-10">
       <Link href="/" className="mb-6 flex items-center gap-2.5 transition-transform hover:scale-105">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/neon-k-3d.jpg" alt="کارزینتل" className="h-11 w-11 rounded-xl bg-[#020604] object-cover ring-1 ring-emerald-500/30" />
+        <img src="/logo-mark.svg" alt="کارزینتل" className="h-11 w-11" />
         <span className="text-2xl font-black tracking-tight">
           <span className="bg-gradient-to-l from-emerald-400 to-emerald-600 bg-clip-text text-transparent">کارزین</span>
           <span className="text-slate-900">تل</span>

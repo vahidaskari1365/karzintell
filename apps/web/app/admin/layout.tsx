@@ -50,7 +50,7 @@ function Shell({ children }: { children: ReactNode }) {
     <nav className="flex h-full flex-col gap-0.5 overflow-y-auto p-3">
       <Link href="/admin" className="mb-4 flex items-center gap-2.5 px-2 py-3" onClick={() => setOpen(false)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/neon-k-3d.jpg" alt="کارزینتل" className="h-8 w-8 rounded-lg bg-[#020604] object-cover ring-1 ring-emerald-500/30" />
+        <img src="/logo-mark.svg" alt="کارزینتل" className="h-8 w-8" />
         <span className="font-black text-slate-900">پنل مدیریت کارزینتل</span>
       </Link>
       {visible.map((m) => {

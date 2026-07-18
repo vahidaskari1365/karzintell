@@ -11,9 +11,9 @@ export function BrandMark({ className = 'h-9 w-9' }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={brand.logo || '/neon-k-3d.jpg'}
+      src={brand.logo || '/logo-mark.svg'}
       alt={brand.name}
-      className={`${className} rounded-xl bg-[#020604] object-cover ring-1 ring-emerald-500/30 drop-shadow-[0_0_14px_rgba(16,185,129,0.55)]`}
+      className={`${className} object-contain`}
     />
   );
 }

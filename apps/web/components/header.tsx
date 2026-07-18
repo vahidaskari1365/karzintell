@@ -65,7 +65,7 @@ export function Header() {
         </button>
 
         <Link href="/" className="group flex items-center gap-2.5 transition-transform hover:scale-[1.03]">
-          <BrandMark className="h-10 w-10 transition-transform duration-500 group-hover:rotate-[360deg]" />
+          <BrandMark className="h-9 w-9" />
           <BrandName />
         </Link>
 
