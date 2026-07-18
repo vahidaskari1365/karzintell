@@ -7,6 +7,7 @@ import { CheckCircle2, Expand, Heart, Minus, Plus, Scale, Share2, ShoppingCart, 
 import { api, qs } from '@/lib/api-client';
 import { ProductDetailType, ProductVariantType } from '@/lib/types';
 import { PageLoading, Button, Badge, Card, Textarea, Input, Select } from '@/components/ui';
+import { Reveal } from '@/components/cinematic/fx';
 import { PriceTag, RatingStars } from '@/components/display';
 import { ProductGrid } from '@/components/product-card';
 import { faNumber, toToman } from '@/lib/format';
@@ -321,6 +322,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         <span className="text-slate-600">{product.name}</span>
       </nav>
 
+      <Reveal y={34}>
       <div className="grid gap-8 lg:grid-cols-2">
         <Gallery images={product.images} videos={product.videos} />
 
@@ -458,13 +460,16 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           {tab === 'questions' && <QuestionsSection productId={product.id} />}
         </div>
       </div>
+      </Reveal>
 
       {/* محصولات مرتبط */}
       {product.related.length > 0 && (
+        <Reveal y={40}>
         <section className="mt-12">
           <h2 className="mb-4 text-lg font-bold">محصولات مرتبط</h2>
           <ProductGrid items={product.related} />
         </section>
+        </Reveal>
       )}
     </div>
   );

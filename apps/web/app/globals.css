@@ -34,3 +34,70 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .prose-fa img { @apply my-4 rounded-xl; }
 .prose-fa h1, .prose-fa h2, .prose-fa h3 { @apply my-4 font-bold text-slate-900; }
 .prose-fa ul { @apply my-3 list-disc pr-6; }
+
+/* ==========================================================================
+   سینمایی — تم تیره فضایی + افکت‌های نوری (Awwwards level)
+   ========================================================================== */
+
+:root {
+  --cinema-bg: #05080f;          /* مشکی-آبی عمیق */
+  --cinema-surface: #0b1120;
+  --cinema-amber: #f59e0b;       /* کهربایی برند */
+  --cinema-cyan: #22d3ee;
+  --cinema-violet: #8b5cf6;
+}
+
+.cinema { background: var(--cinema-bg); color: #e2e8f0; }
+
+/* فیلم‌گرین ظریف روی سکشن‌های تیره */
+.cinema-grain { position: relative; }
+.cinema-grain::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .06; z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+/* شیشه دودی */
+.glass-dark {
+  background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.09);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.ring-glow { box-shadow: 0 0 0 1px rgba(245,158,11,.25), 0 8px 40px -8px rgba(245,158,11,.35); }
+
+/* متن گرادیانی متحرک */
+.text-aurora {
+  background: linear-gradient(92deg, #fbbf24, #f97316, #22d3ee, #a78bfa, #fbbf24);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: aurora-slide 9s linear infinite;
+}
+@keyframes aurora-slide { to { background-position: 300% 0; } }
+
+/* مارکی بی‌نهایت */
+.marquee-track { display: flex; width: max-content; animation: marquee 28s linear infinite; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* شناور نرم برای کارت‌های سه‌بعدی */
+@keyframes float-y { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+.float-y { animation: float-y 6s ease-in-out infinite; }
+
+/* نبض نور (pulse glow) برای CTA */
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 24px 0 rgba(245,158,11,.35); } 50% { box-shadow: 0 0 44px 6px rgba(245,158,11,.55); } }
+.pulse-glow { animation: pulse-glow 2.8s ease-in-out infinite; }
+
+/* کارت با دنبال‌کردن موس (tilt) */
+.tilt-card { transform-style: preserve-3d; transition: transform .25s ease, box-shadow .3s ease; will-change: transform; }
+.tilt-card:hover { box-shadow: 0 20px 60px -15px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08); }
+
+/* خط نورانی دایره‌ای چرخان دور کادر */
+.orbit-border { position: relative; overflow: hidden; border-radius: 1.25rem; }
+.orbit-border::before {
+  content: ''; position: absolute; inset: -150%;
+  background: conic-gradient(from 0deg, transparent 0 80%, var(--cinema-amber) 88%, #22d3ee 94%, transparent 100%);
+  animation: orbit 5s linear infinite; z-index: 0;
+}
+.orbit-border > .orbit-inner { position: relative; z-index: 1; border-radius: inherit; }
+@keyframes orbit { to { transform: rotate(360deg); } }
+
+/* اسکرول‌باری تیره برای سکشن‌های سینمایی */
+.cinema ::-webkit-scrollbar-thumb { background: #1e293b; }
