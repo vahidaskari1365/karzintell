@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Instagram, Send, MessageCircle, Phone, Play } from 'lucide-react';
 import { useBranding } from '@/lib/branding';
-import { BrandMark, BrandName } from './brand-logo';
+import { BrandLockup } from './brand-logo';
 
 const SOCIAL_META: Array<{ key: 'instagram' | 'telegram' | 'whatsapp' | 'aparat'; label: string; icon: typeof Instagram }> = [
   { key: 'instagram', label: 'اینستاگرام', icon: Instagram },
@@ -20,9 +20,8 @@ export function Footer() {
     <footer className="mt-16 border-t border-slate-200 bg-white/90 backdrop-blur">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="mb-3 flex items-center gap-2.5">
-            <BrandMark className="h-10 w-10" />
-            <BrandName className="text-lg" />
+          <div className="mb-4">
+            <BrandLockup subtitle={false} />
           </div>
           <p className="text-sm leading-7 text-slate-500">
             فروشگاه اینترنتی قطعات و گجت‌های الکترونیک؛ موبایل، ساعت هوشمند، هدفون و لوازم جانبی با ضمانت اصالت کالا.
