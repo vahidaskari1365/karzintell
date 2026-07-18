@@ -13,6 +13,7 @@ import { toToman, faNumber } from '@/lib/format';
 import { CategoryNode, ProductCardType } from '@/lib/types';
 import { ProductGrid } from '@/components/product-card';
 import { PageLoading } from '@/components/ui';
+import { HeroScene } from '@/components/cinematic/scene3d';
 import {
   CountUp, Magnetic, Marquee, Parallax, Reveal, RevealGroup, ScrollProgress, TiltCard, revealItem,
 } from '@/components/cinematic/fx';
@@ -38,91 +39,89 @@ const GT = ({ children }: { children: React.ReactNode }) => (
   <span className="bg-gradient-to-l from-emerald-600 via-green-500 to-teal-500 bg-clip-text text-transparent">{children}</span>
 );
 
-// --------------------------------------------------------------- هیرو — امضای نئونی برند (تیره) با موشن زنده
-const HERO_SEEDS: Array<[string, string, string]> = [
-  ['8%', '20%', '0s'], ['15%', '55%', '.6s'], ['12%', '78%', '1.1s'], ['22%', '35%', '1.7s'],
-  ['28%', '65%', '.4s'], ['36%', '25%', '2s'], ['42%', '70%', '.9s'], ['50%', '40%', '1.4s'],
-  ['58%', '60%', '2.2s'], ['66%', '30%', '.2s'], ['74%', '55%', '1.8s'], ['82%', '25%', '1s'],
-  ['88%', '70%', '.7s'], ['94%', '45%', '2.4s'], ['48%', '85%', '1.5s'], ['70%', '88%', '.8s'],
-];
-
+// --------------------------------------------------------------- هیرو — پلاتینیوم مدرن با صحنه‌ی سه‌بعدی زنده و موشن آرورا
 function CinematicHero() {
   return (
-    <section className={`${FULL} cinema cinema-grain min-h-[94svh] overflow-hidden`}>
+    <section className={`${FULL} relative min-h-[94svh] overflow-hidden bg-[#e9edeb]`}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک</h1>
 
-      {/* پس‌زمینه: K مداری نئونی — نئون‌ها نفس می‌کشند و نور سبز ساطع می‌کنند */}
+      {/* پس‌زمینه: آرورای سبز-فیروزه‌ای متحرک + نقطه‌چین مینیمال */}
       <div aria-hidden className="absolute inset-0">
-        <div className="animate-neon-drift absolute inset-0 bg-[url('/assets/neon-k-bg.jpg')] bg-cover bg-center opacity-60" />
+        <div className="animate-aurora absolute -top-32 right-[8%] h-[30rem] w-[30rem] rounded-full bg-emerald-300/45 blur-[110px]" />
+        <div className="animate-aurora absolute top-1/3 -left-24 h-[26rem] w-[26rem] rounded-full bg-teal-200/60 blur-[100px]" style={{ animationDuration: '30s', animationDelay: '3s' }} />
+        <div className="animate-aurora absolute -bottom-40 right-1/3 h-[24rem] w-[24rem] rounded-full bg-cyan-200/40 blur-[110px]" style={{ animationDuration: '27s', animationDelay: '6s' }} />
+        <div className="absolute inset-0 bg-grid-dots opacity-50" />
+        {/* هاله سفید مرکزی برای خوانایی */}
+        <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_42%,rgba(255,255,255,.7),transparent_70%)]" />
+        {/* اتصال نرم به سکشن بعدی */}
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-white/60" />
+      </div>
 
-        {/* موج نورانی که هر چند ثانیه روی مدار K جاری می‌شود */}
-        <div className="neon-surge left-[6%] top-[10%] h-[80%] w-[46%] rounded-full" />
-        <div className="neon-surge left-[-4%] top-[22%] h-[58%] w-[30%] rounded-full" style={{ animationDelay: '4.5s' }} />
-
-        {/* رشته‌نورهای شهابی سبز — عبور آرام و بدون آزار چشم */}
-        <i className="neon-comet top-[30%]" style={{ animationDelay: '1s' }} />
-        <i className="neon-comet top-[44%]" style={{ animationDelay: '6s', animationDuration: '15s' }} />
-        <i className="neon-comet top-[21%]" style={{ animationDelay: '9.5s', animationDuration: '10s', width: '160px' }} />
-
-        {/* ذرات سبز درخشان شناور */}
-        {HERO_SEEDS.map(([x, y, d], i) => (
-          <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d }} />
-        ))}
-
-        {/* هاله‌های نبض‌دار سبز ملایم */}
-        <div className="animate-neon-pulse pointer-events-none absolute top-1/4 right-1/4 h-80 w-80 rounded-full bg-emerald-500/15 blur-[130px]" />
-        <div className="animate-neon-pulse pointer-events-none absolute bottom-10 left-1/5 h-72 w-72 rounded-full bg-green-400/10 blur-[120px]" style={{ animationDelay: '2s' }} />
-
-        {/* محو تدریجی برای خوانایی و اتصال نرم به سکشن روشن بعدی */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#05080f]/55 via-transparent to-[#05080f]" />
+      {/* صحنه سه‌بعدی زنده — فقط دسکتاپ (موبایل سبک و روان می‌ماند) */}
+      <div className="absolute inset-y-0 left-0 z-[1] hidden w-[52%] lg:block">
+        <HeroScene />
       </div>
 
       {/* محتوا */}
-      <div className="relative z-10 mx-auto flex min-h-[94svh] max-w-6xl flex-col items-center justify-center px-6 text-center">
-        <Reveal delay={0.05} y={18}>
-          <span className="glass-dark inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-2xs font-bold text-emerald-300">
-            <ShoppingBag className="h-3.5 w-3.5" /> واردات و فروش تخصصی قطعات و گجت‌های الکترونیک
-          </span>
-        </Reveal>
+      <div className="relative z-10 mx-auto grid min-h-[94svh] max-w-7xl items-center px-6 lg:grid-cols-2">
+        <div className="flex flex-col items-center text-center lg:ps-8">
+          <Reveal delay={0.05} y={16}>
+            <span className="glass-light inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-2xs font-black text-emerald-700">
+              <ShoppingBag className="h-3.5 w-3.5" /> واردات و فروش تخصصی قطعات و گجت‌های الکترونیک
+            </span>
+          </Reveal>
 
-        <Reveal delay={0.15} y={28}>
-          <p className="mt-6 max-w-2xl text-base leading-9 text-slate-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-xl sm:leading-10">
-            از پرچمداران موبایل تا ظریف‌ترین قطعات — هر گجتی که به ذهنت می‌رسد این‌جاست؛
-            با اصالتِ تضمین‌شده، قیمتِ رقابتی و پشتیبانی واقعی.
-          </p>
-        </Reveal>
+          <Reveal delay={0.16} y={26}>
+            <p className="mt-7 max-w-xl text-base leading-9 text-slate-700 sm:text-xl sm:leading-10">
+              از پرچمداران موبایل تا ظریف‌ترین قطعات — هر گجتی که به ذهنت می‌رسد این‌جاست؛
+              با اصالتِ تضمین‌شده، قیمتِ رقابتی و <span className="font-black text-emerald-700">پشتیبانی واقعی</span>.
+            </p>
+          </Reveal>
 
-        <Reveal delay={0.28} y={22}>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <Magnetic>
-              <Link
-                href="/search"
-                className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-black text-slate-950 transition-transform hover:scale-105"
-              >
-                <Zap className="h-4.5 w-4.5" /> شروع خرید
-              </Link>
-            </Magnetic>
-            <Magnetic>
-              <Link
-                href="/blog"
-                className="glass-dark inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-slate-200 transition hover:border-emerald-400/40 hover:text-emerald-300"
-              >
-                <Flame className="h-4.5 w-4.5 text-green-400" /> راهنمای انتخاب هوشمند
-              </Link>
-            </Magnetic>
-          </div>
-        </Reveal>
+          <Reveal delay={0.28} y={20}>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+              <Magnetic>
+                <Link
+                  href="/search"
+                  className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-black text-white shadow-xl shadow-emerald-500/30 transition-transform hover:scale-105"
+                >
+                  <Zap className="h-4.5 w-4.5" /> شروع خرید
+                </Link>
+              </Magnetic>
+              <Magnetic>
+                <Link
+                  href="/blog"
+                  className="glass-light inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700"
+                >
+                  <Flame className="h-4.5 w-4.5 text-emerald-600" /> راهنمای انتخاب هوشمند
+                </Link>
+              </Magnetic>
+            </div>
+          </Reveal>
 
-        {/* نشانگر اسکرول */}
-        <motion.div
-          className="absolute bottom-8 flex flex-col items-center gap-1 text-slate-400"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-        >
-          <span className="text-2xs">قدم به فروشگاه بگذار</span>
-          <ChevronDown className="h-5 w-5" />
-        </motion.div>
+          {/* مینی‌نشان‌های اعتماد */}
+          <Reveal delay={0.4} y={14}>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-2xs font-bold text-slate-500">
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600" /> گارانتی رسمی</span>
+              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 text-emerald-600" /> ارسال سریع سراسری</span>
+              <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-emerald-600" /> پرداخت امن</span>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* ستون خالی برای تنفس صحنه سه‌بعدی در دسکتاپ */}
+        <div className="hidden lg:block" />
       </div>
+
+      {/* نشانگر اسکرول */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 text-slate-400"
+        animate={{ y: [0, 10, 0] }}
+        transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+      >
+        <span className="text-2xs font-bold">قدم به فروشگاه بگذار</span>
+        <ChevronDown className="h-5 w-5" />
+      </motion.div>
     </section>
   );
 }
@@ -203,16 +202,16 @@ function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNod
       <div className="pointer-events-none absolute -top-16 right-8 h-96 w-96 rounded-full bg-emerald-200/50 blur-[130px]" />
       <div className="pointer-events-none absolute bottom-0 left-8 h-80 w-80 rounded-full bg-teal-100/60 blur-[120px]" />
 
-      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-6 lg:grid-cols-2">
+      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-6 px-6 pt-24 sm:gap-8 sm:pt-16 lg:grid-cols-2 lg:pt-0">
         {/* متن و CTA */}
         <div>
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-2xs font-black text-emerald-700 ring-1 ring-emerald-200">
             <Icon className="h-3.5 w-3.5" /> قفسه‌ی {cat.name} — بخش {faNumber(idx + 1)} از {faNumber(total)}
           </span>
-          <h2 className="mt-5 text-5xl font-black leading-tight text-slate-900 sm:text-7xl">
+          <h2 className="mt-4 text-4xl font-black leading-tight text-slate-900 sm:text-5xl lg:text-6xl xl:text-7xl">
             <Link href={`/categories/${cat.slug}`} className="transition-colors hover:text-emerald-600">{cat.name}</Link>
           </h2>
-          <p className="mt-5 max-w-md text-sm leading-8 text-slate-600">{tagline}</p>
+          <p className="mt-4 max-w-md text-xs leading-7 text-slate-600 sm:text-sm sm:leading-8">{tagline}</p>
           <Magnetic className="mt-8">
             <Link
               href={`/categories/${cat.slug}`}
@@ -228,7 +227,11 @@ function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNod
           {isLoading && [1, 2, 3, 4].map((i) => (
             <div key={i} className="glass-light h-44 animate-pulse rounded-2xl" />
           ))}
-          {(items || []).slice(0, 4).map((px) => <MiniGlassCard key={px.id} p={px} />)}
+          {(items || []).slice(0, 4).map((px, i) => (
+            <div key={px.id} className={i > 1 ? 'hidden sm:block' : ''}>
+              <MiniGlassCard p={px} />
+            </div>
+          ))}
           {!isLoading && !(items || []).length && (
             <div className="glass-light col-span-2 flex h-44 items-center justify-center rounded-2xl text-sm text-slate-400">
               به‌زودی محصولات این قفسه چیده می‌شوند
@@ -320,13 +323,15 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
 
   if (!cats.length) return null;
   return (
-    <section ref={targetRef} className={`${FULL} relative`} style={{ height: `${n * 100 + 45}vh` }}>
-      <div className="sticky top-0 h-screen overflow-hidden bg-white">
-        {/* بک‌گراند عکس فروشگاه واقعی با نفسِ آرام */}
+    <section ref={targetRef} className={`${FULL} relative`} style={{ height: `${n * 85 + 30}vh` }}>
+      <div className="sticky top-0 h-[100svh] overflow-hidden bg-gradient-to-br from-[#e2e7e4] via-[#edf1ee] to-[#dde4e0]">
+        {/* بافت روشن با عمق — نقطه‌چین + هاله‌های سبز کرمی (بدون عکس) */}
         <div aria-hidden className="absolute inset-0">
-          <div className="animate-soft-zoom absolute inset-0 bg-[url('/assets/store-bg.jpg')] bg-cover bg-center" />
-          <div className="absolute inset-0 bg-white/84" />
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
+          <div className="absolute inset-0 bg-grid-dots opacity-40" />
+          <div className="animate-aurora pointer-events-none absolute -top-20 right-[12%] h-[26rem] w-[26rem] rounded-full bg-emerald-300/35 blur-[120px]" />
+          <div className="animate-aurora pointer-events-none absolute bottom-[-10%] left-[8%] h-[22rem] w-[22rem] rounded-full bg-teal-200/50 blur-[110px]" style={{ animationDuration: '28s', animationDelay: '4s' }} />
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white/70 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/70 to-transparent" />
         </div>
 
         {/* عنوان ثابت بالای صحنه */}
@@ -431,8 +436,8 @@ function HorizontalRail({ items }: { items: ProductCardType[] }) {
 
   if (!items.length) return null;
   return (
-    <section ref={targetRef} className={`${FULL} relative h-[340vh] bg-[#f6f8f7]`}>
-      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
+    <section ref={targetRef} className={`${FULL} relative h-[340vh] bg-gradient-to-b from-[#e7ece9] to-[#f0f3f1]`}>
+      <div className="sticky top-0 flex h-[100svh] flex-col justify-center overflow-hidden">
         <div className="pointer-events-none absolute top-20 left-0 h-80 w-80 rounded-full bg-emerald-100/80 blur-[110px]" />
         <div className="pointer-events-none absolute bottom-10 right-0 h-72 w-72 rounded-full bg-teal-100/70 blur-[110px]" />
         <div className="relative mx-auto mb-10 w-full max-w-7xl px-6">
@@ -497,7 +502,7 @@ function TrustRow() {
     { icon: BadgeCheck, title: '۷ روز مهلت بازگشت', desc: 'بازگرداندن کالا بدون قید و شرط' },
   ];
   return (
-    <section className={`${FULL} bg-white py-20`}>
+    <section className={`${FULL} bg-transparent py-20`}>
       <RevealGroup className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-6 lg:grid-cols-4" step={0.08}>
         {items.map((f) => (
           <motion.div key={f.title} variants={revealItem}>
@@ -516,7 +521,7 @@ function TrustRow() {
 // --------------------------------------------------------------- CTA نهایی — نسخه روشن با قاب گرادیانی
 function FinaleCTA() {
   return (
-    <section className={`${FULL} bg-gradient-to-b from-white to-emerald-50/70 py-24`}>
+    <section className={`${FULL} bg-gradient-to-b from-[#edf1ee] to-emerald-100/60 py-24`}>
       <Reveal className="mx-auto max-w-4xl px-6">
         <div className="rounded-[2rem] bg-gradient-to-l from-emerald-300 via-teal-200 to-emerald-300 p-[1.5px] shadow-2xl shadow-emerald-500/10">
           <div className="glass-light rounded-[calc(2rem-1.5px)] p-10 text-center sm:p-16">

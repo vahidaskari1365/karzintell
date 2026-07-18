@@ -20,11 +20,11 @@ function CoreShape() {
       <mesh ref={mesh} scale={1.65}>
         <torusKnotGeometry args={[1, 0.32, 220, 40]} />
         <MeshDistortMaterial
-          color="#10b981"
-          emissive="#047857"
-          emissiveIntensity={0.55}
-          metalness={0.85}
-          roughness={0.18}
+          color="#059669"
+          emissive="#065f46"
+          emissiveIntensity={0.32}
+          metalness={0.9}
+          roughness={0.22}
           distort={0.28}
           speed={2.2}
         />
@@ -70,7 +70,7 @@ function ParticleField({ count = 260 }: { count?: number }) {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial size={0.05} color="#67e8f9" transparent opacity={0.75} sizeAttenuation depthWrite={false} />
+      <pointsMaterial size={0.05} color="#0d9488" transparent opacity={0.6} sizeAttenuation depthWrite={false} />
     </points>
   );
 }
@@ -93,16 +93,16 @@ export function HeroScene() {
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       className="!absolute inset-0"
     >
-      <ambientLight intensity={0.35} />
-      <pointLight position={[6, 4, 6]} intensity={60} color="#4ade80" />
-      <pointLight position={[-6, -3, -4]} intensity={40} color="#22d3ee" />
-      <spotLight position={[0, 8, 4]} angle={0.5} intensity={60} color="#8b5cf6" penumbra={1} />
+      <ambientLight intensity={0.85} />
+      <directionalLight position={[5, 6, 4]} intensity={1.4} color="#ffffff" />
+      <pointLight position={[6, 4, 6]} intensity={55} color="#34d399" />
+      <pointLight position={[-6, -3, -4]} intensity={35} color="#14b8a6" />
       <MouseRig>
         <CoreShape />
-        <OrbitRing radius={2.6} color="#10b981" tilt={1.15} speed={0.35} />
-        <OrbitRing radius={3.3} color="#22d3ee" tilt={1.35} speed={-0.22} />
+        <OrbitRing radius={2.6} color="#059669" tilt={1.15} speed={0.35} />
+        <OrbitRing radius={3.3} color="#14b8a6" tilt={1.35} speed={-0.22} />
         <ParticleField />
-        <Sparkles count={90} scale={[10, 7, 4]} size={2.2} speed={0.35} color="#a7f3d0" opacity={0.7} />
+        <Sparkles count={90} scale={[10, 7, 4]} size={2.2} speed={0.35} color="#0f766e" opacity={0.55} />
       </MouseRig>
     </Canvas>
   );

@@ -9,7 +9,7 @@ html {
 }
 
 body {
-  background-color: #f8fafc;
+  background-color: #edf0ee;   /* پلاتینیوم مدرن — نه سفید خشک، نه تیره */
   color: #0f172a;
 }
 
@@ -185,9 +185,23 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 }
 .animate-soft-zoom { animation: soft-zoom 34s ease-in-out infinite; }
 
+/* دریفت آرام گوی‌های نورانی (آرورا) — موشن نرم و لوکس */
+@keyframes aurora-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(4%, -5%) scale(1.12); }
+  100% { transform: translate(-4%, 4%) scale(1); }
+}
+.animate-aurora { animation: aurora-drift 24s ease-in-out infinite alternate; }
+
+/* بافت نقطه‌چین ظریف برای عمق مینیمال */
+.bg-grid-dots {
+  background-image: radial-gradient(rgba(15, 23, 42, .10) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+
 /* احترام به حساسیت به حرکت */
 @media (prefers-reduced-motion: reduce) {
-  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge, .animate-soft-zoom { animation: none !important; }
+  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge, .animate-soft-zoom, .animate-aurora { animation: none !important; }
 }
 
 /* سرچ‌باکس شیشه‌ای روی هدر تیره */
