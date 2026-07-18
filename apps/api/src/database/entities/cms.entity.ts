@@ -157,3 +157,77 @@ export class TicketMessage {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }
+
+export type BlogKind = 'post' | 'news';
+
+@Entity('blog_posts')
+export class BlogPost {
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  id: number;
+
+  @Column({ length: 190 })
+  title: string;
+
+  @Column({ length: 220, unique: true })
+  slug: string;
+
+  @Column({ length: 500, nullable: true })
+  excerpt: string | null;
+
+  @Column({ type: 'longtext' })
+  body: string;
+
+  @Column({ name: 'cover_path', length: 500, nullable: true })
+  coverPath: string | null;
+
+  @Column({ type: 'enum', enum: ['post', 'news'], default: 'post' })
+  kind: BlogKind;
+
+  @Column({ type: 'enum', enum: ['draft', 'published'], default: 'draft' })
+  status: 'draft' | 'published';
+
+  @Column({ name: 'author_id', type: 'bigint', unsigned: true, nullable: true })
+  authorId: number | null;
+
+  @Column({ name: 'meta_title', length: 190, nullable: true })
+  metaTitle: string | null;
+
+  @Column({ name: 'meta_description', length: 300, nullable: true })
+  metaDescription: string | null;
+
+  @Column({ name: 'published_at', type: 'datetime', nullable: true })
+  publishedAt: Date | null;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date | null;
+}
+
+@Entity('faqs')
+export class Faq {
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  id: number;
+
+  @Column({ length: 300 })
+  question: string;
+
+  @Column({ type: 'text' })
+  answer: string;
+
+  @Column({ name: 'sort_order', type: 'int', default: 0 })
+  sortOrder: number;
+
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}

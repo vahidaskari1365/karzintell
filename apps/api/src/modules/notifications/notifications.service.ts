@@ -5,6 +5,7 @@ import * as nodemailer from 'nodemailer';
 import * as webpush from 'web-push';
 import { Notification, PushSubscription } from '../../database/entities';
 import { env } from '../../config/configuration';
+import { QueueService } from '../../common/queue.service';
 
 /**
  * اعلان‌ها: ذخیره درون‌برنامه + ارسال پیامک/ایمیل/Web Push.
@@ -26,7 +27,12 @@ export class NotificationsService implements OnModuleInit {
     private readonly notifications: Repository<Notification>,
     @InjectRepository(PushSubscription)
     private readonly pushSubs: Repository<PushSubscription>,
-  ) {}
+    private readonly queue: QueueService,
+  ) {
+    // مصرف‌کننده‌های صف (Background Jobs)
+    this.queue.register('sms.send', (p) => this.deliverSms(p.phone, p.message));
+    this.queue.register('email.send', (p) => this.deliverEmail(p.to, p.subject, p.text));
+  }
 
   async onModuleInit() {
     // کلیدهای VAPID از env؛ در غیر اینصورت از تنظیمات دیتابیس؛ در غیر اینصورت تولید خودکار
@@ -119,13 +125,23 @@ export class NotificationsService implements OnModuleInit {
     return { unsubscribed: true };
   }
 
-  /** ارسال پیامک (توسعه: لاگ) */
+  /** ارسال پیامک — از طریق صف پس‌زمینه (بدون بلاک کردن درخواست) */
   async sendSms(phone: string, message: string): Promise<void> {
+    await this.queue.enqueue('sms.send', { phone, message });
+  }
+
+  /** اجرای واقعی ارسال پیامک (داخل ورکر صف) */
+  private async deliverSms(phone: string, message: string) {
     if (env.sms.provider === 'log' || !env.sms.apiKey) {
       this.logger.log(`[SMS→${phone}] ${message}`);
       return;
     }
-    // اتصال پنل واقعی (Kavenegar/قاصدک) در مرحله استقرار
+    if (env.sms.provider === 'kavenegar') {
+      const url = `https://api.kavenegar.com/v1/${env.sms.apiKey}/sms/send.json?receptor=${encodeURIComponent(phone)}&message=${encodeURIComponent(message)}${env.sms.sender ? `&sender=${encodeURIComponent(env.sms.sender)}` : ''}`;
+      const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) throw new Error(`kavenegar ${res.status}`);
+      return;
+    }
     this.logger.log(`[SMS provider=${env.sms.provider}] ${phone}: ${message}`);
   }
 
@@ -133,7 +149,12 @@ export class NotificationsService implements OnModuleInit {
     await this.sendSms(phone, `کارزینتل\nکد تأیید شما: ${code}`);
   }
 
+  /** ارسال ایمیل — از طریق صف پس‌زمینه */
   async sendEmail(to: string, subject: string, text: string): Promise<void> {
+    await this.queue.enqueue('email.send', { to, subject, text });
+  }
+
+  private async deliverEmail(to: string, subject: string, text: string) {
     try {
       await this.transporter.sendMail({
         from: `"${env.mail.fromName}" <${env.mail.from}>`,

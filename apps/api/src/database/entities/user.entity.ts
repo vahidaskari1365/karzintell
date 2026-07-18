@@ -51,6 +51,12 @@ export class User {
   @Column({ name: 'must_change_password', default: false, transformer: boolTransformer })
   mustChangePassword: boolean;
 
+  @Column({ name: 'two_factor_enabled', default: false, transformer: boolTransformer })
+  twoFactorEnabled: boolean;
+
+  @Column({ name: 'two_factor_secret', length: 64, nullable: true, select: false })
+  twoFactorSecret: string | null;
+
   @Column({ name: 'email_verified_at', type: 'datetime', nullable: true })
   emailVerifiedAt: Date | null;
 

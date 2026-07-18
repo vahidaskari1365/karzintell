@@ -16,6 +16,10 @@ export class RegisterDto {
 
   @IsString() @MinLength(8, { message: 'رمز عبور حداقل ۸ کاراکتر' }) @MaxLength(72)
   password: string;
+
+  // کپچای عددی (ضدبات)
+  @IsOptional() @IsString() captchaId?: string;
+  @IsOptional() @IsString() captchaAnswer?: string;
 }
 
 export class LoginDto {
@@ -39,6 +43,26 @@ export class OtpSendDto {
   @ValidateIf((o) => o.purpose === 'register')
   @IsString() @MaxLength(120)
   fullName?: string;
+
+  // کپچای عددی (ضدبات — الزامی)
+  @IsString() @IsNotEmpty({ message: 'کپچا الزامی است' })
+  captchaId: string;
+
+  @IsString() @IsNotEmpty({ message: 'کپچا الزامی است' })
+  captchaAnswer: string;
+}
+
+export class TwoFactorVerifyDto {
+  @IsString() @IsNotEmpty()
+  ticket: string;
+
+  @IsString() @Length(6, 6, { message: 'کد ۶ رقمی است' })
+  code: string;
+}
+
+export class TwoFactorCodeDto {
+  @IsString() @Length(6, 6, { message: 'کد ۶ رقمی است' })
+  code: string;
 }
 
 export class OtpVerifyDto {

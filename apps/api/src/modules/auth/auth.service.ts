@@ -15,6 +15,7 @@ import { otpCode, sha256, uuid } from '../../common/utils';
 import { RedisService } from '../../common/redis.service';
 import { RbacService } from '../rbac/rbac.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CaptchaService, TwoFactorService } from './security.service';
 import { AuthUser, JwtRefreshPayload } from '../../common/types';
 import { DomainException } from '../../common/http-exception.filter';
 
@@ -38,6 +39,8 @@ export class AuthService {
     private readonly redis: RedisService,
     private readonly rbac: RbacService,
     private readonly notifications: NotificationsService,
+    readonly captcha: CaptchaService,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   // --------------------------------------------------------------- ثبت‌نام
@@ -74,6 +77,7 @@ export class AuthService {
     const user = await this.users
       .createQueryBuilder('u')
       .addSelect('u.passwordHash')
+      .addSelect('u.twoFactorSecret')
       .where('LOWER(u.email) = :id OR u.phone = :id', { id })
       .getOne();
     if (!user || !(await bcrypt.compare(password, user.passwordHash)))
@@ -81,10 +85,87 @@ export class AuthService {
     if (user.status === 'suspended')
       throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
 
+    // ورود دومرحله‌ای فعال → صدور بلیت چالش (بدون توکن)
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      const ticket = await this.twoFactor.issueTicket(user.id);
+      return { requireTwoFactor: true, ticket } as any;
+    }
+
     await this.users.update(user.id, { lastLoginAt: new Date() });
     const tokens = await this.issueTokens(user.id, ip, ua);
     const authUser = await this.rbac.buildAuthUser(user.id);
     return { tokens, user: authUser };
+  }
+
+  /** تکمیل ورود با کد TOTP */
+  async verifyTwoFactor(ticket: string, code: string, ip?: string, ua?: string) {
+    const userId = await this.twoFactor.peekTicket(ticket);
+    const user = await this.users
+      .createQueryBuilder('u')
+      .addSelect('u.twoFactorSecret')
+      .where('u.id = :userId', { userId })
+      .getOne();
+    if (!user?.twoFactorEnabled || !user.twoFactorSecret)
+      throw new UnauthorizedException({ code: 'TFA_NOT_ENABLED', message: 'ورود دومرحله‌ای فعال نیست' });
+
+    // حداکثر ۵ تلاش ناموفق برای هر بلیت — بعد از آن بلیت می‌سوزد
+    if (!this.twoFactor.check(code, user.twoFactorSecret)) {
+      const tries = await this.redis.incrWithTtl(`tfa:tries:${ticket}`, 180);
+      if (tries > 5) {
+        await this.twoFactor.burnTicket(ticket);
+        throw new UnauthorizedException({ code: 'TFA_LOCKED', message: 'تلاش‌های ناموفق زیاد شد — دوباره وارد شوید' });
+      }
+      throw new UnauthorizedException({ code: 'TFA_BAD_CODE', message: 'کد ورود دومرحله‌ای اشتباه است' });
+    }
+
+    await this.twoFactor.burnTicket(ticket);
+    await this.users.update(user.id, { lastLoginAt: new Date() });
+    const tokens = await this.issueTokens(user.id, ip, ua);
+    const authUser = await this.rbac.buildAuthUser(user.id);
+    return { tokens, user: authUser };
+  }
+
+  // ------------------------------------------------------ مدیریت ۲FA (me)
+  async twoFactorSetup(userId: number) {
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException({ code: 'UNAUTHORIZED', message: 'کاربر یافت نشد' });
+    if (user.twoFactorEnabled)
+      throw new DomainException('TFA_ALREADY', 'ورود دومرحله‌ای از قبل فعال است', 409);
+    const secret = this.twoFactor.generateSecret();
+    await this.users.update(userId, { twoFactorSecret: secret });
+    const otpauthUrl = this.twoFactor.keyUri(user.phone || `user-${userId}`, secret);
+    return { secret, otpauthUrl, qrDataUrl: await this.twoFactor.qrDataUrl(otpauthUrl) };
+  }
+
+  async twoFactorEnable(userId: number, code: string) {
+    const secret = await this.secretOf(userId);
+    if (!secret) throw new DomainException('TFA_SETUP_FIRST', 'ابتدا «راه‌اندازی» را بزنید', 400);
+    if (!this.twoFactor.check(code, secret))
+      throw new UnauthorizedException({ code: 'TFA_BAD_CODE', message: 'کد اشتباه است — ساعت گوشی را همگام (اتوماتیک) کنید' });
+    await this.users.update(userId, { twoFactorEnabled: true });
+    return { enabled: true };
+  }
+
+  async twoFactorDisable(userId: number, code: string) {
+    const secret = await this.secretOf(userId);
+    if (!secret || !this.twoFactor.check(code, secret))
+      throw new UnauthorizedException({ code: 'TFA_BAD_CODE', message: 'کد اشتباه است' });
+    await this.users.update(userId, { twoFactorEnabled: false, twoFactorSecret: null });
+    return { enabled: false };
+  }
+
+  async twoFactorStatus(userId: number) {
+    const u = await this.users.findOne({ where: { id: userId } });
+    return { enabled: !!u?.twoFactorEnabled };
+  }
+
+  private async secretOf(userId: number) {
+    const user = await this.users
+      .createQueryBuilder('u')
+      .addSelect('u.twoFactorSecret')
+      .where('u.id = :userId', { userId })
+      .getOne();
+    return user?.twoFactorSecret ?? null;
   }
 
   // ------------------------------------------------------------------ OTP

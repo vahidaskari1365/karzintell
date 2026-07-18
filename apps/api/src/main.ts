@@ -9,6 +9,17 @@ import { AppModule } from './app.module';
 import { env } from './config/configuration';
 
 async function bootstrap() {
+  // رصد خطا با Sentry — فقط اگر SENTRY_DSN تنظیم شده باشد (import تنبل، بدون هزینه در غیر اینصورت)
+  if (env.sentryDsn) {
+    try {
+      // @ts-ignore — پکیج اختیاری است؛ فقط با SENTRY_DSN لود می‌شود
+      const Sentry = await import('@sentry/node');
+      Sentry.init({ dsn: env.sentryDsn, environment: env.nodeEnv, tracesSampleRate: 0.1 });
+    } catch {
+      // پکیج نصب نیست → ادامه بدون رصد خارجی
+    }
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: env.isProd ? ['log', 'warn', 'error'] : ['log', 'debug', 'warn', 'error'],
   });

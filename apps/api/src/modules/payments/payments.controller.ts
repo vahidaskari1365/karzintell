@@ -36,8 +36,8 @@ export class PaymentsController {
   /** درگاه‌های فعال برای چک‌اوت */
   @Public()
   @Get('payments/gateways')
-  gateways(@CurrentUser() user?: AuthUser) {
-    return { data: this.payments.listGateways(user?.id) };
+  async gateways(@CurrentUser() user?: AuthUser) {
+    return { data: await this.payments.listGateways(user?.id) };
   }
 
   @Post('payments/init')

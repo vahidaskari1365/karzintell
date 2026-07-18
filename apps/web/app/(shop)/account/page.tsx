@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { toast, useAuthStore } from '@/lib/auth-store';
 import { Button, Card, Field, Input, Badge } from '@/components/ui';
+import { TwoFactorCard } from '@/components/twofactor-card';
 import { useState } from 'react';
 import { faDateTime, toToman } from '@/lib/format';
 
@@ -102,6 +103,8 @@ export default function AccountPage() {
           تغییر رمز
         </Button>
       </Card>
+
+      <TwoFactorCard />
     </div>
   );
 }

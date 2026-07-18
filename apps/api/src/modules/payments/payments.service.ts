@@ -8,6 +8,7 @@ import { DomainException } from '../../common/http-exception.filter';
 import { OrdersService } from '../orders/orders.service';
 import { WalletService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SettingsService } from '../settings/settings.service';
 import { gatewayAdapter, GATEWAY_ADAPTERS } from './gateways';
 
 /**
@@ -27,16 +28,29 @@ export class PaymentsService {
     private readonly ordersService: OrdersService,
     private readonly wallet: WalletService,
     private readonly notifications: NotificationsService,
+    private readonly settings: SettingsService,
   ) {}
 
-  /** درگاه‌های فعال و قابل استفاده برای چک‌اوت */
-  listGateways(userId?: number) {
+  /** درگاه‌های فعال و قابل استفاده برای چک‌اوت (قابل مدیریت از تنظیمات فروشگاه) */
+  async listGateways(userId?: number) {
     const list: Array<{ key: string; title: string; description?: string }> = [];
+    // فیلتر درگاه‌ها از تنظیمات (JSON)؛ «همه» = پیش‌فرض
+    let enabled: string[] | null = null;
+    try {
+      const raw = await this.settings.get('payment.gateways_enabled', '');
+      if (raw) {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed)) enabled = parsed;
+      }
+    } catch { /* نادیده بگیر */ }
+
     for (const [key, adapter] of Object.entries(GATEWAY_ADAPTERS)) {
-      if (adapter.isConfigured()) list.push({ key, title: adapter.title, description: 'پرداخت آنلاین امن' });
+      if (adapter.isConfigured() && (!enabled || enabled.includes(key)))
+        list.push({ key, title: adapter.title, description: 'پرداخت آنلاین امن' });
     }
     if (env.isDev || !list.length) list.push({ key: 'manual', title: 'درگاه آزمایشی', description: 'تست توسعه — فوری موفق می‌شود' });
-    list.push({ key: 'wallet', title: 'کیف پول', description: 'پرداخت از موجودی کیف پول کارزینتل' });
+    if (!enabled || enabled.includes('wallet'))
+      list.push({ key: 'wallet', title: 'کیف پول', description: 'پرداخت از موجودی کیف پول کارزینتل' });
     return { items: list, default: list[0]?.key ?? 'manual' };
   }
 

@@ -159,4 +159,55 @@ export class DashboardController {
     );
     return { data: rows };
   }
+
+  /** گزارش سود ناخالص (فروش - بهای تمام‌شده) روزانه/ماهانه */
+  @Get('reports/profit')
+  @RequirePermissions('reports.view')
+  async profitReport(@Query('from') from?: string, @Query('to') to?: string, @Query('groupBy') groupBy?: string) {
+    const group = groupBy === 'month' ? `%Y-%m` : `%Y-%m-%d`;
+    const params: any[] = [group];
+    let dateCond = '';
+    if (from) { dateCond += ' AND o.paid_at >= ?'; params.push(new Date(from)); }
+    if (to) { dateCond += ' AND o.paid_at <= ?'; params.push(new Date(to + ' 23:59:59')); }
+    const rows = await this.em.query(
+      `SELECT DATE_FORMAT(o.paid_at, ?) AS bucket,
+              COUNT(DISTINCT o.id) AS orders,
+              COALESCE(SUM(oi.total_price - oi.discount_amount),0) AS revenue,
+              COALESCE(SUM(COALESCE(v.cost_price,0) * oi.quantity),0) AS cost,
+              COALESCE(SUM(oi.total_price - oi.discount_amount - COALESCE(v.cost_price,0) * oi.quantity),0) AS profit
+       FROM order_items oi
+       JOIN orders o ON o.id = oi.order_id AND o.payment_status IN ('paid','partially_refunded') ${dateCond}
+       JOIN product_variants v ON v.id = oi.variant_id
+       GROUP BY bucket ORDER BY bucket ASC`,
+      params,
+    );
+    return {
+      data: rows.map((r: any) => ({
+        bucket: r.bucket, orders: Number(r.orders),
+        revenue: Number(r.revenue), cost: Number(r.cost), profit: Number(r.profit),
+      })),
+    };
+  }
+
+  /** مشتریان برتر */
+  @Get('reports/top-customers')
+  @RequirePermissions('reports.view')
+  async topCustomers(@Query('limit') limit?: string) {
+    const rows = await this.em.query(
+      `SELECT u.id, u.full_name AS fullName, u.phone,
+              COUNT(o.id) AS ordersCount, COALESCE(SUM(o.grand_total),0) AS totalSpent,
+              MAX(o.paid_at) AS lastOrderAt
+       FROM orders o JOIN users u ON u.id = o.user_id
+       WHERE o.payment_status = 'paid' AND o.deleted_at IS NULL
+       GROUP BY u.id, u.full_name, u.phone
+       ORDER BY totalSpent DESC
+       LIMIT ?`,
+      [Math.min(50, Number(limit) || 10)],
+    );
+    return {
+      data: rows.map((r: any) => ({
+        ...r, ordersCount: Number(r.ordersCount), totalSpent: Number(r.totalSpent),
+      })),
+    };
+  }
 }

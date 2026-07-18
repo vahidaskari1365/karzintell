@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import {
-  Award, BarChart3, Boxes, FileText, FolderTree, Image as ImageIcon, LayoutDashboard,
-  ListChecks, Menu, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star,
+  Award, BarChart3, Boxes, FileText, FolderTree, HelpCircle, Image as ImageIcon, LayoutDashboard,
+  ListChecks, Menu, Newspaper, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star,
   Store, Ticket, TicketPercent, Truck, UserCog, Users, X,
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth-guard';
@@ -29,6 +29,8 @@ const MENU: MenuItem[] = [
   { href: '/admin/coupons', label: 'کدهای تخفیف', icon: <TicketPercent className="h-4.5 w-4.5" />, perm: 'coupons.manage' },
   { href: '/admin/banners', label: 'بنرها', icon: <ImageIcon className="h-4.5 w-4.5" />, perm: 'banners.manage' },
   { href: '/admin/pages', label: 'صفحات سایت', icon: <FileText className="h-4.5 w-4.5" />, perm: 'pages.manage' },
+  { href: '/admin/blog', label: 'وبلاگ و اخبار', icon: <Newspaper className="h-4.5 w-4.5" />, perm: 'pages.manage' },
+  { href: '/admin/faqs', label: 'سوالات متداول', icon: <HelpCircle className="h-4.5 w-4.5" />, perm: 'pages.manage' },
   { href: '/admin/reviews', label: 'دیدگاه‌ها و پرسش‌ها', icon: <Star className="h-4.5 w-4.5" />, perm: 'reviews.moderate' },
   { href: '/admin/tickets', label: 'تیکت‌ها', icon: <Ticket className="h-4.5 w-4.5" />, perm: 'tickets.view' },
   { href: '/admin/reports', label: 'گزارش فروش', icon: <BarChart3 className="h-4.5 w-4.5" />, perm: 'reports.view' },

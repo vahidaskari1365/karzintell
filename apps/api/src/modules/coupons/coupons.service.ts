@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Coupon, CouponUsage } from '../../database/entities';
 import { DomainException } from '../../common/http-exception.filter';
 import { paginate } from '../../common/utils';
+import { computeCouponDiscount } from './coupon-math';
 
 /** یک قلم سبد برای محاسبه دامنه کوپن (محصول/دسته) */
 export interface CouponLine {
@@ -65,12 +66,7 @@ export class CouponsService {
   }
 
   computeDiscount(coupon: Coupon, subtotal: number): number {
-    let discount =
-      coupon.type === 'percent'
-        ? Math.floor((subtotal * Number(coupon.value)) / 100)
-        : Number(coupon.value);
-    if (coupon.maxDiscount && discount > coupon.maxDiscount) discount = coupon.maxDiscount;
-    return Math.min(discount, subtotal);
+    return computeCouponDiscount(coupon, subtotal);
   }
 
   /** ثبت مصرف کوپن — باید داخل تراکنش سفارش صدا زده شود */

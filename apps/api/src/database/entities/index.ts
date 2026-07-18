@@ -30,7 +30,7 @@ import { Coupon, Cart, CartItem, CouponUsage } from './cart.entity';
 import { Order, OrderItem, OrderStatusHistory, Payment, Shipment } from './order.entity';
 import { ShippingZone, ShippingMethod } from './shipping.entity';
 import { Review, ProductQuestion, Wishlist, ProductCompare } from './engagement.entity';
-import { Banner, Page, Ticket, TicketMessage } from './cms.entity';
+import { Banner, BlogPost, Faq, Page, Ticket, TicketMessage } from './cms.entity';
 import { Notification, PushSubscription, Setting, AuditLog, FileRecord } from './system.entity';
 import { Wallet, WalletTransaction } from './wallet.entity';
 
@@ -45,7 +45,7 @@ export const ALL_ENTITIES = [
   Order, OrderItem, OrderStatusHistory, Payment, Shipment,
   ShippingZone, ShippingMethod,
   Review, ProductQuestion, Wishlist, ProductCompare,
-  Banner, Page, Ticket, TicketMessage,
+  Banner, Page, Ticket, TicketMessage, BlogPost, Faq,
   Notification, PushSubscription, Setting, AuditLog, FileRecord,
   Wallet, WalletTransaction,
 ];

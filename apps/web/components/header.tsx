@@ -11,6 +11,7 @@ import { CategoryNode } from '@/lib/types';
 import { faNumber } from '@/lib/format';
 import { NotificationsBell } from './notifications-bell';
 import { SearchBox } from './search-box';
+import { useBranding } from '@/lib/branding';
 
 function useCartCount() {
   const { user, hydrated } = useAuthStore();
@@ -39,6 +40,7 @@ export function Header() {
   const { user, hydrated, clearAuth } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const cartCount = useCartCount();
+  const brand = useBranding();
 
   const { data: tree } = useQuery({
     queryKey: ['categories-tree'],
@@ -63,10 +65,15 @@ export function Header() {
         </button>
 
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900">
-            <Zap className="h-5 w-5 text-amber-400" />
-          </span>
-          <span className="text-xl font-black text-slate-900">کارزینتل</span>
+          {brand.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logo} alt={brand.name} className="h-9 w-auto max-w-32 object-contain" />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900">
+              <Zap className="h-5 w-5 text-amber-400" />
+            </span>
+          )}
+          <span className="text-xl font-black text-slate-900">{brand.name}</span>
         </Link>
 
         {/* دسته‌بندی‌ها - دسکتاپ */}

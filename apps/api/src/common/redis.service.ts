@@ -41,6 +41,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return !!this.client && this.client.status === 'ready';
   }
 
+  /** اجرای دستور خام Redis — فقط وقتی آنلاین است (برای صف/لیست‌ها) */
+  async raw(command: string, ...args: any[]): Promise<any> {
+    if (!this.isOnline) throw new Error('Redis آفلاین است');
+    return (this.client as any).call(command, ...args);
+  }
+
   async get(key: string): Promise<string | null> {
     if (this.isOnline) return this.client!.get(key);
     const item = this.memory.get(key);

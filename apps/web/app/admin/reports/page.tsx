@@ -33,6 +33,22 @@ export default function AdminReportsPage() {
     queryFn: async () => (await api<any[] | { items: any[] }>(`/admin/reports/low-stock`)).data,
   });
 
+  // سود ناخالص در همان بازه فروش
+  const { data: profit } = useQuery({
+    queryKey: ['report-profit', from, to, groupBy],
+    queryFn: async () => (await api<Array<{ bucket: string; orders: number; revenue: number; cost: number; profit: number }>>(`/admin/reports/profit${qs({ from, to, groupBy })}`)).data,
+  });
+
+  const { data: topCustomers } = useQuery({
+    queryKey: ['report-top-customers'],
+    queryFn: async () => (await api<any[]>(`/admin/reports/top-customers?limit=10`)).data,
+  });
+
+  const profitTotals = (profit || []).reduce(
+    (acc, p) => ({ revenue: acc.revenue + p.revenue, cost: acc.cost + p.cost, profit: acc.profit + p.profit }),
+    { revenue: 0, cost: 0, profit: 0 },
+  );
+
   const maxTotal = Math.max(1, ...(data?.series || []).map((s) => s.total));
   const topItems: any[] = Array.isArray(top) ? top : (top as any)?.items || [];
   const lowItems: any[] = Array.isArray(lowStock) ? lowStock : (lowStock as any)?.items || [];
@@ -93,6 +109,37 @@ export default function AdminReportsPage() {
               </div>
             )}
           </Card>
+
+          {/* گزارش سود ناخالص */}
+          <Card className="mb-5 p-5">
+            <p className="mb-4 text-sm font-bold text-slate-800">سود ناخالص (فروش − بهای تمام‌شده)</p>
+            <div className="mb-5 grid grid-cols-3 gap-3">
+              {[
+                { label: 'درآمد خالص اقلام', value: profitTotals.revenue, cls: 'text-sky-700' },
+                { label: 'بهای تمام‌شده', value: profitTotals.cost, cls: 'text-rose-600' },
+                { label: 'سود ناخالص', value: profitTotals.profit, cls: profitTotals.profit >= 0 ? 'text-emerald-700' : 'text-rose-700' },
+              ].map((k) => (
+                <div key={k.label} className="rounded-2xl bg-slate-50 p-4 text-center">
+                  <p className="text-2xs text-slate-400">{k.label}</p>
+                  <p className={`mt-1 text-base font-black ${k.cls}`}>{toToman(k.value)} تومان</p>
+                </div>
+              ))}
+            </div>
+            {(profit || []).length === 0 ? (
+              <p className="py-4 text-center text-xs text-slate-400">داده‌ای در این بازه نیست</p>
+            ) : (
+              <div className="max-h-56 space-y-1 overflow-y-auto">
+                {(profit || []).map((p) => (
+                  <div key={p.bucket} className="flex items-center justify-between rounded-xl px-3 py-2 text-xs odd:bg-slate-50" >
+                    <span className="text-slate-500" dir="ltr">{p.bucket}</span>
+                    <span className={p.profit >= 0 ? 'font-bold text-emerald-700' : 'font-bold text-rose-700'}>
+                      {toToman(p.profit)} تومان <span className="font-normal text-slate-400">({faNumber(p.orders)} سفارش)</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         </>
       )}
 
@@ -127,6 +174,34 @@ export default function AdminReportsPage() {
                 </tr>
               ))}
               {lowItems.length === 0 && <tr><td className="p-6 text-center text-xs text-slate-400">همه اقلام شارژ هستند 🎉</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        {/* مشتریان برتر */}
+        <div className={`${tableCls.wrap} lg:col-span-2`}>
+          <p className="border-b border-slate-100 px-5 py-4 text-sm font-bold text-slate-800">مشتریان برتر (بر اساس مبلغ خرید)</p>
+          <table className={tableCls.table}>
+            <thead className={tableCls.thead}>
+              <tr>
+                <th className={tableCls.th}>#</th>
+                <th className={tableCls.th}>مشتری</th>
+                <th className={tableCls.th}>تعداد سفارش</th>
+                <th className={tableCls.th}>مجموع خرید</th>
+                <th className={tableCls.th}>آخرین خرید</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(topCustomers || []).map((c: any, i: number) => (
+                <tr key={c.id} className={tableCls.row}>
+                  <td className={tableCls.td}><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-50 text-2xs font-black text-amber-600">{faNumber(i + 1)}</span></td>
+                  <td className={tableCls.td}><span className="text-xs font-medium">{c.fullName}</span><br /><span className="text-2xs text-slate-400" dir="ltr">{c.phone}</span></td>
+                  <td className={tableCls.td}>{faNumber(c.ordersCount)} سفارش</td>
+                  <td className={`${tableCls.td} font-bold`}>{toToman(c.totalSpent)} تومان</td>
+                  <td className={tableCls.td}><span className="text-2xs text-slate-400">{c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString('fa-IR') : '—'}</span></td>
+                </tr>
+              ))}
+              {(topCustomers || []).length === 0 && <tr><td colSpan={5} className="p-6 text-center text-xs text-slate-400">داده‌ای نیست</td></tr>}
             </tbody>
           </table>
         </div>

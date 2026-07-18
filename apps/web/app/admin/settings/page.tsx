@@ -13,6 +13,7 @@ interface SettingGroup { group: string; items: SettingItem[] }
 
 const GROUP_LABELS: Record<string, string> = {
   general: 'عمومی', billing: 'مالی و فاکتور', shipping: 'ارسال', inventory: 'انبار', infra: 'زیرساخت', payment: 'پرداخت',
+  sms: 'پیامک', mail: 'ایمیل', security: 'امنیت',
 };
 
 const isJsonString = (v: string): boolean => /^[\[{]/.test(v.trim());

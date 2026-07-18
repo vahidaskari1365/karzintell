@@ -32,6 +32,8 @@ CREATE TABLE users (
   avatar_path          VARCHAR(500)  NULL,
   status               ENUM('active','pending','suspended') NOT NULL DEFAULT 'pending',
   must_change_password TINYINT(1)    NOT NULL DEFAULT 0 COMMENT 'کاربران ساخته‌شده توسط ادمین موظف به تغییر رمز هستند',
+  two_factor_enabled   TINYINT(1)    NOT NULL DEFAULT 0 COMMENT 'ورود دومرحله‌ای (TOTP) فعال است',
+  two_factor_secret    VARCHAR(64)   NULL COMMENT 'کلید TOTP (رمزنگاری در سطح اپلیکیشن پیشنهاد می‌شود)',
   email_verified_at    DATETIME      NULL,
   phone_verified_at    DATETIME      NULL,
   last_login_at        DATETIME      NULL,
@@ -772,8 +774,45 @@ CREATE TABLE pages (
   UNIQUE KEY uq_pages_slug (slug)
 ) ENGINE=InnoDB COMMENT='صفحات ثابت: درباره ما، تماس، شرایط، ...';
 
+-- ============================================================================
+-- 7-ب) وبلاگ و اخبار + سوالات متداول
+-- ============================================================================
+
+CREATE TABLE blog_posts (
+  id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title            VARCHAR(190) NOT NULL,
+  slug             VARCHAR(220) NOT NULL,
+  excerpt          VARCHAR(500) NULL,
+  body             LONGTEXT NOT NULL,
+  cover_path       VARCHAR(500) NULL,
+  kind             ENUM('post','news') NOT NULL DEFAULT 'post' COMMENT 'post=وبلاگ | news=خبر',
+  status           ENUM('draft','published') NOT NULL DEFAULT 'draft',
+  author_id        BIGINT UNSIGNED NULL,
+  meta_title       VARCHAR(190) NULL,
+  meta_description VARCHAR(300) NULL,
+  published_at     DATETIME NULL,
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at       DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_blog_slug (slug),
+  KEY idx_blog (kind, status, published_at),
+  CONSTRAINT fk_blog_author FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB COMMENT='مقالات وبلاگ و اخبار';
+
+CREATE TABLE faqs (
+  id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  question   VARCHAR(300) NOT NULL,
+  answer     TEXT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active  TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB COMMENT='سوالات متداول (FAQ)';
+
 CREATE TABLE tickets (
-  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id    BIGINT UNSIGNED NOT NULL,
   order_id   BIGINT UNSIGNED NULL,
   subject    VARCHAR(190) NOT NULL,

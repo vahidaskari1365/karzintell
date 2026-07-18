@@ -20,6 +20,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE_URL}/search`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${SITE_URL}/categories`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${SITE_URL}/blog`, changeFrequency: 'daily', priority: 0.6 },
+    { url: `${SITE_URL}/news`, changeFrequency: 'daily', priority: 0.5 },
+    { url: `${SITE_URL}/faq`, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${SITE_URL}/cart`, changeFrequency: 'monthly', priority: 0.2 },
   ];
 
@@ -56,5 +59,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((p) => p?.slug)
     .map((p) => ({ url: `${SITE_URL}/pages/${p.slug}`, changeFrequency: 'monthly', priority: 0.4 }));
 
-  return [...staticRoutes, ...productRoutes, ...categoryRoutes, ...pageRoutes];
+  // مقالات وبلاگ و اخبار
+  const [blog, news] = await Promise.all([
+    fetchJson<{ data: Array<{ slug: string; updatedAt?: string }> }>('/blog?limit=1000'),
+    fetchJson<{ data: Array<{ slug: string; updatedAt?: string }> }>('/news?limit=1000'),
+  ]);
+  // همه پست‌ها (چه بلاگ چه خبر) در مسیر /blog/:slug باز می‌شوند
+  const postRoutes = (list?: Array<{ slug: string; updatedAt?: string }> | null): MetadataRoute.Sitemap =>
+    (list || [])
+      .filter((p) => p?.slug)
+      .map((p) => ({
+        url: `${SITE_URL}/blog/${p.slug}`,
+        lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined,
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+      }));
+
+  return [
+    ...staticRoutes,
+    ...productRoutes,
+    ...categoryRoutes,
+    ...pageRoutes,
+    ...postRoutes(blog?.data),
+    ...postRoutes(news?.data),
+  ];
 }

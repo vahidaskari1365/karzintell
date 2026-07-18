@@ -22,6 +22,8 @@ export const env = {
   webUrl: process.env.WEB_URL || "http://localhost:3000",
   globalPrefix: "api/v1",
   swagger: bool(process.env.SWAGGER, true),
+  /** اگر خالی باشد رصد خطا (Sentry) کاملاً غیرفعال است و وابستگی‌ای لود نمی‌شود */
+  sentryDsn: process.env.SENTRY_DSN || "",
   corsOrigins: (process.env.CORS_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000")
     .split(",")
     .map((s) => s.trim())

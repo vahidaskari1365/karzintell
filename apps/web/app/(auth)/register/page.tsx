@@ -7,6 +7,7 @@ import { api } from '@/lib/api-client';
 import { toast, useAuthStore } from '@/lib/auth-store';
 import { Button, Field, Input } from '@/components/ui';
 import { normalizeDigits } from '@/lib/format';
+import { CaptchaField, CaptchaValue } from '@/components/captcha';
 
 function RegisterForm() {
   const router = useRouter();
@@ -15,6 +16,8 @@ function RegisterForm() {
   const { setAuth } = useAuthStore();
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState({ fullName: '', phone: '', email: '', password: '' });
+  const [captcha, setCaptcha] = useState<CaptchaValue>({ captchaId: '', captchaAnswer: '' });
+  const [captchaRefresh, setCaptchaRefresh] = useState(0);
 
   const submit = async () => {
     if (!form.fullName.trim()) return toast.error('نام و نام خانوادگی لازم است');
@@ -28,6 +31,7 @@ function RegisterForm() {
           phone: form.phone ? normalizeDigits(form.phone) : undefined,
           email: form.email || undefined,
           password: form.password,
+          ...captcha,
         },
         auth: false,
       });
@@ -36,6 +40,7 @@ function RegisterForm() {
       router.replace(next);
     } catch (e) {
       toast.error((e as Error).message);
+      setCaptchaRefresh((k) => k + 1);
     } finally {
       setSending(false);
     }
@@ -59,6 +64,7 @@ function RegisterForm() {
         <Field label="رمز عبور" required hint="حداقل ۸ کاراکتر">
           <Input dir="ltr" type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && submit()} />
         </Field>
+        <CaptchaField value={captcha} onChange={setCaptcha} refreshKey={captchaRefresh} />
         <Button className="w-full" size="lg" onClick={submit} loading={sending}>
           ثبت‌نام
         </Button>

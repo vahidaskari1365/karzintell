@@ -7,6 +7,7 @@ import { api } from '@/lib/api-client';
 import { toast } from '@/lib/auth-store';
 import { Button, Field, Input } from '@/components/ui';
 import { normalizeDigits } from '@/lib/format';
+import { CaptchaField, CaptchaValue } from '@/components/captcha';
 
 export default function ForgotPage() {
   const router = useRouter();
@@ -18,12 +19,16 @@ export default function ForgotPage() {
   const isEmail = form.identifier.includes('@');
   const channel = isEmail ? 'email' : 'phone';
 
+  const [captcha, setCaptcha] = useState<CaptchaValue>({ captchaId: '', captchaAnswer: '' });
+  const [captchaRefresh, setCaptchaRefresh] = useState(0);
+
   const send = async () => {
+    if (!captcha.captchaAnswer.trim()) return toast.error('پاسخ کپچا را وارد کنید');
     setSending(true);
     try {
       const { data } = await api<{ devCode?: string }>('/auth/forgot-password', {
         method: 'POST',
-        body: { channel, target: form.identifier.trim(), purpose: 'reset_password' },
+        body: { channel, target: form.identifier.trim(), purpose: 'reset_password', ...captcha },
         auth: false,
       });
       setStep('reset');
@@ -31,6 +36,7 @@ export default function ForgotPage() {
       toast.success('کد بازنشانی ارسال شد');
     } catch (e) {
       toast.error((e as Error).message);
+      setCaptchaRefresh((k) => k + 1);
     } finally {
       setSending(false);
     }
@@ -79,6 +85,8 @@ export default function ForgotPage() {
             </Field>
           </>
         )}
+
+        {step === 'send' && <CaptchaField value={captcha} onChange={setCaptcha} refreshKey={captchaRefresh} />}
 
         <Button className="w-full" size="lg" loading={sending} onClick={step === 'send' ? send : reset} disabled={!form.identifier.trim()}>
           {step === 'send' ? 'ارسال کد' : 'تغییر رمز عبور'}
