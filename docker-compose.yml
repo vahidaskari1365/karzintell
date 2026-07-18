@@ -1,0 +1,124 @@
+# ============================================================================
+#  کارزینتل — زیرساخت محیط توسعه (Dev Infrastructure)
+#  اجرا:  docker compose up -d
+#  مشاهده وضعیت:  docker compose ps
+#  توقف:  docker compose down      (با حذف داده: docker compose down -v)
+# ============================================================================
+
+name: karzintell
+
+services:
+  # ------------------------------------------------------------- پایگاه‌داده
+  mysql:
+    image: mysql:8.0
+    container_name: karzintell-mysql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_0900_ai_ci
+      --default-time-zone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-karzintell}
+      MYSQL_USER: ${DB_USERNAME:-karzintell}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ کش/صف
+  redis:
+    image: redis:7-alpine
+    container_name: karzintell-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-secret}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secret}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ جستجو
+  meilisearch:
+    image: getmeili/meilisearch:v1.8
+    container_name: karzintell-meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey123}
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    restart: unless-stopped
+
+  # ---------------------------------------------------- ذخیره‌سازی فایل (S3)
+  minio:
+    image: minio/minio:latest
+    container_name: karzintell-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-karzintell}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-secret_secret_secret}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # کنسول مدیریت: http://localhost:9001
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ساخت باکت پیش‌فرض بعد از بالا آمدن MinIO
+  minio-init:
+    image: minio/mc:latest
+    container_name: karzintell-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set local http://minio:9000 ${S3_ACCESS_KEY:-karzintell} ${S3_SECRET_KEY:-secret_secret_secret};
+      /usr/bin/mc mb --ignore-existing local/${S3_BUCKET:-karzintell};
+      /usr/bin/mc anonymous set download local/${S3_BUCKET:-karzintell};
+      exit 0;
+      "
+
+  # ------------------------------------------------- رابط وب دیتابیس (توسعه)
+  adminer:
+    image: adminer:latest
+    container_name: karzintell-adminer
+    ports:
+      - "8080:8080"   # http://localhost:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --------------------------------------------------------- ایمیل (توسعه)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: karzintell-mailhog
+    ports:
+      - "8025:8025"   # صندوق ورودی: http://localhost:8025
+      - "1025:1025"   # SMTP
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+  meili_data:
+  minio_data:
