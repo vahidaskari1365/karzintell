@@ -44,20 +44,20 @@ const NEON_SEEDS: Array<[string, string, string]> = [
   ['72%', '30%', '.5s'], ['80%', '60%', '1.1s'], ['87%', '42%', '1.7s'], ['93%', '72%', '2.4s'],
 ];
 
-/** پس‌زمینه هدر: تصویر K نئونی با دریفت آرام + ذرات سبز درخشان ملایم */
-function NeonHeaderBg() {
+/** افکت روشن هدر: هاله‌های سبز کرمی ملایم + چند ذره درخشان ظریف روی شیشه سفید */
+function LightHeaderFx() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* تصویر نئونی K سمت چپ هدر */}
-      <div className="animate-neon-drift absolute inset-y-0 left-0 w-5/6 bg-[url('/assets/neon-k-bg.jpg')] bg-cover bg-right opacity-35 sm:w-2/3" />
-      {/* هاله سبز نبض‌دار وسط */}
-      <div className="animate-neon-pulse absolute -top-12 left-1/4 h-28 w-2/3 rounded-full bg-emerald-500/20 blur-3xl" />
-      {/* ذرات درخشان */}
+      {/* هاله سبز کرمی پشت لوگو */}
+      <div className="animate-neon-pulse absolute -top-10 right-0 h-24 w-72 rounded-full bg-emerald-300/30 blur-3xl" />
+      {/* هاله سبز خیلی ملایم سمت چپ */}
+      <div className="animate-neon-pulse absolute -top-6 left-1/4 h-20 w-56 rounded-full bg-teal-200/35 blur-3xl" style={{ animationDelay: '2.5s' }} />
+      {/* ذرات درخشان ظریف */}
       {NEON_SEEDS.map(([x, y, d], i) => (
-        <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d }} />
+        <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.5 }} />
       ))}
-      {/* محو به سمت راست برای خوانایی محتوا */}
-      <div className="absolute inset-0 bg-gradient-to-l from-[#03080c]/95 via-[#03080c]/45 to-transparent" />
+      {/* موی خط امضای سبز در لبه پایین هدر */}
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-l from-transparent via-emerald-400/70 to-transparent" />
     </div>
   );
 }
@@ -84,23 +84,23 @@ export function Header() {
   const canAdmin = user && (user.permissions === '*' || (Array.isArray(user.permissions) && user.permissions.includes('dashboard.view')));
 
   return (
-    <header className="sticky top-0 z-40 overflow-hidden border-b border-emerald-950/60 bg-[#03080c]/92 backdrop-blur">
-      <NeonHeaderBg />
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
+      <LightHeaderFx />
       <div className="relative z-10 mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
-        <button className="rounded-lg p-2 text-slate-300 hover:bg-white/10 lg:hidden" onClick={() => setMobileOpen(true)}>
+        <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setMobileOpen(true)}>
           <Menu className="h-5 w-5" />
         </button>
 
         <Link href="/" className="group flex items-center gap-2.5 transition-transform hover:scale-[1.03]">
           <BrandMark className="h-9 w-9" />
-          <BrandName dark />
+          <BrandName />
         </Link>
 
         {/* دسته‌بندی‌ها - دسکتاپ */}
         <nav className="hidden items-center gap-1 lg:flex">
           {(tree || []).slice(0, 5).map((c) => (
             <div key={c.id} className="group relative">
-              <Link href={`/categories/${c.slug}`} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-emerald-300 transition-colors">
+              <Link href={`/categories/${c.slug}`} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
                 {c.name}
                 {c.children?.length > 0 && <ChevronDown className="h-3.5 w-3.5" />}
               </Link>
@@ -124,7 +124,7 @@ export function Header() {
 
         <div className="ms-auto flex items-center gap-1">
           {user && <NotificationsBell />}
-          <Link href="/cart" className="relative rounded-xl p-2.5 text-slate-300 hover:bg-white/10 transition-colors">
+          <Link href="/cart" className="relative rounded-xl p-2.5 text-slate-600 hover:bg-slate-100 transition-colors">
             <ShoppingCart className="h-5.5 w-5.5" />
             {cartCount > 0 && (
               <span className="absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white">
@@ -135,7 +135,7 @@ export function Header() {
 
           {hydrated && user ? (
             <div className="group relative">
-              <button className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors">
+              <button className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
                 <UserIcon className="h-5 w-5" />
                 <span className="hidden max-w-28 truncate md:block">{user.fullName}</span>
                 <ChevronDown className="h-4 w-4" />
@@ -160,7 +160,7 @@ export function Header() {
               </div>
             </div>
           ) : (
-            <Link href="/login" className="rounded-xl bg-gradient-to-l from-emerald-500 to-green-600 px-4 py-2 text-sm font-bold text-slate-950 transition hover:brightness-110">
+            <Link href="/login" className="rounded-xl bg-gradient-to-l from-emerald-500 to-green-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-500/25 transition hover:brightness-105">
               ورود | ثبت‌نام
             </Link>
           )}
@@ -168,7 +168,7 @@ export function Header() {
       </div>
 
       {/* جستجوی موبایل */}
-      <div className="neon-search relative z-10 border-t border-white/10 px-4 py-2 md:hidden">
+      <div className="neon-search relative z-10 border-t border-slate-100 px-4 py-2 md:hidden">
         <SearchBox mobile onNavigate={() => setMobileOpen(false)} />
       </div>
 

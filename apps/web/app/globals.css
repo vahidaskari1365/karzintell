@@ -170,20 +170,36 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
   50%      { opacity: .8; transform: scale(1.07); }
 }
 
+/* شیشه روشن — کارت‌های شفاف روی زمینه روشن */
+.glass-light {
+  background: rgba(255, 255, 255, .82);
+  border: 1px solid rgba(226, 232, 240, .95);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 34px -14px rgba(15, 23, 42, .12);
+}
+
+/* زوم خیلی آرام برای پس‌زمینه‌ها (نفس‌کشیدن تصویر) */
+@keyframes soft-zoom {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+.animate-soft-zoom { animation: soft-zoom 34s ease-in-out infinite; }
+
 /* احترام به حساسیت به حرکت */
 @media (prefers-reduced-motion: reduce) {
-  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge { animation: none !important; }
+  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge, .animate-soft-zoom { animation: none !important; }
 }
 
 /* سرچ‌باکس شیشه‌ای روی هدر تیره */
 .neon-search input {
-  background: rgba(255,255,255,.07) !important;
-  border-color: rgba(74,222,128,.22) !important;
-  color: #e2e8f0 !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
-.neon-search input::placeholder { color: #64748b; }
+.neon-search input::placeholder { color: #94a3b8; }
 .neon-search input:focus {
   border-color: #34d399 !important;
-  background: rgba(255,255,255,.12) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .14) !important;
 }
-.neon-search svg { color: #34d399 !important; }
+.neon-search svg { color: #059669 !important; }
