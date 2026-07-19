@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-  BadgeCheck, ChevronDown, Cpu, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag, Smartphone,
+  BadgeCheck, BookOpen, Cable, ChevronDown, Cpu, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag, Smartphone,
   Sparkles, Star, Truck, Watch, Zap,
 } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { toToman, faNumber } from '@/lib/format';
 import { CategoryNode, ProductCardType } from '@/lib/types';
-import { framePushIn, frameWindow, useStickyProgress } from '@/lib/scroll-engine';
+import { frameWindow, useStickyProgress } from '@/lib/scroll-engine';
 import { ProductGrid } from '@/components/product-card';
 import { PageLoading } from '@/components/ui';
 import {
@@ -70,6 +70,17 @@ function CinematicHero() {
   const p = useStickyProgress(targetRef);
   const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
 
+  // ─── موشن‌گرفی اسکرول‌محور: هر حرکت مستقیم از انگشت کاربر فرمان می‌گیرد (مثل اسکراب تایم‌لاین فیلم) ───
+  const segT = 1 / total;
+  const H = segT * 0.24; // نیمه‌پهنای هم‌پوشانی کراس‌فید
+  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+  // شدت موج هر مرز: دقیقاً در لحظه‌ی تعویض صحنه اوج می‌گیرد و بعد آرام می‌خوابد — مثل ضرب‌آهنگ برش فیلم
+  const wave = (b: number) => clamp01((p - (b - H)) / (2 * H)) * (1 - clamp01((p - b) / segT));
+  const w1 = wave(segT);     // مرز اول: بازشدن درِ جعبه ← پرتوهای نور از شکاف
+  const w2 = wave(2 * segT); // مرز دوم: برخاستن محتویات به هوا
+  const w3 = wave(3 * segT); // مرز سوم: شوک‌ویو تولد صحنه‌ی نهایی
+  const glowBoost = Math.min(1, w1 + w2 + w3); // نور صحنه در اوج هر برش دم می‌گیرد
+
   const jumpTo = (i: number) => {
     const el = targetRef.current;
     if (!el) return;
@@ -84,12 +95,16 @@ function CinematicHero() {
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۸ پرو</h1>
 
       {/* ساختار دقیقاً هم‌الگو با اسکرول قفسه‌های پایین صفحه که روی دستگاه شما سالم کار می‌کند */}
-      <div className="sticky top-0 h-[100svh] overflow-hidden bg-[#eef1f1]">
-        {/* پایه‌ی روشن استودیویی پشت عکس‌های واقعی + هاله‌ی سبز ملایم برند برای لحظه‌ی لود */}
+      <div className="sticky top-0 h-[100svh] overflow-hidden bg-[radial-gradient(120%_95%_at_50%_12%,#1a2125_0%,#0c0f10_72%)]">
+        {/* صحنه‌ی ذغالی سینما + تقویت نور در اوج هر برش */}
         <div aria-hidden className="absolute inset-0">
-          <div className="absolute inset-x-0 bottom-0 top-[45%] bg-[radial-gradient(60%_55%_at_50%_78%,rgba(16,185,129,.12),transparent_70%)]" />
+          <div
+            className="absolute inset-x-0 bottom-0 top-[40%] bg-[radial-gradient(62%_58%_at_50%_76%,rgba(16,185,129,.18),transparent_72%)]"
+            style={{ opacity: 0.5 + glowBoost * 0.5 }}
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(130%_100%_at_50%_0%,transparent_56%,rgba(5,7,8,.62))]" />
           {CHARCOAL_SEEDS.map(([x, y, d], i) => (
-            <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.22 }} />
+            <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.35 }} />
           ))}
         </div>
 
@@ -98,35 +113,95 @@ function CinematicHero() {
           <link key={f.src} rel="preload" as="image" href={f.src} />
         ))}
 
-        {/* چهار فریم آنباکسینگ — الگوی عینِ قفسه‌ها: شفافیت از اسکرول + ترنزیشن ملایم */}
+        {/* چهار قاب واقعی — هر سکانس با ورود سه‌بعدیِ مختص خودش، هم‌ریتم با آنباکس واقعی */}
         {UNBOX_FRAMES.map((f, i) => {
           const active = i === idx;
+          const enter = i === 0 ? 1 : clamp01((p - (i * segT - H)) / (2 * H));            // روند ورود — دقیقاً همگام با کراس‌فید
+          const exit = i === total - 1 ? 0 : clamp01((p - ((i + 1) * segT - H)) / (2 * H)); // روند خروج — صحنه به‌سمت بیننده می‌آید
+          const local = clamp01((p - i * segT) / segT);                                   // پیشرفت داخل سکانس
+          // زبانه‌ی ورود هر صحنه — موشن‌گرفی همان لحظه‌ی آنباکس:
+          let enter3d = '';
+          if (i === 1) enter3d = ` translateY(${(1 - enter) * 90}px) rotateX(-${(1 - enter) * 16}deg)`; // درِ جعبه به‌سمت بیننده باز می‌شود و می‌نشیند
+          if (i === 2) enter3d = ` translateY(${(1 - enter) * 130}px) scale(${0.9 + enter * 0.1})`;     // محتویات از دلِ جعبه سربرمی‌آورند
+          if (i === 3) enter3d = ` scale(${0.78 + enter * 0.22}) rotate(${(1 - enter) * -6}deg)`;        // شات نهایی با ضرب تولد پیدا می‌کند
+          const driftY = (i % 2 === 0 ? 1 : -1) * local * 12;         // شناوری ظریف داخل صحنه — نفس کشیدن تصویر
+          const driftScale = 1 + local * 0.05 + exit * 0.08;          // دوربین آهسته نزدیک می‌شود؛ هنگام برش به‌سمت بیننده
           return (
             <div
               key={f.src}
               aria-hidden={!active}
-              className="absolute inset-0 bg-[#eef1f1] will-change-[opacity,transform]"
+              className="absolute inset-0 will-change-[opacity]"
               style={{
                 opacity: frameWindow(p, i, total, 0.24),
-                transform: framePushIn(p, i, total),
-                transition: 'opacity .18s linear, transform .12s linear',
+                transition: 'opacity .18s linear',
                 pointerEvents: active ? 'auto' : 'none',
                 zIndex: active ? 10 : 0,
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={f.src} alt={f.alt} draggable={false}
-                fetchPriority={i === 0 ? 'high' : undefined}
-                className="h-full w-full select-none object-cover object-center"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
-              />
+              <div className="flex h-full items-center justify-center px-4 pb-10" style={{ perspective: '1500px' }}>
+                <div
+                  className="relative w-[min(92vw,calc(54svh*1.4406))] sm:w-[min(74vw,calc(54svh*1.4406))] lg:w-[min(58vw,calc(56svh*1.4406))]"
+                  style={{
+                    aspectRatio: '1200/833',
+                    transform: `translateY(${driftY}px) scale(${driftScale})${enter3d}`,
+                    transformStyle: 'preserve-3d',
+                    transition: 'transform .12s linear',
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={f.src} alt={f.alt} draggable={false}
+                    fetchPriority={i === 0 ? 'high' : undefined}
+                    className="h-full w-full select-none rounded-[2rem] object-cover object-center shadow-[0_45px_140px_-18px_rgba(0,0,0,0.9)] ring-1 ring-white/15"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
+                  />
+                  {/* قاب نئون ظریف دور عکس */}
+                  <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[2rem] shadow-[inset_0_0_0_1px_rgba(16,185,129,0.10)]" />
+                </div>
+              </div>
             </div>
           );
         })}
 
-        {/* محو دودی ملایم پایین برای خوانایی کپشن روی عکس‌های روشن — خودِ عکس دست‌نخورده می‌ماند */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-60 bg-gradient-to-t from-[#0b0e0f]/70 via-[#0b0e0f]/25 to-transparent" />
+        {/* ─── موج ۱: پرتوهای نور از شکاف جعبه — هنگام بازشدن در ─── */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 top-[34%] z-[15]" style={{ opacity: w1 }}>
+          <div
+            className="absolute inset-x-[-25%] bottom-[16%] h-full bg-[conic-gradient(from_-90deg_at_50%_100%,transparent_0deg,rgba(74,222,128,0.30)_10deg,transparent_20deg,rgba(255,255,255,0.18)_28deg,transparent_38deg,rgba(16,185,129,0.26)_50deg,transparent_62deg)]"
+            style={{ transform: `scaleY(${0.35 + w1 * 0.75})`, transformOrigin: '50% 100%' }}
+          />
+          <div className="absolute inset-x-[34%] bottom-[24%] h-20 rounded-full bg-emerald-400/40 blur-3xl" />
+        </div>
+
+        {/* ─── موج ۲: کابل، دفترچه و گوشی از دلِ جعبه به هوا برمی‌خیزند ─── */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-[15]" style={{ opacity: w2 }}>
+          {[
+            { Icon: Cable, x: '22%', k: 1.0, r: -14 },
+            { Icon: Smartphone, x: '47%', k: 1.6, r: 6 },
+            { Icon: BookOpen, x: '70%', k: 0.8, r: 12 },
+          ].map(({ Icon, x, k, r }, n) => (
+            <Icon
+              key={n}
+              className="absolute h-9 w-9 text-emerald-200 drop-shadow-[0_0_16px_rgba(16,185,129,0.75)] sm:h-11 sm:w-11"
+              style={{ left: x, bottom: '22%', transform: `translateY(${-w2 * 150 * k}px) rotate(${r * w2}deg)`, transition: 'transform .16s linear' }}
+            />
+          ))}
+        </div>
+
+        {/* ─── موج ۳: حلقه‌ی شوک‌ویو + بارش ذرات — تولد شات نهایی ─── */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-[15]" style={{ opacity: w3 }}>
+          <div
+            className="absolute left-1/2 top-1/2 h-28 w-28 rounded-full border-2 border-emerald-300/80"
+            style={{ transform: `translate(-50%,-50%) scale(${0.3 + w3 * 3})`, opacity: 1 - w3 }}
+          />
+          <div className="absolute left-1/2 top-1/2 h-40 w-40 rounded-full bg-white/25 blur-2xl" style={{ transform: 'translate(-50%,-50%)', opacity: 0.5 * (1 - w3) }} />
+          {Array.from({ length: 12 }, (_, n) => (
+            <span
+              key={n}
+              className="absolute left-1/2 top-1/2 block h-1.5 w-1.5 rounded-full bg-emerald-200"
+              style={{ transform: `translate(-50%,-50%) rotate(${n * 30}deg) translateX(${w3 * (150 + (n % 4) * 45)}px)`, opacity: 1 - w3 }}
+            />
+          ))}
+        </div>
 
         {/* نشان رویداد بالای صحنه */}
         <div className="pointer-events-none absolute inset-x-0 top-7 z-20 text-center">
@@ -135,8 +210,9 @@ function CinematicHero() {
           </span>
         </div>
 
-        {/* کپشن هر سکانس — با تعویض صحنه دوباره پخش می‌شود */}
+        {/* کپشن هر سکانس — حباب شیشه‌ای روی صحنه‌ی ذغالی؛ با تعویض صحنه دوباره پخش می‌شود */}
         <div key={idx} className="animate-caption-in absolute bottom-28 right-6 z-20 max-w-sm text-right sm:bottom-24 sm:right-14">
+          <div className="rounded-2xl bg-[#0b0f10]/60 p-4 ring-1 ring-white/10 backdrop-blur-md sm:p-5">
           <span className="text-2xs font-black tracking-[0.25em] text-emerald-400">{copy.step}</span>
           <h2 className="mt-2 text-3xl font-black leading-snug text-white sm:text-4xl">{copy.title}</h2>
           <p className="mt-3 text-xs leading-7 text-slate-300/90 sm:text-sm sm:leading-7">{copy.desc}</p>
@@ -161,6 +237,7 @@ function CinematicHero() {
               </Magnetic>
             </div>
           )}
+          </div>
         </div>
 
         {/* ناوبری سکانس‌ها — سمت چپ */}
