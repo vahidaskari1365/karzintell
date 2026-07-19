@@ -116,7 +116,7 @@ function CinematicHero() {
         {/* نشان رویداد بالای صحنه */}
         <div className="pointer-events-none absolute inset-x-0 top-7 z-20 text-center">
           <span className="glass-dark inline-flex items-center gap-2 rounded-full px-5 py-1.5 text-2xs font-black tracking-[0.2em] text-emerald-300">
-            <Sparkles className="h-3.5 w-3.5" /> رویداد ویژه: سری پرو جدید
+            <Sparkles className="h-3.5 w-3.5" /> رویداد ویژهٔ کارزینتل: سری پرو جدید
           </span>
         </div>
 

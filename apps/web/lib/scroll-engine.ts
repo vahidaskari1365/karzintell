@@ -29,17 +29,24 @@ export function useStickyProgress(ref: { current: HTMLElement | null }) {
       raf = requestAnimationFrame(measure);
     };
     measure();
+    // چند اندازه‌گیری تکمیلی بعد از لود — اگر فونت/تصویر چیدمان را جابه‌جا کند، هیچ‌وقت گیر نمی‌کنیم
+    const t1 = window.setTimeout(measure, 120);
+    const t2 = window.setTimeout(measure, 500);
     // هر دو سطح گوش می‌دهیم (برخی مرورگرها/کانتینرها scroll را حبابی نمی‌کنند)
     window.addEventListener('scroll', onScroll, { passive: true });
     document.addEventListener('scroll', onScroll, { passive: true, capture: true });
     window.addEventListener('resize', onScroll);
+    window.addEventListener('load', onScroll);
     // فال‌بک بازه‌ای — حتی اگر رویدادی از قلم بیفتد، پیشرفت هرگز گیر نمی‌کند
-    const iv = window.setInterval(measure, 350);
+    const iv = window.setInterval(measure, 300);
     return () => {
       window.removeEventListener('scroll', onScroll);
       document.removeEventListener('scroll', onScroll, { capture: true } as EventListenerOptions);
       window.removeEventListener('resize', onScroll);
+      window.removeEventListener('load', onScroll);
       window.clearInterval(iv);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
       cancelAnimationFrame(raf);
     };
   }, [ref]);
