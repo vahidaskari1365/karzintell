@@ -11,6 +11,7 @@ import {
 import { api, qs } from '@/lib/api-client';
 import { toToman, faNumber } from '@/lib/format';
 import { CategoryNode, ProductCardType } from '@/lib/types';
+import { framePushIn, frameWindow, useStickyProgress } from '@/lib/scroll-engine';
 import { ProductGrid } from '@/components/product-card';
 import { PageLoading } from '@/components/ui';
 import {
@@ -38,71 +39,8 @@ const GT = ({ children }: { children: React.ReactNode }) => (
   <span className="bg-gradient-to-l from-emerald-600 via-green-500 to-teal-500 bg-clip-text text-transparent">{children}</span>
 );
 
-/* =================================================
-   موتور اسکرول استیکی — مستقل از هر فریمورک انیمیشن
-   با رویداد خام مرورگر + requestAnimationFrame؛
-   روی تمام مرورگرها (موبایل و دسکتاپ) قطعی کار می‌کند.
-   ================================================= */
-function useStickyProgress(ref: { current: HTMLElement | null }) {
-  const [p, setP] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const measure = () => {
-      const el = ref.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const scrollable = el.offsetHeight - window.innerHeight;
-      const v = scrollable <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / scrollable));
-      setP(v);
-    };
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
-    measure();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [ref]);
-  return p;
-}
-
-/* پنجره‌ی شفافیت هر فریم/صحنه — کراس‌فید پیوسته کوپل با اسکرول */
-function frameWindow(p: number, i: number, total: number, fadeRatio = 0.3) {
-  const seg = 1 / total;
-  const start = i * seg;
-  const end = start + seg;
-  const fade = seg * fadeRatio;
-  if (i === 0) {
-    if (p <= end - fade) return 1;
-    if (p >= end) return 0;
-    return 1 - (p - (end - fade)) / fade;
-  }
-  if (i === total - 1) {
-    if (p <= start) return 0;
-    if (p >= start + fade) return 1;
-    return (p - start) / fade;
-  }
-  if (p <= start || p >= end) return 0;
-  if (p < start + fade) return (p - start) / fade;
-  if (p > end - fade) return 1 - (p - (end - fade)) / fade;
-  return 1;
-}
-
-/* حرکت لنز دوربین (پوش‌این) برای هر فریم */
-function framePushIn(p: number, i: number, total: number) {
-  const seg = 1 / total;
-  const local = Math.min(1, Math.max(0, (p - i * seg) / seg));
-  const scale = 1.06 - local * 0.06;
-  const y = i === 0 ? -local * 12 : (1 - local) * 16 - 8;
-  return `translateY(${y}px) scale(${scale})`;
-}
-
 // =============================================================== هیرو — آنباکسینگ سینمایی آیفون ۱۷ پرو (زمینه ذغالی)
+/* موتور اسکرول: lib/scroll-engine.ts (رویداد خام + rAF + فال‌بک، کراس‌فید متقاطع واقعی) */
 /* سه اسکرول = سه سکانس: بازشدن درِ جعبه → بیرون‌آمدن محتویات → پرده‌برداری از گوشی */
 const UNBOX_FRAMES = [
   { src: '/assets/unbox/ic1-closed.jpg', alt: 'جعبه سفید آیفون ۱۷ پرو با عکس گوشی روی بدنه، روی میز ذغالی' },
@@ -162,7 +100,7 @@ function CinematicHero() {
             aria-hidden={i !== idx}
             className="absolute inset-0 will-change-[opacity,transform]"
             style={{
-              opacity: frameWindow(p, i, total, 0.34),
+              opacity: frameWindow(p, i, total, 0.24),
               transform: framePushIn(p, i, total),
               zIndex: i === idx ? 10 : 0,
             }}
@@ -434,7 +372,7 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
               aria-hidden={!active}
               className="absolute inset-0 will-change-[opacity,transform]"
               style={{
-                opacity: frameWindow(p, i, n, 0.26),
+                opacity: frameWindow(p, i, n, 0.24),
                 transform: `translateY(${active ? 0 : 26}px) scale(${active ? 1 : 0.97})`,
                 transition: 'opacity .18s linear, transform .3s ease-out',
                 pointerEvents: active ? 'auto' : 'none',
