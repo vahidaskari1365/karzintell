@@ -65,7 +65,7 @@ const CHARCOAL_SEEDS: Array<[string, string, string]> = [
 ];
 
 function CinematicHero() {
-  const total = UNBOX_FRAMES.length; // 4 فریم = 3 اسکرول
+  const total = UNBOX_FRAMES.length; // ۴ فریم = ۳ اسکرول
   const targetRef = useRef<HTMLElement | null>(null);
   const p = useStickyProgress(targetRef);
   const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
@@ -83,6 +83,7 @@ function CinematicHero() {
     <section ref={targetRef} className={`${FULL}`} style={{ height: `${total * 100 + 35}vh` }}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۷ پرو</h1>
 
+      {/* ساختار دقیقاً هم‌الگو با اسکرول قفسه‌های پایین صفحه که روی دستگاه شما سالم کار می‌کند */}
       <div className="cinema-grain sticky top-0 h-[100svh] overflow-hidden bg-[#14171a]">
         {/* نور صحنه: پایه نور سبز زیر محصول + وینیت ذغالی */}
         <div aria-hidden className="absolute inset-0">
@@ -93,32 +94,37 @@ function CinematicHero() {
           ))}
         </div>
 
-        {/* پیش‌بارگذاری هر ۴ فریم — قبل از اولین اسکرول آماده‌اند (React 19 این‌ها را به head می‌برد) */}
+        {/* پیش‌بارگذاری هر ۴ فریم — قبل از اولین اسکرول آماده‌اند */}
         {UNBOX_FRAMES.map((f) => (
           <link key={f.src} rel="preload" as="image" href={f.src} />
         ))}
 
-        {/* چهار فریم آنباکسینگ — شفافیت و حرکت، لحظه‌به‌لحظه از روی موقعیت اسکرول */}
-        {UNBOX_FRAMES.map((f, i) => (
-          <div
-            key={f.src}
-            aria-hidden={i !== idx}
-            className="absolute inset-0 bg-[#14171a] will-change-[opacity,transform]"
-            style={{
-              opacity: frameWindow(p, i, total, 0.24),
-              transform: framePushIn(p, i, total),
-              zIndex: i === idx ? 10 : 0,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={f.src} alt={f.alt} draggable={false}
-              fetchPriority={i === 0 ? 'high' : undefined}
-              className="h-full w-full select-none object-cover object-center"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
-            />
-          </div>
-        ))}
+        {/* چهار فریم آنباکسینگ — الگوی عینِ قفسه‌ها: شفافیت از اسکرول + ترنزیشن ملایم */}
+        {UNBOX_FRAMES.map((f, i) => {
+          const active = i === idx;
+          return (
+            <div
+              key={f.src}
+              aria-hidden={!active}
+              className="absolute inset-0 bg-[#14171a] will-change-[opacity,transform]"
+              style={{
+                opacity: frameWindow(p, i, total, 0.24),
+                transform: framePushIn(p, i, total),
+                transition: 'opacity .18s linear, transform .12s linear',
+                pointerEvents: active ? 'auto' : 'none',
+                zIndex: active ? 10 : 0,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={f.src} alt={f.alt} draggable={false}
+                fetchPriority={i === 0 ? 'high' : undefined}
+                className="h-full w-full select-none object-cover object-center"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
+              />
+            </div>
+          );
+        })}
 
         {/* محو پایین برای خوانایی کپشن */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#0a0d0e]/85 to-transparent" />
@@ -179,15 +185,15 @@ function CinematicHero() {
           <div className="h-full origin-right bg-gradient-to-l from-emerald-400 to-teal-300" style={{ transform: `scaleX(${p})` }} />
         </div>
 
-        {/* راهنمای اسکرول — فقط سکانس اول */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-slate-400"
-          animate={{ y: [0, 10, 0], opacity: idx === 0 ? 1 : 0 }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+        {/* راهنمای اسکرول — فقط سکانس اول (بدون کتابخانه؛ خالص CSS تا هیچ‌وقت گیر نکند) */}
+        <div
+          className={`absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 animate-bounce flex-col items-center gap-1 text-slate-400 transition-opacity duration-300 ${
+            idx === 0 ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
         >
           <span className="text-2xs font-bold">اسکرول کن — جعبه باز می‌شود</span>
           <ChevronDown className="h-5 w-5" />
-        </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -1,6 +1,23 @@
-// سرویس‌ورکر کارزینتل — اعلان‌های مرورگر (Web Push)
+// سرویس‌ورکر کارزینتل — اعلان‌های مرورگر (Web Push) + HTML همیشه تازه از شبکه
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))));
+});
+
+// صفحه‌ها هرگز از کش قدیمی خوانده نمی‌شوند — اول شبکه، فقط در قطعیِ اینترنت کش
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open('kz-pages-v1').then((c) => c.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
+  }
 });
 
 self.addEventListener('activate', (event) => {
