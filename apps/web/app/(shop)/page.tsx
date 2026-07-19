@@ -208,16 +208,24 @@ function CinematicHero() {
           ))}
         </div>
 
-        {/* تنها نوشته‌ی هیرو — پیام برند کارزینتل، همیشه بالای صحنه می‌درخشد */}
-        <div className="pointer-events-none absolute inset-x-0 top-8 z-20 flex justify-center px-4">
-          <div className="animate-caption-in rounded-full bg-[#0b0f10]/55 px-7 py-2.5 text-center ring-1 ring-white/10 backdrop-blur-md">
-            <span className="text-sm font-black text-white sm:text-base">
-              کارزینتل؛ <span className="text-emerald-400">جایی که فناوری، اصل است</span>
-            </span>
-            <span className="mt-0.5 hidden text-2xs text-slate-300/85 sm:block">
-              موبایل، ساعت هوشمند، هدفون و لوازم جانبی — با گارانتی رسمی و ارسال سریع
-            </span>
-          </div>
+        {/* دو پیام برند در دو سوی صحنه — ثابت در کنار همه‌ی سکانس‌ها */}
+        <div className="pointer-events-none absolute right-6 top-1/2 z-20 hidden max-w-[15rem] -translate-y-1/2 text-right drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)] lg:block xl:right-16 xl:max-w-[17rem]">
+          <span className="mb-3 block h-0.5 w-12 rounded-full bg-gradient-to-l from-emerald-400 to-transparent" />
+          <h2 className="animate-caption-in text-2xl font-black leading-snug text-white xl:text-3xl">
+            کارزینتل؛ <span className="text-emerald-400">قلب تپنده‌ی تکنولوژی</span>
+          </h2>
+          <p className="mt-3 text-xs leading-6 text-slate-300/90 xl:text-sm xl:leading-7">
+            هر قطعه با ضمانت اصالت و ارسال سریع به دست تو
+          </p>
+        </div>
+        <div className="pointer-events-none absolute left-6 top-1/2 z-20 hidden max-w-[15rem] -translate-y-1/2 text-right drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)] lg:block xl:left-16 xl:max-w-[17rem]">
+          <span className="mb-3 block h-0.5 w-12 rounded-full bg-gradient-to-r from-emerald-400 to-transparent" />
+          <h2 className="animate-caption-in text-2xl font-black leading-snug text-white xl:text-3xl" style={{ animationDelay: '.15s' }}>
+            همه‌ی دنیای دیجیتال، <span className="text-emerald-400">یک‌جا</span>
+          </h2>
+          <p className="mt-3 text-xs leading-6 text-slate-300/90 xl:text-sm xl:leading-7">
+            از جدیدترین گوشی‌ها تا خاص‌ترین وسایل جانبی
+          </p>
         </div>
 
         {/* سکانس پایانی: فقط دکمه‌های خرید، تمیز و مینیمال — مرکز پایین صحنه */}
