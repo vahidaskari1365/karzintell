@@ -18,7 +18,7 @@ export function NotificationsBell() {
   });
 
   return (
-    <Link href="/account/notifications" className="relative rounded-xl p-2.5 text-slate-300 hover:bg-white/10 transition-colors">
+    <Link href="/account/notifications" className="relative rounded-xl p-2.5 text-slate-600 hover:bg-black/5 transition-colors">
       <Bell className="h-5.5 w-5.5" />
       {(data || 0) > 0 && (
         <span className="absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">

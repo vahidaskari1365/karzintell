@@ -49,7 +49,7 @@ function LightHeaderFx() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       {/* هاله سبز کرمی پشت لوگو */}
-      <div className="animate-neon-pulse absolute -top-10 right-0 h-24 w-72 rounded-full bg-emerald-500/100/20 blur-3xl" />
+      <div className="animate-neon-pulse absolute -top-10 right-0 h-24 w-72 rounded-full bg-emerald-500/25 blur-3xl" />
       {/* هاله سبز خیلی ملایم سمت چپ */}
       <div className="animate-neon-pulse absolute -top-6 left-1/4 h-20 w-56 rounded-full bg-teal-500/15 blur-3xl" style={{ animationDelay: '2.5s' }} />
       {/* ذرات درخشان ظریف */}
@@ -84,10 +84,10 @@ export function Header() {
   const canAdmin = user && (user.permissions === '*' || (Array.isArray(user.permissions) && user.permissions.includes('dashboard.view')));
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#121518]/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-[#eef3f0]/72 backdrop-blur-xl">
       <LightHeaderFx />
       <div className="relative z-10 mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
-        <button className="rounded-lg p-2 text-slate-300 hover:bg-white/10 lg:hidden" onClick={() => setMobileOpen(true)}>
+        <button className="rounded-lg p-2 text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700 lg:hidden" onClick={() => setMobileOpen(true)}>
           <Menu className="h-5 w-5" />
         </button>
 
@@ -100,14 +100,14 @@ export function Header() {
         <nav className="hidden items-center gap-1 lg:flex">
           {(tree || []).slice(0, 5).map((c) => (
             <div key={c.id} className="group relative">
-              <Link href={`/categories/${c.slug}`} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-emerald-300 transition-colors">
+              <Link href={`/categories/${c.slug}`} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-emerald-600/10 hover:text-emerald-700 transition-colors">
                 {c.name}
                 {c.children?.length > 0 && <ChevronDown className="h-3.5 w-3.5" />}
               </Link>
               {c.children?.length > 0 && (
-                <div className="invisible absolute right-0 top-full z-50 min-w-44 rounded-xl border border-white/10 bg-[#191d21] p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                <div className="invisible absolute right-0 top-full z-50 min-w-44 rounded-xl border border-black/[0.06] bg-white/92 backdrop-blur-xl p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
                   {c.children.map((ch) => (
-                    <Link key={ch.id} href={`/categories/${ch.slug}`} className="block rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10">
+                    <Link key={ch.id} href={`/categories/${ch.slug}`} className="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700">
                       {ch.name}
                     </Link>
                   ))}
@@ -124,7 +124,7 @@ export function Header() {
 
         <div className="ms-auto flex items-center gap-1">
           {user && <NotificationsBell />}
-          <Link href="/cart" className="relative rounded-xl p-2.5 text-slate-300 hover:bg-white/10 transition-colors">
+          <Link href="/cart" className="relative rounded-xl p-2.5 text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700 transition-colors">
             <ShoppingCart className="h-5.5 w-5.5" />
             {cartCount > 0 && (
               <span className="absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white">
@@ -135,26 +135,26 @@ export function Header() {
 
           {hydrated && user ? (
             <div className="group relative">
-              <button className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-200 hover:bg-white/10 transition-colors">
+              <button className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 hover:bg-black/5 transition-colors">
                 <UserIcon className="h-5 w-5" />
                 <span className="hidden max-w-28 truncate md:block">{user.fullName}</span>
                 <ChevronDown className="h-4 w-4" />
               </button>
-              <div className="invisible absolute end-0 top-full z-50 w-52 rounded-xl border border-white/10 bg-[#191d21] p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                <Link href="/account" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10"><UserIcon className="h-4 w-4" /> حساب کاربری</Link>
-                <Link href="/account/orders" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10"><Package className="h-4 w-4" /> سفارش‌ها</Link>
-                <Link href="/account/wishlist" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10"><Heart className="h-4 w-4" /> علاقه‌مندی‌ها</Link>
-                <Link href="/compare" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10"><Scale className="h-4 w-4" /> مقایسه محصولات</Link>
-                <Link href="/account/wallet" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10"><Wallet className="h-4 w-4" /> کیف پول</Link>
-                <Link href="/account/tickets" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10"><Ticket className="h-4 w-4" /> تیکت‌ها</Link>
+              <div className="invisible absolute end-0 top-full z-50 w-52 rounded-xl border border-black/[0.06] bg-white/92 backdrop-blur-xl p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
+                <Link href="/account" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700"><UserIcon className="h-4 w-4" /> حساب کاربری</Link>
+                <Link href="/account/orders" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700"><Package className="h-4 w-4" /> سفارش‌ها</Link>
+                <Link href="/account/wishlist" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700"><Heart className="h-4 w-4" /> علاقه‌مندی‌ها</Link>
+                <Link href="/compare" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700"><Scale className="h-4 w-4" /> مقایسه محصولات</Link>
+                <Link href="/account/wallet" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700"><Wallet className="h-4 w-4" /> کیف پول</Link>
+                <Link href="/account/tickets" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700"><Ticket className="h-4 w-4" /> تیکت‌ها</Link>
                 {canAdmin && (
                   <>
-                    <div className="my-1 border-t border-white/10" />
-                    <Link href="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10"><LayoutDashboard className="h-4 w-4" /> پنل مدیریت</Link>
+                    <div className="my-1 border-t border-black/[0.07]" />
+                    <Link href="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-emerald-600/10 hover:text-emerald-700"><LayoutDashboard className="h-4 w-4" /> پنل مدیریت</Link>
                   </>
                 )}
-                <div className="my-1 border-t border-white/10" />
-                <button onClick={logout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-rose-400 hover:bg-rose-500/10">
+                <div className="my-1 border-t border-black/[0.07]" />
+                <button onClick={logout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-rose-600 hover:bg-rose-500/10">
                   <LogOut className="h-4 w-4" /> خروج از حساب
                 </button>
               </div>
@@ -168,7 +168,7 @@ export function Header() {
       </div>
 
       {/* جستجوی موبایل */}
-      <div className="neon-search relative z-10 border-t border-white/10 px-4 py-2 md:hidden">
+      <div className="neon-search relative z-10 border-t border-black/[0.07] px-4 py-2 md:hidden">
         <SearchBox mobile onNavigate={() => setMobileOpen(false)} />
       </div>
 
@@ -176,18 +176,18 @@ export function Header() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} />
-          <div className="absolute inset-y-0 start-0 w-72 overflow-y-auto bg-[#191d21] p-4 shadow-2xl">
+          <div className="absolute inset-y-0 start-0 w-72 overflow-y-auto bg-white/95 p-4 shadow-2xl backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
               <span className="font-bold">دسته‌بندی‌ها</span>
-              <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 hover:bg-white/10"><X className="h-5 w-5" /></button>
+              <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 text-slate-700 hover:bg-black/5"><X className="h-5 w-5" /></button>
             </div>
             {(tree || []).map((c) => (
               <div key={c.id} className="mb-1">
-                <Link href={`/categories/${c.slug}`} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10">
+                <Link href={`/categories/${c.slug}`} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-emerald-600/10 hover:text-emerald-700">
                   {c.name}
                 </Link>
                 {c.children?.map((ch) => (
-                  <Link key={ch.id} href={`/categories/${ch.slug}`} onClick={() => setMobileOpen(false)} className="block rounded-lg px-6 py-1.5 text-sm text-slate-400 hover:bg-white/10">
+                  <Link key={ch.id} href={`/categories/${ch.slug}`} onClick={() => setMobileOpen(false)} className="block rounded-lg px-6 py-1.5 text-sm text-slate-500 hover:bg-emerald-600/10">
                     {ch.name}
                   </Link>
                 ))}

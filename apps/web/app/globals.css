@@ -242,14 +242,14 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 
 /* سرچ‌باکس شیشه‌ای روی هدر ذغالی */
 .neon-search input {
-  background: rgba(255, 255, 255, .06) !important;
-  border-color: rgba(255, 255, 255, .12) !important;
-  color: #e6ece8 !important;
+  background: rgba(255, 255, 255, .62) !important;
+  border-color: rgba(9, 15, 12, .16) !important;
+  color: #1f2b26 !important;
 }
-.neon-search input::placeholder { color: #7d8a93; }
+.neon-search input::placeholder { color: #8a988f; }
 .neon-search input:focus {
-  border-color: #34d399 !important;
-  background: rgba(255, 255, 255, .08) !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, .22) !important;
+  border-color: #059669 !important;
+  background: rgba(255, 255, 255, .85) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, .25) !important;
 }
-.neon-search svg { color: #34d399 !important; }
+.neon-search svg { color: #059669 !important; }
