@@ -84,7 +84,7 @@ function CinematicHero() {
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۷ پرو</h1>
 
       {/* ساختار دقیقاً هم‌الگو با اسکرول قفسه‌های پایین صفحه که روی دستگاه شما سالم کار می‌کند */}
-      <div className="cinema-grain sticky top-0 h-[100svh] overflow-hidden bg-[#14171a]">
+      <div className="sticky top-0 h-[100svh] overflow-hidden bg-[#14171a]">
         {/* نور صحنه: پایه نور سبز زیر محصول + وینیت ذغالی */}
         <div aria-hidden className="absolute inset-0">
           <div className="absolute inset-x-0 bottom-0 top-[45%] bg-[radial-gradient(60%_55%_at_50%_78%,rgba(16,185,129,.16),transparent_70%)]" />
