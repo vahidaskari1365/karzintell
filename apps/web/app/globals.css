@@ -199,6 +199,13 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
   background-size: 22px 22px;
 }
 
+/* ورود نرم کپشن‌های سکانس آنباکسینگ */
+@keyframes caption-in {
+  from { opacity: 0; transform: translateY(22px); filter: blur(5px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+.animate-caption-in { animation: caption-in .55s cubic-bezier(.22, 1, .36, 1) both; }
+
 /* احترام به حساسیت به حرکت */
 @media (prefers-reduced-motion: reduce) {
   .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge, .animate-soft-zoom, .animate-aurora { animation: none !important; }

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { AnimatePresence, motion, MotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   BadgeCheck, ChevronDown, Cpu, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag, Smartphone,
   Sparkles, Star, Truck, Watch, Zap,
@@ -38,78 +38,99 @@ const GT = ({ children }: { children: React.ReactNode }) => (
   <span className="bg-gradient-to-l from-emerald-600 via-green-500 to-teal-500 bg-clip-text text-transparent">{children}</span>
 );
 
+/* =================================================
+   موتور اسکرول استیکی — مستقل از هر فریمورک انیمیشن
+   با رویداد خام مرورگر + requestAnimationFrame؛
+   روی تمام مرورگرها (موبایل و دسکتاپ) قطعی کار می‌کند.
+   ================================================= */
+function useStickyProgress(ref: { current: HTMLElement | null }) {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const scrollable = el.offsetHeight - window.innerHeight;
+      const v = scrollable <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / scrollable));
+      setP(v);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [ref]);
+  return p;
+}
+
+/* پنجره‌ی شفافیت هر فریم/صحنه — کراس‌فید پیوسته کوپل با اسکرول */
+function frameWindow(p: number, i: number, total: number, fadeRatio = 0.3) {
+  const seg = 1 / total;
+  const start = i * seg;
+  const end = start + seg;
+  const fade = seg * fadeRatio;
+  if (i === 0) {
+    if (p <= end - fade) return 1;
+    if (p >= end) return 0;
+    return 1 - (p - (end - fade)) / fade;
+  }
+  if (i === total - 1) {
+    if (p <= start) return 0;
+    if (p >= start + fade) return 1;
+    return (p - start) / fade;
+  }
+  if (p <= start || p >= end) return 0;
+  if (p < start + fade) return (p - start) / fade;
+  if (p > end - fade) return 1 - (p - (end - fade)) / fade;
+  return 1;
+}
+
+/* حرکت لنز دوربین (پوش‌این) برای هر فریم */
+function framePushIn(p: number, i: number, total: number) {
+  const seg = 1 / total;
+  const local = Math.min(1, Math.max(0, (p - i * seg) / seg));
+  const scale = 1.06 - local * 0.06;
+  const y = i === 0 ? -local * 12 : (1 - local) * 16 - 8;
+  return `translateY(${y}px) scale(${scale})`;
+}
+
 // =============================================================== هیرو — آنباکسینگ سینمایی آیفون ۱۷ پرو (زمینه ذغالی)
 /* سه اسکرول = سه سکانس: بازشدن درِ جعبه → بیرون‌آمدن محتویات → پرده‌برداری از گوشی */
 const UNBOX_FRAMES = [
   { src: '/assets/unbox/ic1-closed.jpg', alt: 'جعبه سفید آیفون ۱۷ پرو با عکس گوشی روی بدنه، روی میز ذغالی' },
   { src: '/assets/unbox/ib2-opening.jpg', alt: 'درِ جعبه آیفون در حال باز شدن با نور سبز و ذرات نورانی' },
   { src: '/assets/unbox/ib3-accessories.jpg', alt: 'کابل بافت سفید و لوازم آیفون شناور بالای جعبه باز' },
-  { src: '/assets/unbox/id4-phone.jpg', alt: 'آیفون ۱۷ پرو سبز با نوار دوربین برآمده تمام‌عرض، ایستاده با نور سبز' },
+  { src: '/assets/unbox/id4-phone.jpg', alt: 'آیفون ۱۷ پرو سبز با نوار دوربین برآمده سه‌لنزه، ایستاده با نور سبز' },
 ];
 
 const UNBOX_COPY = [
-  {
-    step: 'رویداد ویژه',
-    title: 'جعبه روی میز است…',
-    desc: 'فقط سه اسکرول با تجربه‌ی یک آنباکسینگ واقعی فاصله داری.',
-  },
-  {
-    step: 'اسکرول اول',
-    title: 'درِ جعبه باز شد.',
-    desc: 'نوری که از این شکاف بیرون می‌زند، از دلِ فناوری است.',
-  },
-  {
-    step: 'اسکرول دوم',
-    title: 'همه‌چیز سر جای خودش.',
-    desc: 'کابل بافت USB-C، پین سیم‌کارت و شناسنامه‌ی دستگاه — مرتب و آماده.',
-  },
-  {
-    step: 'اسکرول سوم',
-    title: 'آیفون ۱۷ پرو رسید.',
-    desc: 'پرچمدار جدید، همین حالا در قفسه‌ی کارزینتل — با گارانتی رسمی و قیمت رقابتی.',
-  },
+  { step: 'رویداد ویژه', title: 'جعبه روی میز است…', desc: 'فقط سه اسکرول با تجربه‌ی یک آنباکسینگ واقعی فاصله داری.' },
+  { step: 'اسکرول اول', title: 'درِ جعبه باز شد.', desc: 'نوری که از این شکاف بیرون می‌زند، از دلِ فناوری است.' },
+  { step: 'اسکرول دوم', title: 'همه‌چیز سر جای خودش.', desc: 'کابل بافت USB-C، پین سیم‌کارت و شناسنامه‌ی دستگاه — مرتب و آماده.' },
+  { step: 'اسکرول سوم', title: 'آیفون ۱۷ پرو رسید.', desc: 'پرچمدار جدید، همین حالا در قفسه‌ی کارزینتل — با گارانتی رسمی و قیمت رقابتی.' },
 ];
 
 const UNBOX_DOT_LABELS = ['جعبه', 'بازشدن', 'محتویات', 'دستگاه'];
 
-/* ذرات ذغالی‌رنگ برای فضای صحنه */
+/* ذرات ظریف برای فضای صحنه */
 const CHARCOAL_SEEDS: Array<[string, string, string]> = [
   ['12%', '30%', '0s'], ['20%', '68%', '1.2s'], ['33%', '22%', '.8s'], ['82%', '26%', '1.5s'],
   ['90%', '58%', '.5s'], ['72%', '80%', '2s'], ['45%', '15%', '1.8s'], ['8%', '82%', '2.3s'],
 ];
 
-/** هر فریم تصویر — کوپل با خودِ اسکرول: کراس‌فید + پوش‌این لنز */
-function UnboxFrame({ progress, idx, total, src, alt }: { progress: MotionValue<number>; idx: number; total: number; src: string; alt: string }) {
-  const seg = 1 / total;
-  const start = idx * seg;
-  const tIn = start + (idx === 0 ? 0 : seg * 0.34);
-  const tOut = start + seg - (idx === total - 1 ? 0 : seg * 0.34);
-  const end = start + seg;
-
-  const opacity = useTransform(
-    progress,
-    idx === 0 ? [0, tOut, end] : idx === total - 1 ? [start, tIn, 1] : [start, tIn, tOut, end],
-    idx === 0 ? [1, 1, 0] : idx === total - 1 ? [0, 1, 1] : [0, 1, 1, 0],
-  );
-  const scale = useTransform(progress, [start, end], [1.02, 1.08]);
-  const y = useTransform(progress, [start, end], [idx === 0 ? 0 : 22, -20]);
-
-  return (
-    <motion.div style={{ opacity, scale, y }} className="absolute inset-0">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} draggable={false} className="h-full w-full select-none object-cover object-center" />
-    </motion.div>
-  );
-}
-
 function CinematicHero() {
   const total = UNBOX_FRAMES.length; // 4 فریم = 3 اسکرول
-  const targetRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
-  const [idx, setIdx] = useState(0);
-  useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    setIdx(Math.min(total - 1, Math.max(0, Math.floor(v * total))));
-  });
+  const targetRef = useRef<HTMLElement | null>(null);
+  const p = useStickyProgress(targetRef);
+  const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
 
   const jumpTo = (i: number) => {
     const el = targetRef.current;
@@ -121,7 +142,7 @@ function CinematicHero() {
 
   const copy = UNBOX_COPY[idx];
   return (
-    <section ref={targetRef} className={`${FULL} relative`} style={{ height: `${total * 100 + 35}vh` }}>
+    <section ref={targetRef} className={`${FULL}`} style={{ height: `${total * 100 + 35}vh` }}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۷ پرو</h1>
 
       <div className="cinema-grain sticky top-0 h-[100svh] overflow-hidden bg-[#14171a]">
@@ -134,9 +155,21 @@ function CinematicHero() {
           ))}
         </div>
 
-        {/* چهار فریم آنباکسینگ */}
+        {/* چهار فریم آنباکسینگ — شفافیت و حرکت، لحظه‌به‌لحظه از روی موقعیت اسکرول */}
         {UNBOX_FRAMES.map((f, i) => (
-          <UnboxFrame key={f.src} progress={scrollYProgress} idx={i} total={total} src={f.src} alt={f.alt} />
+          <div
+            key={f.src}
+            aria-hidden={i !== idx}
+            className="absolute inset-0 will-change-[opacity,transform]"
+            style={{
+              opacity: frameWindow(p, i, total, 0.34),
+              transform: framePushIn(p, i, total),
+              zIndex: i === idx ? 10 : 0,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={f.src} alt={f.alt} draggable={false} className="h-full w-full select-none object-cover object-center" />
+          </div>
         ))}
 
         {/* محو پایین برای خوانایی کپشن */}
@@ -149,47 +182,33 @@ function CinematicHero() {
           </span>
         </div>
 
-        {/* کپشن هر سکانس — با تعویض صحنه، نرم عوض می‌شود */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 30, filter: 'blur(6px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -22, filter: 'blur(6px)' }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-28 right-6 z-20 max-w-sm text-right sm:bottom-24 sm:right-14"
-          >
-            <span className="text-2xs font-black tracking-[0.25em] text-emerald-400">{copy.step}</span>
-            <h2 className="mt-2 text-3xl font-black leading-snug text-white sm:text-4xl">{copy.title}</h2>
-            <p className="mt-3 text-xs leading-7 text-slate-300/90 sm:text-sm sm:leading-7">{copy.desc}</p>
+        {/* کپشن هر سکانس — با تعویض صحنه دوباره پخش می‌شود */}
+        <div key={idx} className="animate-caption-in absolute bottom-28 right-6 z-20 max-w-sm text-right sm:bottom-24 sm:right-14">
+          <span className="text-2xs font-black tracking-[0.25em] text-emerald-400">{copy.step}</span>
+          <h2 className="mt-2 text-3xl font-black leading-snug text-white sm:text-4xl">{copy.title}</h2>
+          <p className="mt-3 text-xs leading-7 text-slate-300/90 sm:text-sm sm:leading-7">{copy.desc}</p>
 
-            {idx === total - 1 && (
-              <motion.div
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="mt-6 flex flex-wrap justify-end gap-3"
-              >
-                <Magnetic>
-                  <Link
-                    href="/search?category=mobile"
-                    className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:scale-105"
-                  >
-                    <ShoppingBag className="h-4.5 w-4.5" /> مشاهده و خرید
-                  </Link>
-                </Magnetic>
-                <Magnetic>
-                  <Link
-                    href="/search"
-                    className="glass-dark inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-slate-200 transition hover:border-emerald-400/40 hover:text-emerald-300"
-                  >
-                    ورود به فروشگاه
-                  </Link>
-                </Magnetic>
-              </motion.div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+          {idx === total - 1 && (
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <Magnetic>
+                <Link
+                  href="/search?category=mobile"
+                  className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:scale-105"
+                >
+                  <ShoppingBag className="h-4.5 w-4.5" /> مشاهده و خرید
+                </Link>
+              </Magnetic>
+              <Magnetic>
+                <Link
+                  href="/search"
+                  className="glass-dark inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-slate-200 transition hover:border-emerald-400/40 hover:text-emerald-300"
+                >
+                  ورود به فروشگاه
+                </Link>
+              </Magnetic>
+            </div>
+          )}
+        </div>
 
         {/* ناوبری سکانس‌ها — سمت چپ */}
         <div className="absolute left-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-4 md:flex">
@@ -209,7 +228,7 @@ function CinematicHero() {
 
         {/* خط پیشرفت پایین */}
         <div className="absolute inset-x-0 bottom-6 z-20 mx-auto h-1 w-56 overflow-hidden rounded-full bg-white/10">
-          <motion.div className="h-full origin-right bg-gradient-to-l from-emerald-400 to-teal-300" style={{ scaleX: scrollYProgress }} />
+          <div className="h-full origin-right bg-gradient-to-l from-emerald-400 to-teal-300" style={{ transform: `scaleX(${p})` }} />
         </div>
 
         {/* راهنمای اسکرول — فقط سکانس اول */}
@@ -343,38 +362,6 @@ function CategoryStage({ cat, items, isLoading, idx, total }: { cat: CategoryNod
   );
 }
 
-/** هر صحنه با خودِ اسکرول نرم ظاهر/محو می‌شود (crossfade پیوسته و کوپله با حرکت انگشت) */
-function StageView({ progress, idx, total, children, active }: { progress: MotionValue<number>; idx: number; total: number; children: React.ReactNode; active: boolean }) {
-  const seg = 1 / total;
-  const start = idx * seg;
-  const tIn = start + (idx === 0 ? 0 : seg * 0.22);
-  const tOut = start + seg - (idx === total - 1 ? 0 : seg * 0.22);
-  const end = start + seg;
-
-  const opacity = useTransform(
-    progress,
-    idx === 0 ? [0, tOut, end] : idx === total - 1 ? [start, tIn, 1] : [start, tIn, tOut, end],
-    idx === 0 ? [1, 1, 0] : idx === total - 1 ? [0, 1, 1] : [0, 1, 1, 0],
-  );
-  const y = useTransform(progress, [start, end], [idx === 0 ? 0 : 56, idx === total - 1 ? 0 : -56]);
-  const scale = useTransform(
-    progress,
-    idx === 0 ? [0, tOut, end] : idx === total - 1 ? [start, tIn, 1] : [start, tIn, tOut, end],
-    idx === 0 ? [1, 1, 0.965] : idx === total - 1 ? [0.965, 1, 1] : [0.965, 1, 1, 0.965],
-  );
-
-  if (total === 1) return <div className="absolute inset-0">{children}</div>;
-  return (
-    <motion.div
-      style={{ opacity, y, scale, pointerEvents: active ? 'auto' : 'none', zIndex: active ? 10 : 0 }}
-      aria-hidden={!active}
-      className="absolute inset-0"
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 /** دسته‌های پیش‌فرض — اگر API هنوز دسته‌ای برنگرداند، قفسه‌ها با این‌ها چیده می‌شوند */
 const FALLBACK_CATS: CategoryNode[] = [
   { id: -1, name: 'موبایل', slug: 'mobile', children: [] },
@@ -394,12 +381,9 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
     })
     .slice(0, 8);
   const n = Math.max(cats.length, 1);
-  const targetRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
-  const [idx, setIdx] = useState(0);
-  useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    setIdx(Math.min(n - 1, Math.max(0, Math.floor(v * n))));
-  });
+  const targetRef = useRef<HTMLElement | null>(null);
+  const p = useStickyProgress(targetRef);
+  const idx = Math.min(n - 1, Math.max(0, Math.floor(p * n)));
 
   /* پیش‌بارگذاری محصولات همه قفسه‌ها (موازی) */
   const stageQueries = useQueries({
@@ -423,7 +407,7 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
 
   if (!cats.length) return null;
   return (
-    <section ref={targetRef} className={`${FULL} relative`} style={{ height: `${n * 85 + 30}vh` }}>
+    <section ref={targetRef} className={`${FULL}`} style={{ height: `${n * 85 + 30}vh` }}>
       <div className="sticky top-0 h-[100svh] overflow-hidden bg-gradient-to-br from-[#e2e7e4] via-[#edf1ee] to-[#dde4e0]">
         {/* بافت روشن با عمق — نقطه‌چین + هاله‌های سبز کرمی (بدون عکس) */}
         <div aria-hidden className="absolute inset-0">
@@ -441,18 +425,32 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
           </span>
         </div>
 
-        {/* صحنه‌ها — همه سوار بر یک اسکرول پیوسته */}
-        {cats.map((c, i) => (
-          <StageView key={c.id} progress={scrollYProgress} idx={i} total={n} active={i === idx}>
-            <CategoryStage
-              cat={cats[i]}
-              items={pickProducts(stageQueries[i]?.data, FALLBACK_STAGE_PRODUCTS[c.slug] || FALLBACK_BEST.slice(0, 4))}
-              isLoading={!!stageQueries[i]?.isLoading}
-              idx={i}
-              total={n}
-            />
-          </StageView>
-        ))}
+        {/* صحنه‌ها — شفافیت/حرکت‌ هر کدام لحظه‌ای از موقعیت اسکرول محاسبه می‌شود */}
+        {cats.map((c, i) => {
+          const active = i === idx;
+          return (
+            <div
+              key={c.id}
+              aria-hidden={!active}
+              className="absolute inset-0 will-change-[opacity,transform]"
+              style={{
+                opacity: frameWindow(p, i, n, 0.26),
+                transform: `translateY(${active ? 0 : 26}px) scale(${active ? 1 : 0.97})`,
+                transition: 'opacity .18s linear, transform .3s ease-out',
+                pointerEvents: active ? 'auto' : 'none',
+                zIndex: active ? 10 : 0,
+              }}
+            >
+              <CategoryStage
+                cat={c}
+                items={pickProducts(stageQueries[i]?.data, FALLBACK_STAGE_PRODUCTS[c.slug] || FALLBACK_BEST.slice(0, 4))}
+                isLoading={!!stageQueries[i]?.isLoading}
+                idx={i}
+                total={n}
+              />
+            </div>
+          );
+        })}
 
         {/* ریل ناوبری سمت چپ — کلیک = سفر نرم به همان قفسه */}
         <div className="absolute left-5 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-center gap-4 md:flex">
@@ -472,7 +470,7 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
 
         {/* خط پیشرفت پایین */}
         <div className="absolute inset-x-0 bottom-6 z-30 mx-auto h-1 w-56 overflow-hidden rounded-full bg-slate-200">
-          <motion.div className="h-full origin-right bg-gradient-to-l from-emerald-500 to-teal-400" style={{ scaleX: scrollYProgress }} />
+          <div className="h-full origin-right bg-gradient-to-l from-emerald-500 to-teal-400" style={{ transform: `scaleX(${p})` }} />
         </div>
       </div>
     </section>
@@ -516,9 +514,10 @@ function GlassProductCard({ p }: { p: ProductCardType }) {
 }
 
 function HorizontalRail({ items }: { items: ProductCardType[] }) {
-  const targetRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLElement | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const [travel, setTravel] = useState(800);
+  const p = useStickyProgress(targetRef);
 
   useEffect(() => {
     const measure = () => {
@@ -529,10 +528,6 @@ function HorizontalRail({ items }: { items: ProductCardType[] }) {
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, [items.length]);
-
-  const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
-  const x = useTransform(scrollYProgress, [0, 1], [0, travel]);
-  const smoothX = useSpring(x, { stiffness: 90, damping: 22 });
 
   if (!items.length) return null;
   return (
@@ -549,8 +544,12 @@ function HorizontalRail({ items }: { items: ProductCardType[] }) {
             محصولاتی که بیشترین رضایت را از خریداران گرفته‌اند؛ یکی‌یکی جلوی چشمت رد می‌شوند.
           </p>
         </div>
-        <motion.div ref={stripRef} style={{ x: smoothX }} className="relative flex w-max gap-6 px-6">
-          {items.map((p) => <GlassProductCard key={p.id} p={p} />)}
+        <div
+          ref={stripRef}
+          className="relative flex w-max gap-6 px-6 will-change-transform"
+          style={{ transform: `translateX(${p * travel}px)`, transition: 'transform .12s linear' }}
+        >
+          {items.map((px) => <GlassProductCard key={px.id} p={px} />)}
           <Link
             href="/search?sort=-soldCount"
             className="glass-light flex w-56 shrink-0 flex-col items-center justify-center gap-3 rounded-3xl text-sm font-black text-emerald-700 transition hover:border-emerald-300"
@@ -558,10 +557,10 @@ function HorizontalRail({ items }: { items: ProductCardType[] }) {
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100"><Rocket className="h-6 w-6" /></span>
             مشاهده همه ←
           </Link>
-        </motion.div>
+        </div>
         {/* خط پیشرفت ریل */}
         <div className="relative mx-auto mt-10 h-1 w-48 overflow-hidden rounded-full bg-slate-200">
-          <motion.div className="h-full origin-right bg-gradient-to-l from-emerald-500 to-teal-400" style={{ scaleX: scrollYProgress }} />
+          <div className="h-full origin-right bg-gradient-to-l from-emerald-500 to-teal-400" style={{ transform: `scaleX(${p})` }} />
         </div>
       </div>
     </section>
