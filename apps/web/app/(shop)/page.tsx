@@ -39,21 +39,21 @@ const GT = ({ children }: { children: React.ReactNode }) => (
   <span className="bg-gradient-to-l from-emerald-400 via-green-400 to-teal-400 bg-clip-text text-transparent">{children}</span>
 );
 
-// =============================================================== هیرو — آنباکسینگ سینمایی آیفون ۱۷ پرو (زمینه ذغالی)
+// =============================================================== هیرو — آنباکسینگ سینمایی با عکس‌های واقعیِ خودِ مشتری (آیفون ۱۸ پرو)
 /* موتور اسکرول: lib/scroll-engine.ts (رویداد خام + rAF + فال‌بک، کراس‌فید متقاطع واقعی) */
-/* سه اسکرول = سه سکانس: بازشدن درِ جعبه → بیرون‌آمدن محتویات → پرده‌برداری از گوشی */
+/* سه اسکرول = سه سکانس: بازشدن درِ جعبه → محتویات داخل جعبه → صحنه‌ی شناور پرده‌برداری */
 const UNBOX_FRAMES = [
-  { src: '/assets/unbox/ub1-box.jpg', alt: 'جعبه سفید مهروموم‌شده آیفون با چاپ گوشی سبز، روی میز ذغالی براق' },
-  { src: '/assets/unbox/ub2-lid.jpg', alt: 'درِ سفید جعبه در هوا باز می‌شود و نور سبز حجمی از درونش بیرون می‌زند' },
-  { src: '/assets/unbox/ub3-gear.jpg', alt: 'کابل بافت سفید، شارژر، پین سیم‌کارت و دفترچه در هوا معلق‌اند' },
-  { src: '/assets/unbox/ub4-phone.jpg', alt: 'گوشی سبز پرچمدار با سه لنز و نوار دوربین برآمده، تنها در هوا معلق است' },
+  { src: '/assets/unbox/rb1-box.jpg', alt: 'جعبه‌ی سفید مهروموم‌شده‌ی آیفون ۱۸ پرو روی پس‌زمینه‌ی استودیویی روشن' },
+  { src: '/assets/unbox/rb2-lid.jpg', alt: 'درِ سفید جعبه کمی باز شده و بدنه‌ی تیره‌ی گوشی داخل قاب مخصوصش دیده می‌شود' },
+  { src: '/assets/unbox/rb3-gear.jpg', alt: 'سینی باز جعبه با گوشی صفحه‌سیاه، حلقه‌ی کابل بافت سفید USB-C و دفترچه؛ درِ جعبه کنار آن ایستاده است' },
+  { src: '/assets/unbox/rb4-phone.jpg', alt: 'صحنه‌ی شناور آنباکسینگ: درِ جعبه، آیفون بنفش از نمای جلو و پشت با سه لنز، پین سیم‌کارت، برگه‌ها و کابل USB-C معلق در هوا' },
 ];
 
 const UNBOX_COPY = [
-  { step: 'رویداد ویژه', title: 'جعبه روی میز است…', desc: 'فقط سه اسکرول با تجربه‌ی یک آنباکسینگ واقعی فاصله داری.' },
-  { step: 'اسکرول اول', title: 'درِ جعبه باز شد.', desc: 'نوری که از این شکاف بیرون می‌زند، از دلِ فناوری است.' },
-  { step: 'اسکرول دوم', title: 'همه‌چیز سر جای خودش.', desc: 'کابل بافت USB-C، پین سیم‌کارت و شناسنامه‌ی دستگاه — مرتب و آماده.' },
-  { step: 'اسکرول سوم', title: 'آیفون ۱۷ پرو رسید.', desc: 'پرچمدار جدید، همین حالا در قفسه‌ی کارزینتل — با گارانتی رسمی و قیمت رقابتی.' },
+  { step: 'رویداد ویژه', title: 'جعبه هنوز مهروموم است…', desc: 'فقط چند اسکرول با یک آنباکسینگ واقعی فاصله داری.' },
+  { step: 'اسکرول اول', title: 'درِ جعبه باز شد.', desc: 'اولین نگاه به پرچمدار جدید — داخل قاب مخصوص خودش.' },
+  { step: 'اسکرول دوم', title: 'همه‌چیز سر جای خودش.', desc: 'گوشی، کابل بافت USB-C و دفترچه‌ی راهنما — مرتب و آماده.' },
+  { step: 'اسکرول سوم', title: 'آیفون ۱۸ پرو رسید.', desc: 'پرچمدار جدید در رنگ بنفش، همین حالا در قفسه‌ی کارزینتل — با گارانتی رسمی و قیمت رقابتی.' },
 ];
 
 const UNBOX_DOT_LABELS = ['جعبه', 'بازشدن', 'محتویات', 'دستگاه'];
@@ -81,16 +81,15 @@ function CinematicHero() {
   const copy = UNBOX_COPY[idx];
   return (
     <section ref={targetRef} className={`${FULL}`} style={{ height: `${total * 100 + 35}vh` }}>
-      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۷ پرو</h1>
+      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۸ پرو</h1>
 
       {/* ساختار دقیقاً هم‌الگو با اسکرول قفسه‌های پایین صفحه که روی دستگاه شما سالم کار می‌کند */}
-      <div className="sticky top-0 h-[100svh] overflow-hidden bg-[#14171a]">
-        {/* نور صحنه: پایه نور سبز زیر محصول + وینیت ذغالی */}
+      <div className="sticky top-0 h-[100svh] overflow-hidden bg-[#eef1f1]">
+        {/* پایه‌ی روشن استودیویی پشت عکس‌های واقعی + هاله‌ی سبز ملایم برند برای لحظه‌ی لود */}
         <div aria-hidden className="absolute inset-0">
-          <div className="absolute inset-x-0 bottom-0 top-[45%] bg-[radial-gradient(60%_55%_at_50%_78%,rgba(16,185,129,.16),transparent_70%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_0%,transparent_55%,rgba(9,11,12,.55))]" />
+          <div className="absolute inset-x-0 bottom-0 top-[45%] bg-[radial-gradient(60%_55%_at_50%_78%,rgba(16,185,129,.12),transparent_70%)]" />
           {CHARCOAL_SEEDS.map(([x, y, d], i) => (
-            <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.35 }} />
+            <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.22 }} />
           ))}
         </div>
 
@@ -106,7 +105,7 @@ function CinematicHero() {
             <div
               key={f.src}
               aria-hidden={!active}
-              className="absolute inset-0 bg-[#14171a] will-change-[opacity,transform]"
+              className="absolute inset-0 bg-[#eef1f1] will-change-[opacity,transform]"
               style={{
                 opacity: frameWindow(p, i, total, 0.24),
                 transform: framePushIn(p, i, total),
@@ -126,13 +125,13 @@ function CinematicHero() {
           );
         })}
 
-        {/* محو پایین برای خوانایی کپشن */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#0a0d0e]/85 to-transparent" />
+        {/* محو دودی ملایم پایین برای خوانایی کپشن روی عکس‌های روشن — خودِ عکس دست‌نخورده می‌ماند */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-60 bg-gradient-to-t from-[#0b0e0f]/70 via-[#0b0e0f]/25 to-transparent" />
 
         {/* نشان رویداد بالای صحنه */}
         <div className="pointer-events-none absolute inset-x-0 top-7 z-20 text-center">
           <span className="glass-dark inline-flex items-center gap-2 rounded-full px-5 py-1.5 text-2xs font-black tracking-[0.2em] text-emerald-300">
-            <Sparkles className="h-3.5 w-3.5" /> رویداد ویژهٔ کارزینتل: سری پرو جدید
+            <Sparkles className="h-3.5 w-3.5" /> رویداد ویژهٔ کارزینتل: آیفون ۱۸ پرو
           </span>
         </div>
 
