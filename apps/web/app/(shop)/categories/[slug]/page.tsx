@@ -64,25 +64,25 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   return (
     <div className="py-6">
       <nav className="mb-4 flex items-center gap-2 text-xs text-slate-400">
-        <Link href="/" className="hover:text-slate-700">خانه</Link>
+        <Link href="/" className="hover:text-slate-300">خانه</Link>
         {(catData?.breadcrumb || []).map((b) => (
           <span key={b.slug} className="flex items-center gap-2">
             <span>/</span>
-            <Link href={`/categories/${b.slug}`} className="hover:text-slate-700">{b.name}</Link>
+            <Link href={`/categories/${b.slug}`} className="hover:text-slate-300">{b.name}</Link>
           </span>
         ))}
       </nav>
 
-      <h1 className="mb-6 text-2xl font-black text-slate-900">{category?.name}</h1>
+      <h1 className="mb-6 text-2xl font-black text-slate-100">{category?.name}</h1>
 
       <div className="grid gap-6 lg:grid-cols-4">
         {/* فیلترها */}
-        <aside className="h-fit space-y-5 rounded-2xl border border-slate-200 bg-white p-5 lg:sticky lg:top-24">
+        <aside className="h-fit space-y-5 rounded-2xl border border-white/10 bg-[#181c20] p-5 lg:sticky lg:top-24">
           <div>
             <span className="mb-2 block text-sm font-bold">برند</span>
             <div className="space-y-1.5">
               {(brands || []).map((b: any) => (
-                <label key={b.id} className="flex items-center gap-2 text-sm text-slate-600">
+                <label key={b.id} className="flex items-center gap-2 text-sm text-slate-400">
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded accent-slate-900"
@@ -97,28 +97,28 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               ))}
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-300">
             <input type="checkbox" className="h-4 w-4 rounded accent-slate-900" checked={inStock} onChange={(e) => { setPage(1); setInStock(e.target.checked); }} />
             فقط کالاهای موجود
           </label>
 
           {/* بازه قیمت (تومان) */}
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <p className="mb-2 text-sm font-bold text-slate-700">محدوده قیمت (تومان)</p>
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <p className="mb-2 text-sm font-bold text-slate-300">محدوده قیمت (تومان)</p>
             <div className="flex items-center gap-2">
               <input
                 inputMode="numeric"
                 value={priceFrom}
                 onChange={(e) => setPriceFrom(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="از"
-                className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-orange-400"
+                className="w-full rounded-lg border border-white/10 px-2 py-1.5 text-xs outline-none focus:border-orange-400"
               />
               <input
                 inputMode="numeric"
                 value={priceTo}
                 onChange={(e) => setPriceTo(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="تا"
-                className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-orange-400"
+                className="w-full rounded-lg border border-white/10 px-2 py-1.5 text-xs outline-none focus:border-orange-400"
               />
             </div>
             <button
@@ -130,14 +130,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
           </div>
 
           {/* حداقل امتیاز */}
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <p className="mb-2 text-sm font-bold text-slate-700">امتیاز</p>
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <p className="mb-2 text-sm font-bold text-slate-300">امتیاز</p>
             {[
               { v: 0, label: 'همه' },
               { v: 4, label: '۴ ستاره و بالاتر' },
               { v: 3, label: '۳ ستاره و بالاتر' },
             ].map((o) => (
-              <label key={o.v} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-600">
+              <label key={o.v} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-400">
                 <input
                   type="radio"
                   name="minRating"
@@ -154,7 +154,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         {/* نتایج */}
         <div className="lg:col-span-3">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-slate-400">
               {products ? `${faNumber(products.meta?.total || 0)} کالا` : ''}
             </span>
             <Select value={sort} onChange={(e) => { setPage(1); setSort(e.target.value); }} className="max-w-52">

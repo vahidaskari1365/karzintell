@@ -57,23 +57,23 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-xl font-black text-slate-900">کیف پول</h1>
+      <h1 className="text-xl font-black text-slate-100">کیف پول</h1>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="flex items-center gap-4 border-emerald-100 bg-gradient-to-bl from-emerald-50 to-white p-5">
-          <span className="rounded-2xl bg-emerald-500 p-3 text-white">
+        <Card className="flex items-center gap-4 border-emerald-400/30 bg-gradient-to-bl from-emerald-50 to-white p-5">
+          <span className="rounded-2xl bg-emerald-500/100 p-3 text-white">
             <Wallet className="h-6 w-6" />
           </span>
           <div>
-            <p className="text-xs text-slate-500">موجودی کیف پول</p>
-            <p className="text-2xl font-black text-slate-900">
+            <p className="text-xs text-slate-400">موجودی کیف پول</p>
+            <p className="text-2xl font-black text-slate-100">
               {toToman(wallet.balance)} <span className="text-sm font-normal text-slate-400">تومان</span>
             </p>
           </div>
         </Card>
 
         <Card className="p-5">
-          <p className="mb-1 text-sm font-bold text-slate-700">افزایش اعتبار</p>
+          <p className="mb-1 text-sm font-bold text-slate-300">افزایش اعتبار</p>
           <p className="mb-3 text-xs text-slate-400">مبلغ به تومان وارد شود</p>
           <div className="flex gap-2">
             <Input
@@ -94,7 +94,7 @@ export default function WalletPage() {
       </div>
 
       <Card className="p-0">
-        <p className="border-b border-slate-100 px-5 py-4 text-sm font-bold text-slate-800">تراکنش‌های اخیر</p>
+        <p className="border-b border-white/10 px-5 py-4 text-sm font-bold text-slate-100">تراکنش‌های اخیر</p>
         {wallet.transactions.length === 0 ? (
           <p className="p-8 text-center text-sm text-slate-400">تراکنشی ثبت نشده است.</p>
         ) : (
@@ -103,15 +103,15 @@ export default function WalletPage() {
               const positive = tx.type === 'charge' || tx.type === 'refund';
               return (
                 <li key={tx.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <span className={`rounded-xl p-2 ${positive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'}`}>
+                  <span className={`rounded-xl p-2 ${positive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-500'}`}>
                     {positive ? <TrendingUp className="h-4.5 w-4.5" /> : <TrendingDown className="h-4.5 w-4.5" />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800">{tx.description || TX_LABELS[tx.type] || tx.type}</p>
+                    <p className="text-sm font-medium text-slate-100">{tx.description || TX_LABELS[tx.type] || tx.type}</p>
                     <p className="text-xs text-slate-400">{faDateTime(tx.createdAt)}</p>
                   </div>
                   <div className="text-left">
-                    <p className={`text-sm font-bold ${positive ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    <p className={`text-sm font-bold ${positive ? 'text-emerald-400' : 'text-rose-500'}`}>
                       {positive ? '+' : '−'}{toToman(tx.amount)}
                     </p>
                     <p className="text-2xs text-slate-400">مانده: {toToman(tx.balanceAfter)}</p>

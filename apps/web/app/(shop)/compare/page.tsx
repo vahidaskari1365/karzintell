@@ -77,23 +77,23 @@ export default function ComparePage() {
 
       {data && data.items.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-separate border-spacing-0 rounded-2xl border border-slate-200 bg-white text-sm">
+          <table className="w-full min-w-[640px] border-separate border-spacing-0 rounded-2xl border border-white/10 bg-[#181c20] text-sm">
             <thead>
               <tr>
-                <th className="sticky right-0 w-32 border-b border-l border-slate-200 bg-slate-50 p-3 text-right text-xs text-slate-400">محصول</th>
+                <th className="sticky right-0 w-32 border-b border-l border-white/10 bg-[#10130f] p-3 text-right text-xs text-slate-400">محصول</th>
                 {data.items.map((p) => (
-                  <th key={p.id} className="min-w-52 border-b border-slate-200 p-4 align-top">
+                  <th key={p.id} className="min-w-52 border-b border-white/10 p-4 align-top">
                     <div className="flex flex-col items-center gap-3 text-center">
                       <Link href={`/products/${p.slug}`}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={p.image || '/icon.svg'} alt={p.name} className="h-28 w-28 rounded-2xl object-cover" />
                       </Link>
-                      <Link href={`/products/${p.slug}`} className="line-clamp-2 text-sm font-bold leading-6 hover:text-blue-600">{p.name}</Link>
+                      <Link href={`/products/${p.slug}`} className="line-clamp-2 text-sm font-bold leading-6 hover:text-blue-400">{p.name}</Link>
                       <RatingStars value={p.ratingAvg} count={p.ratingCount} />
                       <PriceTag price={p.price} size="sm" />
                       <div className="flex gap-2">
                         <AddFirstVariantButton productSlug={p.slug} inStock={p.inStock} />
-                        <button onClick={() => remove(p.id)} className="rounded-xl border border-slate-200 p-2 text-rose-500 hover:bg-rose-50" title="حذف از مقایسه">
+                        <button onClick={() => remove(p.id)} className="rounded-xl border border-white/10 p-2 text-rose-500 hover:bg-rose-500/10" title="حذف از مقایسه">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -103,27 +103,27 @@ export default function ComparePage() {
               </tr>
             </thead>
             <tbody>
-              <tr className="bg-slate-50/60">
-                <td className="sticky right-0 border-b border-l border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">برند</td>
-                {data.items.map((p) => <td key={p.id} className="border-b border-slate-200 p-3 text-center">{p.brandName || '—'}</td>)}
+              <tr className="bg-[#10130f]/60">
+                <td className="sticky right-0 border-b border-l border-white/10 bg-[#10130f] p-3 text-xs text-slate-400">برند</td>
+                {data.items.map((p) => <td key={p.id} className="border-b border-white/10 p-3 text-center">{p.brandName || '—'}</td>)}
               </tr>
               <tr>
-                <td className="sticky right-0 border-b border-l border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">دسته‌بندی</td>
-                {data.items.map((p) => <td key={p.id} className="border-b border-slate-200 p-3 text-center">{p.categoryName || '—'}</td>)}
+                <td className="sticky right-0 border-b border-l border-white/10 bg-[#10130f] p-3 text-xs text-slate-400">دسته‌بندی</td>
+                {data.items.map((p) => <td key={p.id} className="border-b border-white/10 p-3 text-center">{p.categoryName || '—'}</td>)}
               </tr>
-              <tr className="bg-slate-50/60">
-                <td className="sticky right-0 border-b border-l border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">وضعیت موجودی</td>
+              <tr className="bg-[#10130f]/60">
+                <td className="sticky right-0 border-b border-l border-white/10 bg-[#10130f] p-3 text-xs text-slate-400">وضعیت موجودی</td>
                 {data.items.map((p) => (
-                  <td key={p.id} className="border-b border-slate-200 p-3 text-center">
-                    {p.inStock ? <span className="font-bold text-emerald-600">موجود</span> : <span className="font-bold text-rose-500">ناموجود</span>}
+                  <td key={p.id} className="border-b border-white/10 p-3 text-center">
+                    {p.inStock ? <span className="font-bold text-emerald-400">موجود</span> : <span className="font-bold text-rose-500">ناموجود</span>}
                   </td>
                 ))}
               </tr>
               {data.attributeNames.map((attr, i) => (
-                <tr key={attr} className={i % 2 ? 'bg-slate-50/60' : ''}>
-                  <td className="sticky right-0 border-b border-l border-slate-200 bg-slate-50 p-3 text-xs text-slate-400">{attr}</td>
+                <tr key={attr} className={i % 2 ? 'bg-[#10130f]/60' : ''}>
+                  <td className="sticky right-0 border-b border-l border-white/10 bg-[#10130f] p-3 text-xs text-slate-400">{attr}</td>
                   {data.items.map((p) => (
-                    <td key={p.id} className={`border-b border-slate-200 p-3 text-center ${p.specs[attr] ? 'font-medium text-slate-800' : 'text-slate-300'}`}>
+                    <td key={p.id} className={`border-b border-white/10 p-3 text-center ${p.specs[attr] ? 'font-medium text-slate-100' : 'text-slate-300'}`}>
                       {p.specs[attr] || '—'}
                     </td>
                   ))}
@@ -144,7 +144,7 @@ export default function ComparePage() {
 function AddFirstVariantButton({ productSlug, inStock }: { productSlug: string; inStock: boolean }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
-  if (!inStock) return <span className="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-400">ناموجود</span>;
+  if (!inStock) return <span className="rounded-xl bg-white/10 px-3 py-2 text-xs text-slate-400">ناموجود</span>;
 
   const add = async () => {
     setBusy(true);

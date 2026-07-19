@@ -50,7 +50,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
         <div className="flex items-center gap-3">
           <Link
             href={`/account/orders/${order.code}/invoice`}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:border-slate-900 hover:text-slate-900"
+            className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400 hover:border-slate-900 hover:text-slate-100"
           >
             <FileText className="h-4 w-4" /> مشاهده و چاپ فاکتور
           </Link>
@@ -67,12 +67,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
             {ALL_STEPS.map((s, i) => (
               <div key={s} className="flex flex-1 items-center">
                 <div className="flex flex-col items-center gap-1.5">
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= currentStep ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= currentStep ? 'bg-emerald-500/100 text-white' : 'bg-white/10 text-slate-400'}`}>
                     {faNumber(i + 1)}
                   </span>
-                  <span className={`hidden text-[10px] sm:block ${i <= currentStep ? 'text-emerald-700' : 'text-slate-400'}`}>{STEP_LABELS[s]}</span>
+                  <span className={`hidden text-[10px] sm:block ${i <= currentStep ? 'text-emerald-300' : 'text-slate-400'}`}>{STEP_LABELS[s]}</span>
                 </div>
-                {i < ALL_STEPS.length - 1 && <div className={`mx-1 h-0.5 flex-1 ${i < currentStep ? 'bg-emerald-500' : 'bg-slate-100'}`} />}
+                {i < ALL_STEPS.length - 1 && <div className={`mx-1 h-0.5 flex-1 ${i < currentStep ? 'bg-emerald-500/100' : 'bg-white/10'}`} />}
               </div>
             ))}
           </div>
@@ -80,8 +80,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
       )}
 
       {order.status === 'pending_payment' && (
-        <Card className="flex items-center justify-between border-amber-200 bg-amber-50">
-          <span className="text-sm text-amber-800">این سفارش در انتظار پرداخت است.</span>
+        <Card className="flex items-center justify-between border-amber-400/30 bg-amber-500/10">
+          <span className="text-sm text-amber-300">این سفارش در انتظار پرداخت است.</span>
           <Button size="sm" onClick={() => pay.mutate()} loading={pay.isPending}>
             <CreditCard className="h-4 w-4" /> پرداخت آنلاین
           </Button>
@@ -91,11 +91,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
       {/* آیتم‌ها */}
       <Card>
         <h2 className="mb-4 font-bold">اقلام سفارش</h2>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-white/10">
           {order.items.map((i) => (
             <div key={i.id} className="flex items-center justify-between gap-3 py-3">
               <div>
-                <span className="text-sm font-semibold text-slate-800">{i.productName}</span>
+                <span className="text-sm font-semibold text-slate-100">{i.productName}</span>
                 {i.variantTitle && <span className="ms-2 text-xs text-slate-400">{i.variantTitle}</span>}
                 <span className="mt-0.5 block text-xs text-slate-400">تعداد: {faNumber(i.quantity)}</span>
               </div>
@@ -110,7 +110,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
         <Card>
           <h2 className="mb-3 font-bold">آدرس تحویل</h2>
           {order.address && (
-            <p className="text-sm leading-7 text-slate-600">
+            <p className="text-sm leading-7 text-slate-400">
               {(order.address as any).receiverName} — {(order.address as any).receiverPhone}
               <br />
               {(order.address as any).province}، {(order.address as any).city}، {(order.address as any).address}
@@ -118,7 +118,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
             </p>
           )}
           {order.shipment?.trackingCode && (
-            <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
+            <p className="mt-3 rounded-xl bg-[#10130f] p-3 text-sm">
               کد رهگیری مرسوله: <b dir="ltr">{order.shipment.trackingCode}</b>
             </p>
           )}
@@ -128,14 +128,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
         <Card>
           <h2 className="mb-3 font-bold">صورتحساب</h2>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-slate-500"><span>جمع اقلام</span><span>{toToman(order.subtotal)}</span></div>
-            {order.discountTotal > 0 && <div className="flex justify-between text-emerald-600"><span>تخفیف</span><span>{toToman(order.discountTotal)}-</span></div>}
-            <div className="flex justify-between text-slate-500"><span>مالیات</span><span>{toToman(order.taxTotal)}</span></div>
-            <div className="flex justify-between text-slate-500"><span>هزینه ارسال</span><span>{order.shippingCost ? toToman(order.shippingCost) : 'رایگان'}</span></div>
-            <div className="flex justify-between border-t border-slate-100 pt-2 font-black"><span>جمع نهایی</span><span>{toToman(order.grandTotal)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>جمع اقلام</span><span>{toToman(order.subtotal)}</span></div>
+            {order.discountTotal > 0 && <div className="flex justify-between text-emerald-400"><span>تخفیف</span><span>{toToman(order.discountTotal)}-</span></div>}
+            <div className="flex justify-between text-slate-400"><span>مالیات</span><span>{toToman(order.taxTotal)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>هزینه ارسال</span><span>{order.shippingCost ? toToman(order.shippingCost) : 'رایگان'}</span></div>
+            <div className="flex justify-between border-t border-white/10 pt-2 font-black"><span>جمع نهایی</span><span>{toToman(order.grandTotal)}</span></div>
           </div>
           {order.payments?.[0] && (
-            <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
+            <div className="mt-3 rounded-xl bg-[#10130f] p-3 text-xs text-slate-400">
               درگاه: {order.payments[0].gateway} — وضعیت: {order.payments[0].status}
               {order.payments[0].refId && <span className="block" dir="ltr">Ref: {order.payments[0].refId}</span>}
             </div>
@@ -149,8 +149,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ code: st
         <div className="space-y-3">
           {order.histories.map((h, idx) => (
             <div key={idx} className="flex items-center gap-3 text-sm">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-              <span className="text-slate-800">{h.to}</span>
+              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500/100" />
+              <span className="text-slate-100">{h.to}</span>
               {h.note && <span className="text-slate-400">— {h.note}</span>}
               <span className="ms-auto text-xs text-slate-400">{faDateTime(h.at)}</span>
             </div>

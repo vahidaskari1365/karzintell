@@ -21,10 +21,10 @@ interface Ticket {
 }
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  open: { label: 'باز', cls: 'bg-emerald-50 text-emerald-700' },
-  pending_support: { label: 'در انتظار پشتیبانی', cls: 'bg-amber-50 text-amber-700' },
-  pending_customer: { label: 'در انتظار شما', cls: 'bg-orange-50 text-orange-700' },
-  closed: { label: 'بسته‌شده', cls: 'bg-slate-100 text-slate-500' },
+  open: { label: 'باز', cls: 'bg-emerald-500/10 text-emerald-300' },
+  pending_support: { label: 'در انتظار پشتیبانی', cls: 'bg-amber-500/10 text-amber-300' },
+  pending_customer: { label: 'در انتظار شما', cls: 'bg-orange-500/10 text-orange-300' },
+  closed: { label: 'بسته‌شده', cls: 'bg-white/10 text-slate-400' },
 };
 
 const DEPARTMENTS = [
@@ -69,7 +69,7 @@ export default function TicketsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-black text-slate-900">تیکت‌های پشتیبانی</h1>
+        <h1 className="text-xl font-black text-slate-100">تیکت‌های پشتیبانی</h1>
         <Button size="sm" onClick={() => setOpen(true)}>
           <MessageSquarePlus className="h-4 w-4" /> تیکت جدید
         </Button>
@@ -83,9 +83,9 @@ export default function TicketsPage() {
             const st = STATUS_LABELS[t.status] || STATUS_LABELS.open;
             return (
               <li key={t.id}>
-                <Link href={`/account/tickets/${t.id}`} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300">
+                <Link href={`/account/tickets/${t.id}`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#181c20] p-4 transition hover:border-slate-300">
                   <div>
-                    <p className="text-sm font-bold text-slate-800">#{t.id} — {t.subject}</p>
+                    <p className="text-sm font-bold text-slate-100">#{t.id} — {t.subject}</p>
                     <p className="mt-1 text-xs text-slate-400">{DEPARTMENTS.find((d) => d.value === t.department)?.label} · آخرین به‌روزرسانی: {faDateTime(t.updatedAt)}</p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-2xs font-bold ${st.cls}`}>{st.label}</span>

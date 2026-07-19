@@ -63,16 +63,16 @@ export default function AddressesPage() {
                 {a.isDefault && <Star className="h-4 w-4 fill-amber-400 text-amber-400" />}
               </div>
               <div className="flex gap-1">
-                <button onClick={() => setDialog({ id: a.id, form: { ...a } })} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => setDeleteId(a.id)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-500"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => setDialog({ id: a.id, form: { ...a } })} className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-slate-300"><Pencil className="h-4 w-4" /></button>
+                <button onClick={() => setDeleteId(a.id)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-500/10 hover:text-rose-500"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
-            <p className="mt-2 text-sm leading-7 text-slate-600">
+            <p className="mt-2 text-sm leading-7 text-slate-400">
               {a.receiverName} — {a.receiverPhone}
               <br />{a.province}، {a.city}، {a.address}
             </p>
             {!a.isDefault && (
-              <button onClick={() => setDefault.mutate(a.id)} className="mt-2 text-xs text-slate-400 underline hover:text-slate-700">
+              <button onClick={() => setDefault.mutate(a.id)} className="mt-2 text-xs text-slate-400 underline hover:text-slate-300">
                 انتخاب به‌عنوان پیش‌فرض
               </button>
             )}

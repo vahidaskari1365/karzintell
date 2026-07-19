@@ -177,10 +177,10 @@ export default function CheckoutPage() {
                   <button
                     key={a.id}
                     onClick={() => setAddressId(a.id)}
-                    className={`rounded-2xl border-2 p-4 text-right transition-colors ${addressId === a.id ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
+                    className={`rounded-2xl border-2 p-4 text-right transition-colors ${addressId === a.id ? 'border-slate-900 bg-[#10130f]' : 'border-white/10'}`}
                   >
-                    <div className="font-bold text-slate-800">{a.receiverName}</div>
-                    <div className="mt-1 text-xs leading-6 text-slate-500">
+                    <div className="font-bold text-slate-100">{a.receiverName}</div>
+                    <div className="mt-1 text-xs leading-6 text-slate-400">
                       {a.province}، {a.city}، {a.address}
                     </div>
                     <div className="mt-1 text-xs text-slate-400" dir="ltr">{a.receiverPhone}</div>
@@ -199,7 +199,7 @@ export default function CheckoutPage() {
               {!selectedAddress && <p className="text-sm text-slate-400">ابتدا آدرس تحویل را انتخاب کنید.</p>}
               {selectedAddress && shippingLoading && <p className="text-sm text-slate-400">در حال محاسبه روش‌های ارسال…</p>}
               {selectedAddress && !shippingLoading && (shippingData?.items?.length ?? 0) === 0 && (
-                <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-700">
+                <p className="rounded-xl bg-amber-500/10 p-3 text-sm text-amber-300">
                   برای منطقه شما روش ارسال فعالی تعریف نشده است؛ هزینه ارسال پس از ثبت سفارش محاسبه می‌شود.
                 </p>
               )}
@@ -208,11 +208,11 @@ export default function CheckoutPage() {
                   <button
                     key={m.id}
                     onClick={() => setShippingMethodId(m.id)}
-                    className={`rounded-2xl border-2 p-4 text-center transition-colors ${shippingMethodId === m.id ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
+                    className={`rounded-2xl border-2 p-4 text-center transition-colors ${shippingMethodId === m.id ? 'border-slate-900 bg-[#10130f]' : 'border-white/10'}`}
                   >
                     <div className="text-sm font-bold">{m.name}</div>
                     <div className="mt-1 text-xs text-slate-400">{m.typeLabel}{m.eta ? ` — ${m.eta}` : ''}</div>
-                    <div className={`mt-2 text-sm font-black ${m.isFree ? 'text-emerald-600' : ''}`}>
+                    <div className={`mt-2 text-sm font-black ${m.isFree ? 'text-emerald-400' : ''}`}>
                       {m.isFree ? 'رایگان!' : toToman(m.finalCost)}
                     </div>
                     {m.isFree && m.cost > 0 && <div className="text-xs text-slate-400 line-through">{toToman(m.cost)}</div>}
@@ -229,7 +229,7 @@ export default function CheckoutPage() {
                   <button
                     key={g.key}
                     onClick={() => setGateway(g.key)}
-                    className={`rounded-2xl border-2 p-4 text-center transition-colors ${gateway === g.key ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}
+                    className={`rounded-2xl border-2 p-4 text-center transition-colors ${gateway === g.key ? 'border-slate-900 bg-[#10130f]' : 'border-white/10'}`}
                   >
                     <div className="flex items-center justify-center gap-1.5 text-sm font-bold">
                       {g.key === 'wallet' && <WalletIcon className="h-4 w-4" />}
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
           {/* خلاصه */}
           <Card className="h-fit space-y-3 lg:sticky lg:top-24">
             <h2 className="font-bold">خلاصه سفارش</h2>
-            <div className="space-y-2 text-sm text-slate-500">
+            <div className="space-y-2 text-sm text-slate-400">
               {cart.items.map((i) => (
                 <div key={i.id} className="flex justify-between gap-2">
                   <span className="line-clamp-1">{i.productName} × {faNumber(i.quantity)}</span>
@@ -266,17 +266,17 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div className="space-y-2 border-t border-slate-100 pt-3 text-sm">
-              <div className="flex justify-between text-slate-500"><span>جمع اقلام</span><span>{toToman(cart.subtotal)}</span></div>
+            <div className="space-y-2 border-t border-white/10 pt-3 text-sm">
+              <div className="flex justify-between text-slate-400"><span>جمع اقلام</span><span>{toToman(cart.subtotal)}</span></div>
               {cart.couponDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600"><span>تخفیف{cart.couponCode ? ` (${cart.couponCode})` : ''}</span><span>{toToman(cart.couponDiscount)}-</span></div>
+                <div className="flex justify-between text-emerald-400"><span>تخفیف{cart.couponCode ? ` (${cart.couponCode})` : ''}</span><span>{toToman(cart.couponDiscount)}-</span></div>
               )}
-              <div className="flex justify-between text-slate-500">
+              <div className="flex justify-between text-slate-400">
                 <span>هزینه ارسال{selectedMethod ? ` (${selectedMethod.name})` : ''}</span>
-                <span className={shippingCost === 0 ? 'text-emerald-600 font-bold' : ''}>{shippingCost === 0 ? 'رایگان' : toToman(shippingCost)}</span>
+                <span className={shippingCost === 0 ? 'text-emerald-400 font-bold' : ''}>{shippingCost === 0 ? 'رایگان' : toToman(shippingCost)}</span>
               </div>
-              <div className="flex justify-between text-slate-500"><span>مالیات (۹٪)</span><span>{toToman(tax)}</span></div>
-              <div className="flex justify-between border-t border-slate-100 pt-3 text-base font-black">
+              <div className="flex justify-between text-slate-400"><span>مالیات (۹٪)</span><span>{toToman(tax)}</span></div>
+              <div className="flex justify-between border-t border-white/10 pt-3 text-base font-black">
                 <span>مبلغ نهایی</span><span>{toToman(grand)}</span>
               </div>
             </div>

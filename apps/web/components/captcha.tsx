@@ -40,12 +40,12 @@ export function CaptchaField({ value, onChange, refreshKey }: { value: CaptchaVa
   return (
     <Field label="کد امنیتی (ضد ربات)" required hint="به عدد پاسخ دهید">
       <div className="flex items-center gap-2">
-        <div className="flex min-w-36 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">
+        <div className="flex min-w-36 items-center justify-between rounded-xl border border-white/10 bg-[#10130f] px-3 py-2.5 text-sm font-bold text-slate-300">
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="h-4 w-4 text-emerald-500" />
             {loading ? '…' : question}
           </span>
-          <button type="button" onClick={load} className="text-slate-400 hover:text-slate-700" title="کپچای جدید">
+          <button type="button" onClick={load} className="text-slate-400 hover:text-slate-300" title="کپچای جدید">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>

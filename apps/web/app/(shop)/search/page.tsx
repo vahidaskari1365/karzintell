@@ -28,7 +28,7 @@ function SearchResults() {
 
   return (
     <div className="py-6">
-      <h1 className="mb-1 text-xl font-black text-slate-900">
+      <h1 className="mb-1 text-xl font-black text-slate-100">
         {q ? <>نتایج جستجو برای «{q}»</> : 'همه محصولات'}
       </h1>
       <p className="mb-6 text-sm text-slate-400">
@@ -36,7 +36,7 @@ function SearchResults() {
       </p>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-4 text-sm text-slate-600">
+        <div className="flex items-center gap-4 text-sm text-slate-400">
           <label className="flex cursor-pointer items-center gap-2">
             <input type="checkbox" checked={inStock} onChange={(e) => { setPage(1); setInStock(e.target.checked); }} className="h-4 w-4 accent-orange-500" />
             فقط موجود

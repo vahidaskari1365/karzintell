@@ -16,11 +16,11 @@ export function PriceTag({ price, compareAt, size = 'md', className }: {
   return (
     <div className={clsx('flex flex-wrap items-baseline gap-2', className)}>
       {off > 0 && (
-        <span className="rounded-lg bg-rose-100 px-1.5 py-0.5 text-xs font-bold text-rose-600">
+        <span className="rounded-lg bg-rose-500/15 px-1.5 py-0.5 text-xs font-bold text-rose-400">
           {faNumber(off)}٪
         </span>
       )}
-      <span className={clsx('font-bold text-slate-900', size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg')}>
+      <span className={clsx('font-bold text-slate-100', size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg')}>
         {toToman(price)}
       </span>
       {off > 0 && (
@@ -43,7 +43,7 @@ export function RatingStars({ value, count, size = 'sm' }: { value: number; coun
           {[1, 2, 3, 4, 5].map((i) => <Star key={i} className={clsx(sz, 'shrink-0')} fill="currentColor" />)}
         </span>
       </span>
-      <span className="text-xs text-slate-500" dir="rtl">{faNumber(value)}{count != null && ` (${faNumber(count)})`}</span>
+      <span className="text-xs text-slate-400" dir="rtl">{faNumber(value)}{count != null && ` (${faNumber(count)})`}</span>
     </span>
   );
 }
@@ -68,7 +68,7 @@ export function Pagination({ page, limit, total, onPage }: {
             onClick={() => onPage(n)}
             className={clsx(
               'h-9 min-w-9 rounded-lg px-2 text-sm font-medium',
-              n === page ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+              n === page ? 'bg-slate-900 text-white' : 'bg-white/10 text-slate-400 hover:bg-slate-200',
             )}
           >
             {faNumber(n)}

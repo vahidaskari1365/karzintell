@@ -61,36 +61,36 @@ export default function CartPage() {
         <div className="space-y-3 lg:col-span-2">
           {cart.items.map((item) => (
             <Card key={item.id} className="flex gap-4">
-              <Link href={`/products/${item.productId}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-50">
+              <Link href={`/products/${item.productId}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#10130f]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {item.image && <img src={item.image} alt="" className="h-full w-full object-cover" />}
               </Link>
               <div className="flex flex-1 flex-col">
-                <span className="text-sm font-semibold text-slate-800">{item.productName}</span>
+                <span className="text-sm font-semibold text-slate-100">{item.productName}</span>
                 {item.variantTitle && <span className="mt-0.5 text-xs text-slate-400">{item.variantTitle}</span>}
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <div className="flex items-center rounded-xl border border-slate-200">
+                  <div className="flex items-center rounded-xl border border-white/10">
                     <button
                       onClick={() => updateQty.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
                       disabled={item.quantity >= item.available}
-                      className="p-2 text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                      className="p-2 text-slate-400 hover:text-slate-100 disabled:opacity-30"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                     <span className="min-w-8 text-center text-sm font-bold">{faNumber(item.quantity)}</span>
-                    <button onClick={() => updateQty.mutate({ itemId: item.id, quantity: item.quantity - 1 })} className="p-2 text-slate-500 hover:text-slate-900">
+                    <button onClick={() => updateQty.mutate({ itemId: item.id, quantity: item.quantity - 1 })} className="p-2 text-slate-400 hover:text-slate-100">
                       <Minus className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-900">{toToman(item.unitPrice * item.quantity)}</span>
-                    <button onClick={() => removeItem.mutate(item.id)} className="rounded-lg p-2 text-slate-300 hover:bg-rose-50 hover:text-rose-500">
+                    <span className="text-sm font-bold text-slate-100">{toToman(item.unitPrice * item.quantity)}</span>
+                    <button onClick={() => removeItem.mutate(item.id)} className="rounded-lg p-2 text-slate-300 hover:bg-rose-500/10 hover:text-rose-500">
                       <Trash2 className="h-4.5 w-4.5" />
                     </button>
                   </div>
                 </div>
                 {item.quantity > item.available && (
-                  <span className="mt-1 text-xs font-medium text-rose-600">موجودی این کالا فقط {faNumber(item.available)} عدد است</span>
+                  <span className="mt-1 text-xs font-medium text-rose-400">موجودی این کالا فقط {faNumber(item.available)} عدد است</span>
                 )}
               </div>
             </Card>
@@ -122,9 +122,9 @@ function CartSummary({ cart, user, invalidate }: { cart: CartType; user: unknown
 
       {user ? (
         cart.couponCode ? (
-          <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3">
-            <span className="text-sm font-bold text-emerald-700">کد {cart.couponCode}</span>
-            <button onClick={() => removeCoupon.mutate()} className="text-xs text-emerald-600 underline">حذف</button>
+          <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 px-4 py-3">
+            <span className="text-sm font-bold text-emerald-300">کد {cart.couponCode}</span>
+            <button onClick={() => removeCoupon.mutate()} className="text-xs text-emerald-400 underline">حذف</button>
           </div>
         ) : (
           <div className="flex gap-2">
@@ -135,31 +135,31 @@ function CartSummary({ cart, user, invalidate }: { cart: CartType; user: unknown
           </div>
         )
       ) : (
-        <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">برای استفاده از کد تخفیف ابتدا وارد حساب شوید.</p>
+        <p className="rounded-xl bg-[#10130f] p-3 text-xs text-slate-400">برای استفاده از کد تخفیف ابتدا وارد حساب شوید.</p>
       )}
 
-      <div className="space-y-2 border-t border-slate-100 pt-4 text-sm">
-        <div className="flex justify-between text-slate-500">
+      <div className="space-y-2 border-t border-white/10 pt-4 text-sm">
+        <div className="flex justify-between text-slate-400">
           <span>جمع اقلام ({faNumber(cart.items.length)})</span>
           <span>{toToman(cart.subtotal)}</span>
         </div>
         {cart.couponDiscount > 0 && (
-          <div className="flex justify-between text-emerald-600">
+          <div className="flex justify-between text-emerald-400">
             <span>تخفیف کوپن</span>
             <span>{toToman(cart.couponDiscount)}-</span>
           </div>
         )}
-        <div className="flex justify-between text-slate-500">
+        <div className="flex justify-between text-slate-400">
           <span>مالیات بر ارزش افزوده (۹٪)</span>
           <span>{toToman(cart.tax)}</span>
         </div>
-        <div className="flex justify-between text-slate-500">
+        <div className="flex justify-between text-slate-400">
           <span>هزینه ارسال</span>
-          <span className={cart.shipping === 0 ? 'font-bold text-emerald-600' : ''}>
+          <span className={cart.shipping === 0 ? 'font-bold text-emerald-400' : ''}>
             {cart.shipping === 0 ? 'رایگان' : toToman(cart.shipping)}
           </span>
         </div>
-        <div className="flex justify-between border-t border-slate-100 pt-3 text-base font-black text-slate-900">
+        <div className="flex justify-between border-t border-white/10 pt-3 text-base font-black text-slate-100">
           <span>مبلغ قابل پرداخت</span>
           <span>{toToman(cart.grandTotal)}</span>
         </div>

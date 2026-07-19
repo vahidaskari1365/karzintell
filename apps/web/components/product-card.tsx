@@ -14,9 +14,9 @@ export function ProductCard({ product }: { product: ProductCardType }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-500 hover:-translate-y-1.5 hover:border-emerald-300/70 hover:shadow-[0_16px_40px_-12px_rgba(16,185,129,0.35)]"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#181c20] transition-all duration-500 hover:-translate-y-1.5 hover:border-emerald-300/70 hover:shadow-[0_16px_40px_-12px_rgba(16,185,129,0.35)]"
     >
-      <div className="relative aspect-square overflow-hidden bg-slate-50">
+      <div className="relative aspect-square overflow-hidden bg-[#10130f]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.image || placeholder}
@@ -32,7 +32,7 @@ export function ProductCard({ product }: { product: ProductCardType }) {
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
         {brand && <span className="text-xs text-slate-400">{brand}</span>}
-        <h3 className="line-clamp-2 min-h-[2.6rem] text-sm font-medium leading-6 text-slate-800">{product.name}</h3>
+        <h3 className="line-clamp-2 min-h-[2.6rem] text-sm font-medium leading-6 text-slate-100">{product.name}</h3>
         {(product.ratingAvg ?? 0) > 0 && <RatingStars value={product.ratingAvg || 0} count={product.ratingCount} />}
         <div className="mt-auto pt-1">
           <PriceTag price={product.minPrice} size="sm" />

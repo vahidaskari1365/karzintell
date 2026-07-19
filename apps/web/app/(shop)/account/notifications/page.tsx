@@ -56,12 +56,12 @@ function PushCard() {
   };
 
   return (
-    <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 border-blue-200 bg-blue-50/50">
+    <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 border-blue-400/30 bg-blue-500/10/50">
       <div className="flex items-center gap-3">
-        <BellRing className="h-6 w-6 text-blue-600" />
+        <BellRing className="h-6 w-6 text-blue-400" />
         <div>
-          <div className="text-sm font-bold text-slate-800">اعلان مرورگر (Push Notification)</div>
-          <div className="text-xs text-slate-500">وضعیت سفارش و پیام‌های مهم را لحظه‌ای روی گوشی/کامپیوتر خود ببینید.</div>
+          <div className="text-sm font-bold text-slate-100">اعلان مرورگر (Push Notification)</div>
+          <div className="text-xs text-slate-400">وضعیت سفارش و پیام‌های مهم را لحظه‌ای روی گوشی/کامپیوتر خود ببینید.</div>
         </div>
       </div>
       <Button size="sm" variant={active ? 'secondary' : 'primary'} onClick={toggle} loading={busy}>
@@ -100,7 +100,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-black text-slate-900">اعلان‌ها {unread > 0 && <span className="text-sm font-normal text-orange-500">({unread} خوانده‌نشده)</span>}</h1>
+        <h1 className="text-xl font-black text-slate-100">اعلان‌ها {unread > 0 && <span className="text-sm font-normal text-orange-500">({unread} خوانده‌نشده)</span>}</h1>
         {unread > 0 && (
           <Button variant="secondary" size="sm" onClick={() => readAll.mutate()} loading={readAll.isPending}>
             <CheckCheck className="h-4 w-4" /> خواندن همه
@@ -119,14 +119,14 @@ export default function NotificationsPage() {
               <button
                 onClick={() => !n.readAt && readOne.mutate([n.id])}
                 className={`w-full rounded-2xl border p-4 text-right transition ${
-                  n.readAt ? 'border-slate-100 bg-white' : 'border-orange-200 bg-orange-50/40 hover:bg-orange-50'
+                  n.readAt ? 'border-white/10 bg-white/5' : 'border-orange-400/30 bg-orange-500/10/40 hover:bg-orange-500/10'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className={`text-sm ${n.readAt ? 'font-medium text-slate-600' : 'font-bold text-slate-900'}`}>{n.title}</p>
+                  <p className={`text-sm ${n.readAt ? 'font-medium text-slate-400' : 'font-bold text-slate-100'}`}>{n.title}</p>
                   {!n.readAt && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-orange-500" />}
                 </div>
-                {n.body && <p className="mt-1 text-xs text-slate-500">{n.body}</p>}
+                {n.body && <p className="mt-1 text-xs text-slate-400">{n.body}</p>}
                 <p className="mt-2 text-2xs text-slate-400">{faDateTime(n.createdAt)}</p>
               </button>
             </li>

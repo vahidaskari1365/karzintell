@@ -42,8 +42,8 @@ export function BlogList({ kind }: { kind: 'post' | 'news' }) {
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((p) => (
-          <Link key={p.id} href={`/blog/${p.slug}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition-shadow hover:shadow-lg">
-            <div className="aspect-video bg-slate-100">
+          <Link key={p.id} href={`/blog/${p.slug}`} className="group overflow-hidden rounded-2xl border border-white/10 bg-[#181c20] transition-shadow hover:shadow-lg">
+            <div className="aspect-video bg-white/10">
               {p.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={p.coverUrl} alt={p.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
@@ -52,8 +52,8 @@ export function BlogList({ kind }: { kind: 'post' | 'news' }) {
               )}
             </div>
             <div className="p-4">
-              <h2 className="line-clamp-2 font-bold leading-7 text-slate-900 group-hover:text-blue-700">{p.title}</h2>
-              {p.excerpt && <p className="mt-2 line-clamp-2 text-xs leading-6 text-slate-500">{p.excerpt}</p>}
+              <h2 className="line-clamp-2 font-bold leading-7 text-slate-100 group-hover:text-blue-300">{p.title}</h2>
+              {p.excerpt && <p className="mt-2 line-clamp-2 text-xs leading-6 text-slate-400">{p.excerpt}</p>}
               <div className="mt-3 text-2xs text-slate-400">{p.publishedAt ? faDate(p.publishedAt) : ''}</div>
             </div>
           </Link>

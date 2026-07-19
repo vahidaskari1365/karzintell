@@ -59,7 +59,7 @@ export function ImageUpload({
   return (
     <div className="flex items-center gap-2">
       <input ref={inputRef} type="file" hidden accept={kind === 'video' ? 'video/*' : 'image/*'} onChange={(e) => handleFile(e.target.files?.[0])} />
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#10130f]">
         {value ? (
           kind === 'video' ? (
             <Video className="h-6 w-6 text-slate-400" />

@@ -55,10 +55,10 @@ export default function AccountPage() {
         </Card>
         <Card>
           <span className="text-xs text-slate-400">آخرین سفارش</span>
-          <div className="mt-1 text-lg font-bold text-slate-800" dir="ltr">
+          <div className="mt-1 text-lg font-bold text-slate-100" dir="ltr">
             {orders?.[0] ? orders[0].code : '—'}
           </div>
-          <Link href="/account/orders" className="mt-2 block text-xs text-slate-500">همه سفارش‌ها ←</Link>
+          <Link href="/account/orders" className="mt-2 block text-xs text-slate-400">همه سفارش‌ها ←</Link>
         </Card>
         <Card>
           <span className="text-xs text-slate-400">وضعیت حساب</span>
@@ -68,7 +68,7 @@ export default function AccountPage() {
       </div>
 
       {user.mustChangePassword && (
-        <Card className="border-amber-300 bg-amber-50 text-sm text-amber-800">
+        <Card className="border-amber-300 bg-amber-500/10 text-sm text-amber-300">
           حساب شما توسط مدیر ساخته شده است — لطفاً رمز عبور خود را همین‌جا تغییر دهید.
         </Card>
       )}

@@ -27,7 +27,7 @@ export function AuthGuard({ permission, children }: { permission?: string; child
   if (!user) return <PageLoading label="در حال انتقال به صفحه ورود…" />;
   if (permission && !hasPermission(user, permission))
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-8 text-center text-slate-500">
+      <div className="flex min-h-[50vh] items-center justify-center p-8 text-center text-slate-400">
         دسترسی به این بخش برای حساب شما فعال نیست.
       </div>
     );

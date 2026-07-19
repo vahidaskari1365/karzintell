@@ -23,7 +23,7 @@ export default function StaticPage({ params }: { params: Promise<{ slug: string 
 
   return (
     <div className="mx-auto max-w-3xl py-8">
-      <h1 className="mb-6 text-2xl font-black text-slate-900">{page.title}</h1>
+      <h1 className="mb-6 text-2xl font-black text-slate-100">{page.title}</h1>
       <Card>
         <div className="prose-fa" dangerouslySetInnerHTML={{ __html: page.body }} />
       </Card>

@@ -35,11 +35,11 @@ export default function FaqPage() {
               onClick={() => setOpen(open === i ? null : i)}
               className="flex w-full items-center justify-between gap-3 p-4 text-right"
             >
-              <span className="text-sm font-bold text-slate-800">{f.question}</span>
+              <span className="text-sm font-bold text-slate-100">{f.question}</span>
               <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open === i ? 'rotate-180' : ''}`} />
             </button>
             {open === i && (
-              <div className="border-t border-slate-100 p-4 text-sm leading-7 text-slate-600">{f.answer}</div>
+              <div className="border-t border-white/10 p-4 text-sm leading-7 text-slate-400">{f.answer}</div>
             )}
           </Card>
         ))}

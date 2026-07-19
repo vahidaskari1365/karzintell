@@ -21,7 +21,7 @@ export default function OrderInvoicePage({ params }: { params: Promise<{ code: s
 
   return (
     <div className="py-8">
-      <Link href={`/account/orders/${code}`} className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 print:hidden">
+      <Link href={`/account/orders/${code}`} className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-100 print:hidden">
         <ArrowRight className="h-4 w-4" /> بازگشت به جزئیات سفارش
       </Link>
       <Invoice order={order} />

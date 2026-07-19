@@ -32,14 +32,14 @@ export function BlogDetail({ slug }: { slug: string }) {
   return (
     <article className="mx-auto max-w-3xl py-8">
       <nav className="mb-5 flex items-center gap-1.5 text-xs text-slate-400">
-        <Link href="/" className="hover:text-slate-700">خانه</Link>
+        <Link href="/" className="hover:text-slate-300">خانه</Link>
         <ChevronRight className="h-3 w-3 rotate-180" />
-        <Link href={post.kind === 'news' ? '/news' : '/blog'} className="hover:text-slate-700">{post.kind === 'news' ? 'اخبار' : 'وبلاگ'}</Link>
+        <Link href={post.kind === 'news' ? '/news' : '/blog'} className="hover:text-slate-300">{post.kind === 'news' ? 'اخبار' : 'وبلاگ'}</Link>
         <ChevronRight className="h-3 w-3 rotate-180" />
-        <span className="line-clamp-1 text-slate-600">{post.title}</span>
+        <span className="line-clamp-1 text-slate-400">{post.title}</span>
       </nav>
 
-      <h1 className="text-2xl font-black leading-10 text-slate-900">{post.title}</h1>
+      <h1 className="text-2xl font-black leading-10 text-slate-100">{post.title}</h1>
       <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
         <CalendarDays className="h-4 w-4" />
         {post.publishedAt ? faDate(post.publishedAt) : ''}

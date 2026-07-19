@@ -20,14 +20,14 @@ export function Toaster() {
           key={t.id}
           onClick={() => remove(t.id)}
           className={clsx(
-            'flex cursor-pointer items-center gap-2.5 rounded-xl border bg-white px-4 py-3 text-sm shadow-lg',
-            t.kind === 'success' && 'border-emerald-200',
-            t.kind === 'error' && 'border-rose-200',
-            t.kind === 'info' && 'border-blue-200',
+            'flex cursor-pointer items-center gap-2.5 rounded-xl border bg-[#181c20] px-4 py-3 text-sm shadow-lg',
+            t.kind === 'success' && 'border-emerald-400/30',
+            t.kind === 'error' && 'border-rose-400/30',
+            t.kind === 'info' && 'border-blue-400/30',
           )}
         >
           {icons[t.kind]}
-          <span className="text-slate-700">{t.message}</span>
+          <span className="text-slate-300">{t.message}</span>
         </div>
       ))}
     </div>

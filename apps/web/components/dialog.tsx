@@ -33,15 +33,15 @@ export function Dialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className={clsx('relative z-10 flex max-h-[90vh] w-full flex-col rounded-2xl bg-white shadow-2xl', sizes[size])}>
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="text-base font-bold text-slate-800">{title}</h3>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+      <div className={clsx('relative z-10 flex max-h-[90vh] w-full flex-col rounded-2xl bg-[#181c20] shadow-2xl', sizes[size])}>
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <h3 className="text-base font-bold text-slate-100">{title}</h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-slate-300">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">{footer}</div>}
+        {footer && <div className="flex justify-end gap-2 border-t border-white/10 px-5 py-4">{footer}</div>}
       </div>
     </div>
   );
@@ -74,7 +74,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm leading-7 text-slate-600">{message}</p>
+      <p className="text-sm leading-7 text-slate-400">{message}</p>
     </Dialog>
   );
 }

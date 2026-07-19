@@ -26,12 +26,12 @@ export default function MyOrdersPage() {
         <Link key={o.id} href={`/account/orders/${o.code}`}>
           <Card className="flex flex-wrap items-center justify-between gap-3 transition-shadow hover:shadow-md">
             <div>
-              <span className="font-bold text-slate-900" dir="ltr">{o.code}</span>
+              <span className="font-bold text-slate-100" dir="ltr">{o.code}</span>
               <span className="ms-3 text-xs text-slate-400">{faDate(o.createdAt)}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold">{toToman(o.grandTotal)}</span>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold ${ORDER_STATUS_COLORS[o.status] || 'bg-slate-100'}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${ORDER_STATUS_COLORS[o.status] || 'bg-white/10'}`}>
                 {o.statusLabel}
               </span>
             </div>

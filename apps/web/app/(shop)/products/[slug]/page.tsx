@@ -46,7 +46,7 @@ function CompareButton({ productId }: { productId: number }) {
     <button
       onClick={() => toggle.mutate()}
       className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs transition ${
-        active ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
+        active ? 'border-blue-300 bg-blue-500/10 text-blue-300' : 'border-white/10 text-slate-400 hover:border-slate-300 hover:text-slate-100'
       }`}
       title="مقایسه"
     >
@@ -72,7 +72,7 @@ function Gallery({ images, videos }: { images: ProductDetailType['images']; vide
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="relative flex aspect-square items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-white"
+        className="relative flex aspect-square items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-[#181c20]"
         onMouseMove={(e) => {
           if (!zoom) return;
           const r = e.currentTarget.getBoundingClientRect();
@@ -96,7 +96,7 @@ function Gallery({ images, videos }: { images: ProductDetailType['images']; vide
               />
               <button
                 onClick={() => setLightbox(true)}
-                className="absolute bottom-3 end-3 rounded-full bg-white/90 p-2 text-slate-500 shadow hover:text-slate-800"
+                className="absolute bottom-3 end-3 rounded-full bg-[#181c20]/90 p-2 text-slate-400 shadow hover:text-slate-100"
                 aria-label="بزرگ‌نمایی تصویر"
               >
                 <Expand className="h-4 w-4" />
@@ -123,10 +123,10 @@ function Gallery({ images, videos }: { images: ProductDetailType['images']; vide
             <button
               key={m.key}
               onClick={() => setActive(i)}
-              className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 ${i === active ? 'border-slate-800' : 'border-slate-200'}`}
+              className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 ${i === active ? 'border-slate-800' : 'border-white/10'}`}
             >
               {m.type === 'video' ? (
-                <span className="flex h-full w-full items-center justify-center bg-slate-100 text-[10px] text-slate-500">ویدئو</span>
+                <span className="flex h-full w-full items-center justify-center bg-white/10 text-[10px] text-slate-400">ویدئو</span>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={m.url} alt="" className="h-full w-full object-cover" />
@@ -156,7 +156,7 @@ function ShareButton({ name }: { name: string }) {
   return (
     <button
       onClick={share}
-      className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+      className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-slate-400 transition hover:border-slate-300 hover:text-slate-100"
     >
       <Share2 className="h-4 w-4" /> اشتراک‌گذاری
     </button>
@@ -189,7 +189,7 @@ function VariantPicker({
     <div className="space-y-4">
       {[...groups.entries()].map(([attrName, valueIds]) => (
         <div key={attrName}>
-          <span className="mb-2 block text-sm font-medium text-slate-700">{attrName}</span>
+          <span className="mb-2 block text-sm font-medium text-slate-300">{attrName}</span>
           <div className="flex flex-wrap gap-2">
             {[...valueIds].map((valueId) => {
               // تنوعی که با بقیه گزینه‌های انتخاب‌شده سازگار است
@@ -209,8 +209,8 @@ function VariantPicker({
                     isActive
                       ? 'border-slate-900 bg-slate-900 text-white'
                       : candidate
-                        ? 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
-                        : 'cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300'
+                        ? 'border-white/10 bg-[#181c20] text-slate-300 hover:border-slate-400'
+                        : 'cursor-not-allowed border-white/10 bg-[#10130f] text-slate-300'
                   }`}
                 >
                   {label}
@@ -311,15 +311,15 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* مسیر */}
       <nav className="mb-5 flex items-center gap-2 text-xs text-slate-400">
-        <Link href="/" className="hover:text-slate-700">خانه</Link>
+        <Link href="/" className="hover:text-slate-300">خانه</Link>
         <span>/</span>
         {product.category && (
           <>
-            <Link href={`/categories/${product.category.slug}`} className="hover:text-slate-700">{product.category.name}</Link>
+            <Link href={`/categories/${product.category.slug}`} className="hover:text-slate-300">{product.category.name}</Link>
             <span>/</span>
           </>
         )}
-        <span className="text-slate-600">{product.name}</span>
+        <span className="text-slate-400">{product.name}</span>
       </nav>
 
       <Reveal y={34}>
@@ -331,7 +331,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             <div>
               {product.brand && <span className="text-sm text-slate-400">{product.brand.name}</span>}
               <div className="mt-1 flex items-start justify-between gap-3">
-                <h1 className="text-xl font-black leading-9 text-slate-900">{product.name}</h1>
+                <h1 className="text-xl font-black leading-9 text-slate-100">{product.name}</h1>
                 <div className="flex shrink-0 items-center gap-2">
                   <CompareButton productId={product.id} />
                   <ShareButton name={product.name} />
@@ -341,7 +341,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             <button
               onClick={() => (hydrated && user ? wishlist.mutate() : toast.info('ابتدا وارد حساب شوید'))}
               className={`rounded-xl border p-2.5 transition ${
-                inWishlist ? 'border-rose-300 bg-rose-50 text-rose-500' : 'border-slate-200 text-slate-400 hover:border-rose-300 hover:text-rose-500'
+                inWishlist ? 'border-rose-300 bg-rose-500/10 text-rose-500' : 'border-white/10 text-slate-400 hover:border-rose-300 hover:text-rose-500'
               }`}
               title="علاقه‌مندی"
             >
@@ -356,11 +356,11 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           </div>
 
           {product.features.length > 0 && (
-            <Card className="bg-slate-50/50">
-              <span className="mb-2 block text-sm font-bold text-slate-800">ویژگی‌های کلیدی</span>
+            <Card className="bg-[#10130f]/50">
+              <span className="mb-2 block text-sm font-bold text-slate-100">ویژگی‌های کلیدی</span>
               <ul className="space-y-1.5">
                 {product.features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-400">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                     {f}
                   </li>
@@ -378,17 +378,17 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               <div>
                 <PriceTag price={selected?.price ?? product.minPrice} compareAt={selected?.compareAtPrice} size="lg" />
                 {product.warrantyMonths ? (
-                  <span className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                  <span className="mt-1 flex items-center gap-1 text-xs text-slate-400">
                     <ShieldCheck className="h-4 w-4 text-emerald-500" /> گارانتی {faNumber(product.warrantyMonths)} ماهه
                   </span>
                 ) : null}
               </div>
               <div className="flex items-center gap-3">
                 {inStock && (
-                  <div className="flex items-center rounded-xl border border-slate-200">
-                    <button onClick={() => setQty((q) => Math.min(99, q + 1))} className="p-2.5 text-slate-500 hover:text-slate-900"><Plus className="h-4 w-4" /></button>
+                  <div className="flex items-center rounded-xl border border-white/10">
+                    <button onClick={() => setQty((q) => Math.min(99, q + 1))} className="p-2.5 text-slate-400 hover:text-slate-100"><Plus className="h-4 w-4" /></button>
                     <span className="min-w-8 text-center text-sm font-bold">{faNumber(qty)}</span>
-                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5 text-slate-500 hover:text-slate-900"><Minus className="h-4 w-4" /></button>
+                    <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5 text-slate-400 hover:text-slate-100"><Minus className="h-4 w-4" /></button>
                   </div>
                 )}
                 <Button size="lg" disabled={!selected || !inStock} loading={addToCart.isPending} onClick={() => addToCart.mutate()}>
@@ -398,7 +398,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               </div>
             </div>
             {inStock && selected && selected.stock <= 5 && (
-              <span className="mt-2 block text-xs font-medium text-amber-600">تنها {faNumber(selected.stock)} عدد در انبار باقی مانده</span>
+              <span className="mt-2 block text-xs font-medium text-amber-400">تنها {faNumber(selected.stock)} عدد در انبار باقی مانده</span>
             )}
             <span className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
               <Truck className="h-4 w-4" /> ارسال به سراسر کشور با پست پیشتاز
@@ -409,7 +409,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
       {/* تب‌ها */}
       <div className="mt-10">
-        <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
+        <div className="flex gap-1 overflow-x-auto rounded-xl bg-white/10 p-1">
           {[
             { key: 'specs', label: 'مشخصات فنی' },
             { key: 'description', label: 'توضیحات' },
@@ -419,7 +419,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             <button
               key={t.key}
               onClick={() => setTab(t.key as typeof tab)}
-              className={`whitespace-nowrap rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === t.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+              className={`whitespace-nowrap rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === t.key ? 'bg-[#181c20] text-slate-100 shadow-sm' : 'text-slate-400'}`}
             >
               {t.label}
             </button>
@@ -432,12 +432,12 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               {product.specs.length === 0 && <p className="text-sm text-slate-400">مشخصاتی ثبت نشده است.</p>}
               {product.specs.map((g) => (
                 <Card key={g.group}>
-                  <h3 className="mb-3 font-bold text-slate-900">{g.group}</h3>
-                  <dl className="divide-y divide-slate-100">
+                  <h3 className="mb-3 font-bold text-slate-100">{g.group}</h3>
+                  <dl className="divide-y divide-white/10">
                     {g.items.map((s, i) => (
                       <div key={i} className="grid grid-cols-3 gap-4 py-2.5 text-sm">
                         <dt className="text-slate-400">{s.name}</dt>
-                        <dd className="col-span-2 text-slate-800">{s.value}</dd>
+                        <dd className="col-span-2 text-slate-100">{s.value}</dd>
                       </div>
                     ))}
                   </dl>
@@ -451,7 +451,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               {product.description ? (
                 <div className="prose-fa" dangerouslySetInnerHTML={{ __html: product.description }} />
               ) : (
-                <p className="text-sm text-slate-600">{product.shortDescription || 'توضیحاتی ثبت نشده است.'}</p>
+                <p className="text-sm text-slate-400">{product.shortDescription || 'توضیحاتی ثبت نشده است.'}</p>
               )}
             </Card>
           )}
@@ -504,21 +504,21 @@ function ReviewsSection({ productId }: { productId: number }) {
           <Card key={r.id}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-800">{r.userName}</span>
+                <span className="font-bold text-slate-100">{r.userName}</span>
                 {r.isBuyer && <Badge tone="green">خریدار محصول</Badge>}
               </div>
               <RatingStars value={r.rating} />
             </div>
             {r.title && <h4 className="mt-2 font-semibold">{r.title}</h4>}
-            {r.body && <p className="mt-1 text-sm leading-7 text-slate-600">{r.body}</p>}
+            {r.body && <p className="mt-1 text-sm leading-7 text-slate-400">{r.body}</p>}
             {(r.pros?.length || r.cons?.length) && (
               <div className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
-                {!!r.pros?.length && <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700">✅ {r.pros.join('، ')}</div>}
-                {!!r.cons?.length && <div className="rounded-xl bg-rose-50 p-3 text-rose-700">❌ {r.cons.join('، ')}</div>}
+                {!!r.pros?.length && <div className="rounded-xl bg-emerald-500/10 p-3 text-emerald-300">✅ {r.pros.join('، ')}</div>}
+                {!!r.cons?.length && <div className="rounded-xl bg-rose-500/10 p-3 text-rose-300">❌ {r.cons.join('، ')}</div>}
               </div>
             )}
             {r.sellerReply && (
-              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+              <div className="mt-3 rounded-xl bg-[#10130f] p-3 text-sm text-slate-400">
                 <span className="font-bold">پاسخ فروشگاه: </span>{r.sellerReply}
               </div>
             )}
@@ -538,7 +538,7 @@ function ReviewsSection({ productId }: { productId: number }) {
             <Button className="w-full" onClick={() => submit.mutate()} loading={submit.isPending}>ارسال دیدگاه</Button>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">برای ثبت دیدگاه ابتدا <Link href="/login" className="text-blue-600 underline">وارد حساب</Link> شوید.</p>
+          <p className="text-sm text-slate-400">برای ثبت دیدگاه ابتدا <Link href="/login" className="text-blue-400 underline">وارد حساب</Link> شوید.</p>
         )}
       </Card>
     </div>
@@ -575,14 +575,14 @@ function QuestionsSection({ productId }: { productId: number }) {
             <Button onClick={() => submit.mutate()} loading={submit.isPending} disabled={!q.trim()}>ارسال</Button>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">برای پرسیدن سؤال ابتدا وارد حساب شوید.</p>
+          <p className="text-sm text-slate-400">برای پرسیدن سؤال ابتدا وارد حساب شوید.</p>
         )}
       </Card>
       {(data || []).map((question: any) => (
         <Card key={question.id}>
-          <p className="text-sm font-semibold text-slate-800">❓ {question.question}</p>
+          <p className="text-sm font-semibold text-slate-100">❓ {question.question}</p>
           {question.answer && (
-            <p className="mt-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">
+            <p className="mt-2 rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-300">
               <span className="font-bold">پاسخ فروشگاه: </span>{question.answer}
             </p>
           )}

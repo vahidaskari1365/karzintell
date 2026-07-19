@@ -35,7 +35,7 @@ export default function WishlistPage() {
       {items.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {items.map((p: any) => (
-            <button key={p.id} onClick={() => remove.mutate(p.id)} className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-xs text-rose-500 hover:bg-rose-50">
+            <button key={p.id} onClick={() => remove.mutate(p.id)} className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#181c20] py-2 text-xs text-rose-500 hover:bg-rose-500/10">
               <Trash2 className="h-3.5 w-3.5" /> حذف «{p.name.length > 18 ? p.name.slice(0, 18) + '…' : p.name}»
             </button>
           ))}

@@ -47,11 +47,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <Link href="/account/tickets" className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:text-slate-900">
+        <Link href="/account/tickets" className="rounded-xl border border-white/10 p-2 text-slate-400 hover:text-slate-100">
           <ArrowRight className="h-4.5 w-4.5" />
         </Link>
         <div>
-          <h1 className="text-lg font-black text-slate-900">#{ticket.id} — {ticket.subject}</h1>
+          <h1 className="text-lg font-black text-slate-100">#{ticket.id} — {ticket.subject}</h1>
           <p className="text-xs text-slate-400">وضعیت: {closed ? 'بسته‌شده' : 'باز'} </p>
         </div>
       </div>
@@ -59,9 +59,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       <div className="space-y-3">
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.isStaff ? 'justify-start' : 'justify-end'}`}>
-            <Card className={`max-w-[80%] p-4 ${m.isStaff ? 'border-slate-200 bg-slate-50' : 'border-orange-100 bg-orange-50/50'}`}>
-              {m.isStaff && <p className="mb-1 text-2xs font-bold text-orange-600">پشتیبانی کارزینتل</p>}
-              <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700">{m.body}</p>
+            <Card className={`max-w-[80%] p-4 ${m.isStaff ? 'border-white/10 bg-[#10130f]' : 'border-orange-400/30 bg-orange-500/10/50'}`}>
+              {m.isStaff && <p className="mb-1 text-2xs font-bold text-orange-400">پشتیبانی کارزینتل</p>}
+              <p className="whitespace-pre-wrap text-sm leading-7 text-slate-300">{m.body}</p>
               <p className="mt-2 text-left text-2xs text-slate-400">{faDateTime(m.createdAt)}</p>
             </Card>
           </div>
@@ -69,7 +69,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       </div>
 
       {closed ? (
-        <p className="rounded-2xl bg-slate-100 p-4 text-center text-sm text-slate-500">این تیکت بسته شده است. در صورت نیاز تیکت جدید ایجاد کنید.</p>
+        <p className="rounded-2xl bg-white/10 p-4 text-center text-sm text-slate-400">این تیکت بسته شده است. در صورت نیاز تیکت جدید ایجاد کنید.</p>
       ) : (
         <Card className="p-4">
           <Textarea rows={3} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="پاسخ شما…" />

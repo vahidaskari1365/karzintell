@@ -77,7 +77,7 @@ export function TwoFactorCard() {
 
       {enabled ? (
         <div className="space-y-3">
-          <div className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">✅ ورود دومرحله‌ای فعال است</div>
+          <div className="rounded-xl bg-emerald-500/10 p-3 text-sm font-bold text-emerald-300">✅ ورود دومرحله‌ای فعال است</div>
           {disableMode ? (
             <>
               <Field label="کد ۶ رقمی اپلیکیشن" required hint="برای غیرفعال‌سازی، کد فعلی را وارد کنید">
@@ -98,9 +98,9 @@ export function TwoFactorCard() {
             <QrCode className="h-5 w-5 text-slate-400" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={setup.qrDataUrl} alt="QR Code" className="h-44 w-44" />
-            <div className="text-center text-xs text-slate-500">
+            <div className="text-center text-xs text-slate-400">
               کد را با Google Authenticator اسکن کنید یا کلید را دستی وارد کنید:
-              <div className="mt-1 rounded-lg bg-slate-100 px-3 py-1.5 font-mono text-sm font-bold tracking-widest" dir="ltr">{setup.secret}</div>
+              <div className="mt-1 rounded-lg bg-white/10 px-3 py-1.5 font-mono text-sm font-bold tracking-widest" dir="ltr">{setup.secret}</div>
             </div>
           </div>
           <Field label="کد ۶ رقمی نمایش‌داده‌شده در اپ" required>
