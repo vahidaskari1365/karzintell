@@ -93,12 +93,17 @@ function CinematicHero() {
           ))}
         </div>
 
+        {/* پیش‌بارگذاری هر ۴ فریم — قبل از اولین اسکرول آماده‌اند (React 19 این‌ها را به head می‌برد) */}
+        {UNBOX_FRAMES.map((f) => (
+          <link key={f.src} rel="preload" as="image" href={f.src} />
+        ))}
+
         {/* چهار فریم آنباکسینگ — شفافیت و حرکت، لحظه‌به‌لحظه از روی موقعیت اسکرول */}
         {UNBOX_FRAMES.map((f, i) => (
           <div
             key={f.src}
             aria-hidden={i !== idx}
-            className="absolute inset-0 will-change-[opacity,transform]"
+            className="absolute inset-0 bg-[#14171a] will-change-[opacity,transform]"
             style={{
               opacity: frameWindow(p, i, total, 0.24),
               transform: framePushIn(p, i, total),
@@ -106,7 +111,11 @@ function CinematicHero() {
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={f.src} alt={f.alt} draggable={false} className="h-full w-full select-none object-cover object-center" />
+            <img
+              src={f.src} alt={f.alt} draggable={false}
+              className="h-full w-full select-none object-cover object-center"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
+            />
           </div>
         ))}
 
