@@ -50,10 +50,10 @@ const UNBOX_FRAMES = [
 ];
 
 const UNBOX_COPY = [
-  { step: 'رویداد ویژه', title: 'جعبه هنوز مهروموم است…', desc: 'فقط چند اسکرول با یک آنباکسینگ واقعی فاصله داری.' },
-  { step: 'اسکرول اول', title: 'درِ جعبه باز شد.', desc: 'اولین نگاه به پرچمدار جدید — داخل قاب مخصوص خودش.' },
-  { step: 'اسکرول دوم', title: 'همه‌چیز سر جای خودش.', desc: 'گوشی، کابل بافت USB-C و دفترچه‌ی راهنما — مرتب و آماده.' },
-  { step: 'اسکرول سوم', title: 'آیفون ۱۸ پرو رسید.', desc: 'پرچمدار جدید در رنگ بنفش، همین حالا در قفسه‌ی کارزینتل — با گارانتی رسمی و قیمت رقابتی.' },
+  { step: 'رویداد ویژهٔ کارزینتل', title: 'تازه رسید؛ هنوز مهروموم است…', desc: 'هر دستگاه در کارزینتل سالم و مهروموم به دست تو می‌رسد — فقط چند اسکرول با آنباکسینگ واقعی فاصله داری.' },
+  { step: 'اسکرول اول', title: 'درِ جعبه باز شد.', desc: 'اولین نگاه به پرچمدار جدید — لحظه‌ای که قرار است مال تو باشد.' },
+  { step: 'اسکرول دوم', title: 'همه‌چیز، کامل و اصلی.', desc: 'گوشی، کابل بافت USB-C و دفترچه‌ی راهنما — دقیقاً محتویات رسمی کارخانه، بدون هیچ کم‌وکاست.' },
+  { step: 'اسکرول سوم', title: 'آیفون ۱۸ پرو رسید.', desc: 'رنگ بنفش شگفت‌انگیز — با گارانتی رسمی، ارسال سریع به سراسر کشور و قیمت رقابتی کارزینتل.' },
 ];
 
 const UNBOX_DOT_LABELS = ['جعبه', 'بازشدن', 'محتویات', 'دستگاه'];
@@ -462,8 +462,10 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
   return (
     <section ref={targetRef} className={`${FULL}`} style={{ height: `${n * 85 + 30}vh` }}>
       <div className="sticky top-0 h-[100svh] overflow-hidden bg-gradient-to-br from-[#15191c] via-[#171b1e] to-[#131719]">
-        {/* بافت روشن با عمق — نقطه‌چین + هاله‌های سبز کرمی (بدون عکس) */}
+        {/* بافت روشن با عمق — عکس واقعی فروشگاه (خیلی کم‌رنگ) + نقطه‌چین + هاله‌های سبز کرمی */}
         <div aria-hidden className="absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/store-bg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.14]" />
           <div className="absolute inset-0 bg-grid-dots opacity-40" />
           <div className="animate-aurora pointer-events-none absolute -top-20 right-[12%] h-[26rem] w-[26rem] rounded-full bg-emerald-500/100/20 blur-[120px]" />
           <div className="animate-aurora pointer-events-none absolute bottom-[-10%] left-[8%] h-[22rem] w-[22rem] rounded-full bg-teal-500/15 blur-[110px]" style={{ animationDuration: '28s', animationDelay: '4s' }} />

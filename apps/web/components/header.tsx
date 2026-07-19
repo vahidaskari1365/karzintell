@@ -91,9 +91,12 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link href="/" className="group flex items-center gap-2.5 transition-transform hover:scale-[1.03]">
-          <BrandMark className="h-9 w-9" />
-          <BrandName />
+        <Link
+          href="/"
+          className="group flex items-center gap-3 rounded-2xl bg-[#10181a]/90 px-4 py-2 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-400/30 backdrop-blur transition-transform hover:scale-[1.03]"
+        >
+          <BrandMark className="h-11 w-11" />
+          <BrandName dark className="text-[1.35rem]" />
         </Link>
 
         {/* دسته‌بندی‌ها - دسکتاپ */}
