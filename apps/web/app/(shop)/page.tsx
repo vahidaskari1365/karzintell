@@ -208,6 +208,18 @@ function CinematicHero() {
           ))}
         </div>
 
+        {/* تنها نوشته‌ی هیرو — پیام برند کارزینتل، همیشه بالای صحنه می‌درخشد */}
+        <div className="pointer-events-none absolute inset-x-0 top-8 z-20 flex justify-center px-4">
+          <div className="animate-caption-in rounded-full bg-[#0b0f10]/55 px-7 py-2.5 text-center ring-1 ring-white/10 backdrop-blur-md">
+            <span className="text-sm font-black text-white sm:text-base">
+              کارزینتل؛ <span className="text-emerald-400">جایی که فناوری، اصل است</span>
+            </span>
+            <span className="mt-0.5 hidden text-2xs text-slate-300/85 sm:block">
+              موبایل، ساعت هوشمند، هدفون و لوازم جانبی — با گارانتی رسمی و ارسال سریع
+            </span>
+          </div>
+        </div>
+
         {/* سکانس پایانی: فقط دکمه‌های خرید، تمیز و مینیمال — مرکز پایین صحنه */}
         {idx === total - 1 && (
           <div key={idx} className="animate-caption-in absolute inset-x-0 bottom-24 z-20 flex justify-center">
