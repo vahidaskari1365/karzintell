@@ -3,17 +3,16 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { motion, MotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion';
+import { AnimatePresence, motion, MotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
-  BadgeCheck, ChevronDown, Cpu, Flame, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag,
-  Smartphone, Star, Truck, Watch, Zap,
+  BadgeCheck, ChevronDown, Cpu, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag, Smartphone,
+  Sparkles, Star, Truck, Watch, Zap,
 } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { toToman, faNumber } from '@/lib/format';
 import { CategoryNode, ProductCardType } from '@/lib/types';
 import { ProductGrid } from '@/components/product-card';
 import { PageLoading } from '@/components/ui';
-import { HeroScene } from '@/components/cinematic/scene3d';
 import {
   CountUp, Magnetic, Marquee, Parallax, Reveal, RevealGroup, ScrollProgress, TiltCard, revealItem,
 } from '@/components/cinematic/fx';
@@ -39,89 +38,190 @@ const GT = ({ children }: { children: React.ReactNode }) => (
   <span className="bg-gradient-to-l from-emerald-600 via-green-500 to-teal-500 bg-clip-text text-transparent">{children}</span>
 );
 
-// --------------------------------------------------------------- هیرو — پلاتینیوم مدرن با صحنه‌ی سه‌بعدی زنده و موشن آرورا
-function CinematicHero() {
+// =============================================================== هیرو — آنباکسینگ سینمایی آیفون ۱۷ پرو (زمینه ذغالی)
+/* سه اسکرول = سه سکانس: بازشدن درِ جعبه → بیرون‌آمدن محتویات → پرده‌برداری از گوشی */
+const UNBOX_FRAMES = [
+  { src: '/assets/unbox/u1-closed.jpg', alt: 'جعبه سبز پرچمدار جدید روی میز تیره' },
+  { src: '/assets/unbox/u2-opening.jpg', alt: 'درِ جعبه در حال باز شدن با نور سبز' },
+  { src: '/assets/unbox/u3-accessories.jpg', alt: 'کابل و لوازم شناور بالای جعبه باز' },
+  { src: '/assets/unbox/u4-phone.jpg', alt: 'گوشی پرچمدار جدید ایستاده با نور سبز' },
+];
+
+const UNBOX_COPY = [
+  {
+    step: 'رویداد ویژه',
+    title: 'جعبه روی میز است…',
+    desc: 'فقط سه اسکرول با تجربه‌ی یک آنباکسینگ واقعی فاصله داری.',
+  },
+  {
+    step: 'اسکرول اول',
+    title: 'درِ جعبه باز شد.',
+    desc: 'نوری که از این شکاف بیرون می‌زند، از دلِ فناوری است.',
+  },
+  {
+    step: 'اسکرول دوم',
+    title: 'همه‌چیز سر جای خودش.',
+    desc: 'کابل بافت USB-C، پین سیم‌کارت و شناسنامه‌ی دستگاه — مرتب و آماده.',
+  },
+  {
+    step: 'اسکرول سوم',
+    title: 'آیفون ۱۷ پرو رسید.',
+    desc: 'پرچمدار جدید، همین حالا در قفسه‌ی کارزینتل — با گارانتی رسمی و قیمت رقابتی.',
+  },
+];
+
+const UNBOX_DOT_LABELS = ['جعبه', 'بازشدن', 'محتویات', 'دستگاه'];
+
+/* ذرات ذغالی‌رنگ برای فضای صحنه */
+const CHARCOAL_SEEDS: Array<[string, string, string]> = [
+  ['12%', '30%', '0s'], ['20%', '68%', '1.2s'], ['33%', '22%', '.8s'], ['82%', '26%', '1.5s'],
+  ['90%', '58%', '.5s'], ['72%', '80%', '2s'], ['45%', '15%', '1.8s'], ['8%', '82%', '2.3s'],
+];
+
+/** هر فریم تصویر — کوپل با خودِ اسکرول: کراس‌فید + پوش‌این لنز */
+function UnboxFrame({ progress, idx, total, src, alt }: { progress: MotionValue<number>; idx: number; total: number; src: string; alt: string }) {
+  const seg = 1 / total;
+  const start = idx * seg;
+  const tIn = start + (idx === 0 ? 0 : seg * 0.34);
+  const tOut = start + seg - (idx === total - 1 ? 0 : seg * 0.34);
+  const end = start + seg;
+
+  const opacity = useTransform(
+    progress,
+    idx === 0 ? [0, tOut, end] : idx === total - 1 ? [start, tIn, 1] : [start, tIn, tOut, end],
+    idx === 0 ? [1, 1, 0] : idx === total - 1 ? [0, 1, 1] : [0, 1, 1, 0],
+  );
+  const scale = useTransform(progress, [start, end], [1.02, 1.08]);
+  const y = useTransform(progress, [start, end], [idx === 0 ? 0 : 22, -20]);
+
   return (
-    <section className={`${FULL} relative min-h-[94svh] overflow-hidden bg-[#e9edeb]`}>
-      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک</h1>
+    <motion.div style={{ opacity, scale, y }} className="absolute inset-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} draggable={false} className="h-full w-full select-none object-cover object-center" />
+    </motion.div>
+  );
+}
 
-      {/* پس‌زمینه: آرورای سبز-فیروزه‌ای متحرک + نقطه‌چین مینیمال */}
-      <div aria-hidden className="absolute inset-0">
-        <div className="animate-aurora absolute -top-32 right-[8%] h-[30rem] w-[30rem] rounded-full bg-emerald-300/45 blur-[110px]" />
-        <div className="animate-aurora absolute top-1/3 -left-24 h-[26rem] w-[26rem] rounded-full bg-teal-200/60 blur-[100px]" style={{ animationDuration: '30s', animationDelay: '3s' }} />
-        <div className="animate-aurora absolute -bottom-40 right-1/3 h-[24rem] w-[24rem] rounded-full bg-cyan-200/40 blur-[110px]" style={{ animationDuration: '27s', animationDelay: '6s' }} />
-        <div className="absolute inset-0 bg-grid-dots opacity-50" />
-        {/* هاله سفید مرکزی برای خوانایی */}
-        <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_42%,rgba(255,255,255,.7),transparent_70%)]" />
-        {/* اتصال نرم به سکشن بعدی */}
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-white/60" />
-      </div>
+function CinematicHero() {
+  const total = UNBOX_FRAMES.length; // 4 فریم = 3 اسکرول
+  const targetRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
+  const [idx, setIdx] = useState(0);
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    setIdx(Math.min(total - 1, Math.max(0, Math.floor(v * total))));
+  });
 
-      {/* صحنه سه‌بعدی زنده — فقط دسکتاپ (موبایل سبک و روان می‌ماند) */}
-      <div className="absolute inset-y-0 left-0 z-[1] hidden w-[52%] lg:block">
-        <HeroScene />
-      </div>
+  const jumpTo = (i: number) => {
+    const el = targetRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const scrollable = el.offsetHeight - window.innerHeight;
+    window.scrollTo({ top: top + (i + 0.02) * (scrollable / total), behavior: 'smooth' });
+  };
 
-      {/* محتوا */}
-      <div className="relative z-10 mx-auto grid min-h-[94svh] max-w-7xl items-center px-6 lg:grid-cols-2">
-        <div className="flex flex-col items-center text-center lg:ps-8">
-          <Reveal delay={0.05} y={16}>
-            <span className="glass-light inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-2xs font-black text-emerald-700">
-              <ShoppingBag className="h-3.5 w-3.5" /> واردات و فروش تخصصی قطعات و گجت‌های الکترونیک
-            </span>
-          </Reveal>
+  const copy = UNBOX_COPY[idx];
+  return (
+    <section ref={targetRef} className={`${FULL} relative`} style={{ height: `${total * 100 + 35}vh` }}>
+      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۷ پرو</h1>
 
-          <Reveal delay={0.16} y={26}>
-            <p className="mt-7 max-w-xl text-base leading-9 text-slate-700 sm:text-xl sm:leading-10">
-              از پرچمداران موبایل تا ظریف‌ترین قطعات — هر گجتی که به ذهنت می‌رسد این‌جاست؛
-              با اصالتِ تضمین‌شده، قیمتِ رقابتی و <span className="font-black text-emerald-700">پشتیبانی واقعی</span>.
-            </p>
-          </Reveal>
-
-          <Reveal delay={0.28} y={20}>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-              <Magnetic>
-                <Link
-                  href="/search"
-                  className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-black text-white shadow-xl shadow-emerald-500/30 transition-transform hover:scale-105"
-                >
-                  <Zap className="h-4.5 w-4.5" /> شروع خرید
-                </Link>
-              </Magnetic>
-              <Magnetic>
-                <Link
-                  href="/blog"
-                  className="glass-light inline-flex items-center gap-2 rounded-2xl px-7 py-3.5 text-sm font-bold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700"
-                >
-                  <Flame className="h-4.5 w-4.5 text-emerald-600" /> راهنمای انتخاب هوشمند
-                </Link>
-              </Magnetic>
-            </div>
-          </Reveal>
-
-          {/* مینی‌نشان‌های اعتماد */}
-          <Reveal delay={0.4} y={14}>
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-2xs font-bold text-slate-500">
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600" /> گارانتی رسمی</span>
-              <span className="flex items-center gap-1.5"><Truck className="h-4 w-4 text-emerald-600" /> ارسال سریع سراسری</span>
-              <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-emerald-600" /> پرداخت امن</span>
-            </div>
-          </Reveal>
+      <div className="cinema-grain sticky top-0 h-[100svh] overflow-hidden bg-[#14171a]">
+        {/* نور صحنه: پایه نور سبز زیر محصول + وینیت ذغالی */}
+        <div aria-hidden className="absolute inset-0">
+          <div className="absolute inset-x-0 bottom-0 top-[45%] bg-[radial-gradient(60%_55%_at_50%_78%,rgba(16,185,129,.16),transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_0%,transparent_55%,rgba(9,11,12,.55))]" />
+          {CHARCOAL_SEEDS.map(([x, y, d], i) => (
+            <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.35 }} />
+          ))}
         </div>
 
-        {/* ستون خالی برای تنفس صحنه سه‌بعدی در دسکتاپ */}
-        <div className="hidden lg:block" />
-      </div>
+        {/* چهار فریم آنباکسینگ */}
+        {UNBOX_FRAMES.map((f, i) => (
+          <UnboxFrame key={f.src} progress={scrollYProgress} idx={i} total={total} src={f.src} alt={f.alt} />
+        ))}
 
-      {/* نشانگر اسکرول */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 text-slate-400"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-      >
-        <span className="text-2xs font-bold">قدم به فروشگاه بگذار</span>
-        <ChevronDown className="h-5 w-5" />
-      </motion.div>
+        {/* محو پایین برای خوانایی کپشن */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#0a0d0e]/85 to-transparent" />
+
+        {/* نشان رویداد بالای صحنه */}
+        <div className="pointer-events-none absolute inset-x-0 top-7 z-20 text-center">
+          <span className="glass-dark inline-flex items-center gap-2 rounded-full px-5 py-1.5 text-2xs font-black tracking-[0.2em] text-emerald-300">
+            <Sparkles className="h-3.5 w-3.5" /> رویداد ویژه: سری پرو جدید
+          </span>
+        </div>
+
+        {/* کپشن هر سکانس — با تعویض صحنه، نرم عوض می‌شود */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 30, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -22, filter: 'blur(6px)' }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-28 right-6 z-20 max-w-sm text-right sm:bottom-24 sm:right-14"
+          >
+            <span className="text-2xs font-black tracking-[0.25em] text-emerald-400">{copy.step}</span>
+            <h2 className="mt-2 text-3xl font-black leading-snug text-white sm:text-4xl">{copy.title}</h2>
+            <p className="mt-3 text-xs leading-7 text-slate-300/90 sm:text-sm sm:leading-7">{copy.desc}</p>
+
+            {idx === total - 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="mt-6 flex flex-wrap justify-end gap-3"
+              >
+                <Magnetic>
+                  <Link
+                    href="/search?category=mobile"
+                    className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:scale-105"
+                  >
+                    <ShoppingBag className="h-4.5 w-4.5" /> مشاهده و خرید
+                  </Link>
+                </Magnetic>
+                <Magnetic>
+                  <Link
+                    href="/search"
+                    className="glass-dark inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-slate-200 transition hover:border-emerald-400/40 hover:text-emerald-300"
+                  >
+                    ورود به فروشگاه
+                  </Link>
+                </Magnetic>
+              </motion.div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* ناوبری سکانس‌ها — سمت چپ */}
+        <div className="absolute left-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-4 md:flex">
+          {UNBOX_DOT_LABELS.map((label, i) => (
+            <button key={label} onClick={() => jumpTo(i)} className="group flex flex-col items-center gap-4" aria-label={`رفتن به سکانس ${label}`}>
+              <span
+                className={`rounded-full transition-all duration-500 ${
+                  i === idx ? 'h-8 w-2 bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'h-2 w-2 bg-slate-600 group-hover:bg-emerald-500/60'
+                }`}
+              />
+              <span className={`text-2xs transition-colors duration-300 ${i === idx ? 'font-black text-emerald-300' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                {label}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* خط پیشرفت پایین */}
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto h-1 w-56 overflow-hidden rounded-full bg-white/10">
+          <motion.div className="h-full origin-right bg-gradient-to-l from-emerald-400 to-teal-300" style={{ scaleX: scrollYProgress }} />
+        </div>
+
+        {/* راهنمای اسکرول — فقط سکانس اول */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-slate-400"
+          animate={{ y: [0, 10, 0], opacity: idx === 0 ? 1 : 0 }}
+          transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+        >
+          <span className="text-2xs font-bold">اسکرول کن — جعبه باز می‌شود</span>
+          <ChevronDown className="h-5 w-5" />
+        </motion.div>
+      </div>
     </section>
   );
 }
@@ -170,7 +270,7 @@ const FALLBACK_BEST: ProductCardType[] = [...FALLBACK_NEWEST].sort((a, b) => (b.
 const pickProducts = (items: ProductCardType[] | undefined, fallback: ProductCardType[]) =>
   items && items.length ? items : fallback;
 
-// --------------------------------------------------------------- اسکرول سینمایی فروشگاه (ورود به قفسه‌ی هر دسته) — بهینه‌شده
+// --------------------------------------------------------------- اسکرول سینمایی فروشگاه (ورود به قفسه‌ی هر دسته)
 function MiniGlassCard({ p }: { p: ProductCardType }) {
   return (
     <Link
@@ -379,7 +479,7 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
   );
 }
 
-// --------------------------------------------------------------- ریل افقی محصولات (قفسه‌ی متحرک فروشگاه) — روشن
+// --------------------------------------------------------------- ریل افقی محصولات (قفسه‌ی متحرک فروشگاه)
 function GlassProductCard({ p }: { p: ProductCardType }) {
   return (
     <Link
@@ -518,7 +618,7 @@ function TrustRow() {
   );
 }
 
-// --------------------------------------------------------------- CTA نهایی — نسخه روشن با قاب گرادیانی
+// --------------------------------------------------------------- CTA نهایی
 function FinaleCTA() {
   return (
     <section className={`${FULL} bg-gradient-to-b from-[#edf1ee] to-emerald-100/60 py-24`}>
@@ -595,11 +695,11 @@ export default function HomePage() {
     <div>
       <ScrollProgress />
 
-      {/* 🎬 امضای نئونی برند */}
+      {/* 📦 آنباکسینگ سینمایی — سه اسکرول تا پرچمدار */}
       <CinematicHero />
       <BrandStrip />
 
-      {/* 🏬 قدم‌گذاشتن در فروشگاه — قفسه‌به‌قفسه با اسکرول سینمایی بهینه */}
+      {/* 🏬 قدم‌گذاشتن در فروشگاه — قفسه‌به‌قفسه */}
       <CinematicCategoryScroll tree={tree || []} />
 
       {/* 🛒 قفسه‌ی متحرک پرفروش‌ها */}
