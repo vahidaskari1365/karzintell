@@ -44,7 +44,7 @@ const UNBOX_FRAMES = [
   { src: '/assets/unbox/ic1-closed.jpg', alt: 'جعبه سفید آیفون ۱۷ پرو با عکس گوشی روی بدنه، روی میز ذغالی' },
   { src: '/assets/unbox/ib2-opening.jpg', alt: 'درِ جعبه آیفون در حال باز شدن با نور سبز و ذرات نورانی' },
   { src: '/assets/unbox/ib3-accessories.jpg', alt: 'کابل بافت سفید و لوازم آیفون شناور بالای جعبه باز' },
-  { src: '/assets/unbox/ic4-phone.jpg', alt: 'آیفون ۱۷ پرو سبز با نوار دوربین برآمده تمام‌عرض، ایستاده با نور سبز' },
+  { src: '/assets/unbox/id4-phone.jpg', alt: 'آیفون ۱۷ پرو سبز با نوار دوربین برآمده تمام‌عرض، ایستاده با نور سبز' },
 ];
 
 const UNBOX_COPY = [
