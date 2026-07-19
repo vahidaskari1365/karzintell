@@ -6,7 +6,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   BadgeCheck, BookOpen, Cable, ChevronDown, Cpu, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag, Smartphone,
-  Sparkles, Star, Truck, Watch, Zap,
+  Star, Truck, Watch, Zap,
 } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { toToman, faNumber } from '@/lib/format';
@@ -49,15 +49,6 @@ const UNBOX_FRAMES = [
   { src: '/assets/unbox/rb4-phone.jpg', alt: 'صحنه‌ی شناور آنباکسینگ: آیفون بنفش با سه لنز، پین سیم‌کارت، برگه‌ها و کابل روی سبز تیره' },
 ];
 
-const UNBOX_COPY = [
-  { step: 'رویداد ویژهٔ کارزینتل', title: 'تازه رسید؛ هنوز مهروموم است…', desc: 'هر دستگاه در کارزینتل سالم و مهروموم به دست تو می‌رسد — فقط چند اسکرول با آنباکسینگ واقعی فاصله داری.' },
-  { step: 'اسکرول اول', title: 'درِ جعبه باز شد.', desc: 'اولین نگاه به پرچمدار جدید — لحظه‌ای که قرار است مال تو باشد.' },
-  { step: 'اسکرول دوم', title: 'همه‌چیز، کامل و اصلی.', desc: 'گوشی، کابل بافت USB-C و دفترچه‌ی راهنما — دقیقاً محتویات رسمی کارخانه، بدون هیچ کم‌وکاست.' },
-  { step: 'اسکرول سوم', title: 'آیفون ۱۸ پرو رسید.', desc: 'رنگ بنفش شگفت‌انگیز — با گارانتی رسمی، ارسال سریع به سراسر کشور و قیمت رقابتی کارزینتل.' },
-];
-
-const UNBOX_DOT_LABELS = ['جعبه', 'بازشدن', 'محتویات', 'دستگاه'];
-
 /* ذرات ظریف برای فضای صحنه */
 const CHARCOAL_SEEDS: Array<[string, string, string]> = [
   ['12%', '30%', '0s'], ['20%', '68%', '1.2s'], ['33%', '22%', '.8s'], ['82%', '26%', '1.5s'],
@@ -82,15 +73,6 @@ function CinematicHero() {
   const glowBoost = Math.min(1, w1 + w2 + w3); // نور صحنه در اوج هر برش دم می‌گیرد
   const purpleGlow = frameWindow(p, 3, total, 0.24) * 0.55; // آکسنت بنفش گوشی در سکانس نهایی با صحنه هم‌خوان می‌شود
 
-  const jumpTo = (i: number) => {
-    const el = targetRef.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    const scrollable = el.offsetHeight - window.innerHeight;
-    window.scrollTo({ top: top + (i + 0.02) * (scrollable / total), behavior: 'smooth' });
-  };
-
-  const copy = UNBOX_COPY[idx];
   return (
     <section ref={targetRef} className={`${FULL}`} style={{ height: `${total * 100 + 35}vh` }}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۸ پرو</h1>
@@ -226,22 +208,10 @@ function CinematicHero() {
           ))}
         </div>
 
-        {/* نشان رویداد بالای صحنه */}
-        <div className="pointer-events-none absolute inset-x-0 top-7 z-20 text-center">
-          <span className="glass-dark inline-flex items-center gap-2 rounded-full px-5 py-1.5 text-2xs font-black tracking-[0.2em] text-emerald-300">
-            <Sparkles className="h-3.5 w-3.5" /> رویداد ویژهٔ کارزینتل: آیفون ۱۸ پرو
-          </span>
-        </div>
-
-        {/* کپشن هر سکانس — حباب شیشه‌ای روی صحنه‌ی ذغالی؛ با تعویض صحنه دوباره پخش می‌شود */}
-        <div key={idx} className="animate-caption-in absolute bottom-28 right-6 z-20 max-w-sm text-right sm:bottom-24 sm:right-14">
-          <div className="rounded-2xl bg-[#0b0f10]/60 p-4 ring-1 ring-white/10 backdrop-blur-md sm:p-5">
-          <span className="text-2xs font-black tracking-[0.25em] text-emerald-400">{copy.step}</span>
-          <h2 className="mt-2 text-3xl font-black leading-snug text-white sm:text-4xl">{copy.title}</h2>
-          <p className="mt-3 text-xs leading-7 text-slate-300/90 sm:text-sm sm:leading-7">{copy.desc}</p>
-
-          {idx === total - 1 && (
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
+        {/* سکانس پایانی: فقط دکمه‌های خرید، تمیز و مینیمال — مرکز پایین صحنه */}
+        {idx === total - 1 && (
+          <div key={idx} className="animate-caption-in absolute inset-x-0 bottom-24 z-20 flex justify-center">
+            <div className="flex flex-wrap justify-center gap-3">
               <Magnetic>
                 <Link
                   href="/search?category=mobile"
@@ -259,25 +229,8 @@ function CinematicHero() {
                 </Link>
               </Magnetic>
             </div>
-          )}
           </div>
-        </div>
-
-        {/* ناوبری سکانس‌ها — سمت چپ */}
-        <div className="absolute left-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-4 md:flex">
-          {UNBOX_DOT_LABELS.map((label, i) => (
-            <button key={label} onClick={() => jumpTo(i)} className="group flex flex-col items-center gap-4" aria-label={`رفتن به سکانس ${label}`}>
-              <span
-                className={`rounded-full transition-all duration-500 ${
-                  i === idx ? 'h-8 w-2 bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'h-2 w-2 bg-slate-600 group-hover:bg-emerald-500/100/60'
-                }`}
-              />
-              <span className={`text-2xs transition-colors duration-300 ${i === idx ? 'font-black text-emerald-300' : 'text-slate-400 group-hover:text-slate-300'}`}>
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
+        )}
 
         {/* خط پیشرفت پایین */}
         <div className="absolute inset-x-0 bottom-6 z-20 mx-auto h-1 w-56 overflow-hidden rounded-full bg-white/10">
