@@ -208,8 +208,37 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 
 /* احترام به حساسیت به حرکت */
 @media (prefers-reduced-motion: reduce) {
-  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge, .animate-soft-zoom, .animate-aurora { animation: none !important; }
+  .neon-seed, .animate-neon-drift, .animate-neon-pulse, .neon-comet, .neon-surge, .animate-soft-zoom, .animate-aurora,
+  .film-breath, .sheen-sweep, .rays-sway, .spark-drift { animation: none !important; }
 }
+
+/* ───── سکانس همیشه‌زنده‌ی هیرو — حس پخش فیلم حتا وقتی دست روی اسکرول نیست ───── */
+@keyframes film-breath {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.033) translateY(-3px); }
+}
+.film-breath { animation: film-breath 7.5s ease-in-out infinite alternate; will-change: transform; }
+
+@keyframes sheen-sweep {
+  0%, 62% { transform: translateX(220%) rotate(16deg); opacity: 0; }
+  70% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(-320%) rotate(16deg); opacity: 0; }
+}
+.sheen-sweep { animation: sheen-sweep 6.5s ease-in-out infinite; will-change: transform, opacity; }
+
+@keyframes rays-sway {
+  from { transform: scaleY(0.94) translateY(6px); }
+  to { transform: scaleY(1.05) translateY(-4px); }
+}
+.rays-sway { animation: rays-sway 8.5s ease-in-out infinite alternate; transform-origin: 50% 100%; will-change: transform; }
+
+@keyframes spark-drift {
+  0% { transform: translate3d(0, 0, 0); opacity: .12; }
+  45% { opacity: .55; }
+  100% { transform: translate3d(10px, -52px, 0); opacity: .08; }
+}
+.spark-drift { animation: spark-drift 6.2s ease-in-out infinite alternate; will-change: transform, opacity; }
 
 /* سرچ‌باکس شیشه‌ای روی هدر ذغالی */
 .neon-search input {

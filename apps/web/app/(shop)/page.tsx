@@ -43,10 +43,10 @@ const GT = ({ children }: { children: React.ReactNode }) => (
 /* موتور اسکرول: lib/scroll-engine.ts (رویداد خام + rAF + فال‌بک، کراس‌فید متقاطع واقعی) */
 /* سه اسکرول = سه سکانس: بازشدن درِ جعبه → محتویات داخل جعبه → صحنه‌ی شناور پرده‌برداری */
 const UNBOX_FRAMES = [
-  { src: '/assets/unbox/rb1-box.jpg', alt: 'جعبه‌ی سفید مهروموم‌شده‌ی آیفون ۱۸ پرو روی پس‌زمینه‌ی استودیویی روشن' },
-  { src: '/assets/unbox/rb2-lid.jpg', alt: 'درِ سفید جعبه کمی باز شده و بدنه‌ی تیره‌ی گوشی داخل قاب مخصوصش دیده می‌شود' },
-  { src: '/assets/unbox/rb3-gear.jpg', alt: 'سینی باز جعبه با گوشی صفحه‌سیاه، حلقه‌ی کابل بافت سفید USB-C و دفترچه؛ درِ جعبه کنار آن ایستاده است' },
-  { src: '/assets/unbox/rb4-phone.jpg', alt: 'صحنه‌ی شناور آنباکسینگ: درِ جعبه، آیفون بنفش از نمای جلو و پشت با سه لنز، پین سیم‌کارت، برگه‌ها و کابل USB-C معلق در هوا' },
+  { src: '/assets/unbox/rb1-box.jpg', alt: 'جعبه‌ی سفید مهروموم‌شده‌ی آیفون ۱۸ پرو زیر نور استودیو، روی صحنه‌ی سبز تیره' },
+  { src: '/assets/unbox/rb2-lid.jpg', alt: 'درِ سفید جعبه کمی باز شده و بدنه‌ی تیره‌ی گوشی داخل قابش دیده می‌شود؛ صحنه‌ی سبز سینمایی' },
+  { src: '/assets/unbox/rb3-gear.jpg', alt: 'سینی باز جعبه با گوشی صفحه‌سیاه، کابل بافت USB-C و دفترچه روی نور استودیوی سبز' },
+  { src: '/assets/unbox/rb4-phone.jpg', alt: 'صحنه‌ی شناور آنباکسینگ: آیفون بنفش با سه لنز، پین سیم‌کارت، برگه‌ها و کابل روی سبز تیره' },
 ];
 
 const UNBOX_COPY = [
@@ -80,6 +80,7 @@ function CinematicHero() {
   const w2 = wave(2 * segT); // مرز دوم: برخاستن محتویات به هوا
   const w3 = wave(3 * segT); // مرز سوم: شوک‌ویو تولد صحنه‌ی نهایی
   const glowBoost = Math.min(1, w1 + w2 + w3); // نور صحنه در اوج هر برش دم می‌گیرد
+  const purpleGlow = frameWindow(p, 3, total, 0.24) * 0.55; // آکسنت بنفش گوشی در سکانس نهایی با صحنه هم‌خوان می‌شود
 
   const jumpTo = (i: number) => {
     const el = targetRef.current;
@@ -96,15 +97,26 @@ function CinematicHero() {
 
       {/* ساختار دقیقاً هم‌الگو با اسکرول قفسه‌های پایین صفحه که روی دستگاه شما سالم کار می‌کند */}
       <div className="sticky top-0 h-[100svh] overflow-hidden bg-[radial-gradient(120%_95%_at_50%_12%,#1a2125_0%,#0c0f10_72%)]">
-        {/* صحنه‌ی ذغالی سینما + تقویت نور در اوج هر برش */}
+        {/* صحنه‌ی ذغالی سینما + تقویت نور در اوج هر برش + لایه‌ی همیشه‌زنده‌ی فیلم */}
         <div aria-hidden className="absolute inset-0">
           <div
             className="absolute inset-x-0 bottom-0 top-[40%] bg-[radial-gradient(62%_58%_at_50%_76%,rgba(16,185,129,.18),transparent_72%)]"
             style={{ opacity: 0.5 + glowBoost * 0.5 }}
           />
+          {/* پرتوی سینمایی رقصان پشت قاب‌ها — مثل نور پروژکتورِ سالن سینما */}
+          <div
+            className="rays-sway absolute inset-x-[-22%] bottom-0 top-[44%] bg-[conic-gradient(from_-90deg_at_50%_100%,transparent_0deg,rgba(16,185,129,0.12)_8deg,transparent_17deg,rgba(255,255,255,0.05)_23deg,transparent_31deg,rgba(16,185,129,0.10)_41deg,transparent_54deg)]"
+            style={{ opacity: 0.55 + glowBoost * 0.45 }}
+          />
+          {/* هاله‌ی بنفش سکانس نهایی — هم‌رنگ گوشی */}
+          <div className="absolute inset-x-[22%] bottom-[6%] h-64 rounded-full bg-violet-500/25 blur-3xl" style={{ opacity: purpleGlow }} />
           <div className="absolute inset-0 bg-[radial-gradient(130%_100%_at_50%_0%,transparent_56%,rgba(5,7,8,.62))]" />
           {CHARCOAL_SEEDS.map(([x, y, d], i) => (
             <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.35 }} />
+          ))}
+          {/* جرقه‌های شناور — هوای صحنه همیشه در حرکت است */}
+          {[['16%', '32%', '0s'], ['80%', '26%', '1.3s'], ['28%', '64%', '2.4s'], ['68%', '58%', '3.2s'], ['50%', '18%', '4.1s'], ['86%', '50%', '5s']].map(([x, y, d], n) => (
+            <i key={n} className="spark-drift absolute block h-1 w-1 rounded-full bg-emerald-300/80" style={{ left: x, top: y, animationDelay: d }} />
           ))}
         </div>
 
@@ -148,13 +160,24 @@ function CinematicHero() {
                     transition: 'transform .12s linear',
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={f.src} alt={f.alt} draggable={false}
-                    fetchPriority={i === 0 ? 'high' : undefined}
-                    className="h-full w-full select-none rounded-[2rem] object-cover object-center shadow-[0_45px_140px_-18px_rgba(0,0,0,0.9)] ring-1 ring-white/15"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
-                  />
+                  {/* سکانس زنده: نفس‌کشیدن فیلم + برق دوربین روی قاب */}
+                  <div className="film-breath relative h-full w-full" style={{ animationDelay: `${i * 0.9}s` }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={f.src} alt={f.alt} draggable={false}
+                      fetchPriority={i === 0 ? 'high' : undefined}
+                      className="h-full w-full select-none rounded-[2rem] object-cover object-center shadow-[0_45px_140px_-18px_rgba(0,0,0,0.9)] ring-1 ring-white/15"
+                      style={{ transform: `scale(${1.045 - local * 0.045})`, transition: 'transform .12s linear' }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
+                    />
+                    {/* برق لنز که چرخه‌ای روی قاب می‌غزه — حس پخش زنده‌ی فیلم */}
+                    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2rem]">
+                      <div
+                        className="sheen-sweep absolute -top-[30%] bottom-[-30%] right-0 w-[38%] bg-gradient-to-l from-transparent via-white/15 to-transparent"
+                        style={{ animationDelay: `${1.2 + i * 1.5}s` }}
+                      />
+                    </div>
+                  </div>
                   {/* قاب نئون ظریف دور عکس */}
                   <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[2rem] shadow-[inset_0_0_0_1px_rgba(16,185,129,0.10)]" />
                 </div>
