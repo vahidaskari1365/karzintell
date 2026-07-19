@@ -43,10 +43,10 @@ const GT = ({ children }: { children: React.ReactNode }) => (
 /* موتور اسکرول: lib/scroll-engine.ts (رویداد خام + rAF + فال‌بک، کراس‌فید متقاطع واقعی) */
 /* سه اسکرول = سه سکانس: بازشدن درِ جعبه → بیرون‌آمدن محتویات → پرده‌برداری از گوشی */
 const UNBOX_FRAMES = [
-  { src: '/assets/unbox/ic1-closed.jpg', alt: 'جعبه سفید آیفون ۱۷ پرو با عکس گوشی روی بدنه، روی میز ذغالی' },
-  { src: '/assets/unbox/ib2-opening.jpg', alt: 'درِ جعبه آیفون در حال باز شدن با نور سبز و ذرات نورانی' },
-  { src: '/assets/unbox/ib3-accessories.jpg', alt: 'کابل بافت سفید و لوازم آیفون شناور بالای جعبه باز' },
-  { src: '/assets/unbox/id4-phone.jpg', alt: 'آیفون ۱۷ پرو سبز با نوار دوربین برآمده سه‌لنزه، ایستاده با نور سبز' },
+  { src: '/assets/unbox/ub1-box.jpg', alt: 'جعبه سفید مهروموم‌شده آیفون با چاپ گوشی سبز، روی میز ذغالی براق' },
+  { src: '/assets/unbox/ub2-lid.jpg', alt: 'درِ سفید جعبه در هوا باز می‌شود و نور سبز حجمی از درونش بیرون می‌زند' },
+  { src: '/assets/unbox/ub3-gear.jpg', alt: 'کابل بافت سفید، شارژر، پین سیم‌کارت و دفترچه در هوا معلق‌اند' },
+  { src: '/assets/unbox/ub4-phone.jpg', alt: 'گوشی سبز پرچمدار با سه لنز و نوار دوربین برآمده، تنها در هوا معلق است' },
 ];
 
 const UNBOX_COPY = [
@@ -113,6 +113,7 @@ function CinematicHero() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={f.src} alt={f.alt} draggable={false}
+              fetchPriority={i === 0 ? 'high' : undefined}
               className="h-full w-full select-none object-cover object-center"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
             />
