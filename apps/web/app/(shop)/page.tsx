@@ -41,10 +41,10 @@ const GT = ({ children }: { children: React.ReactNode }) => (
 // =============================================================== هیرو — آنباکسینگ سینمایی آیفون ۱۷ پرو (زمینه ذغالی)
 /* سه اسکرول = سه سکانس: بازشدن درِ جعبه → بیرون‌آمدن محتویات → پرده‌برداری از گوشی */
 const UNBOX_FRAMES = [
-  { src: '/assets/unbox/u1-closed.jpg', alt: 'جعبه سبز پرچمدار جدید روی میز تیره' },
-  { src: '/assets/unbox/u2-opening.jpg', alt: 'درِ جعبه در حال باز شدن با نور سبز' },
-  { src: '/assets/unbox/u3-accessories.jpg', alt: 'کابل و لوازم شناور بالای جعبه باز' },
-  { src: '/assets/unbox/u4-phone.jpg', alt: 'گوشی پرچمدار جدید ایستاده با نور سبز' },
+  { src: '/assets/unbox/ib1-closed.jpg', alt: 'جعبه سفید آیفون ۱۷ پرو با عکس گوشی روی بدنه، روی میز ذغالی' },
+  { src: '/assets/unbox/ib2-opening.jpg', alt: 'درِ جعبه آیفون در حال باز شدن با نور سبز و ذرات نورانی' },
+  { src: '/assets/unbox/ib3-accessories.jpg', alt: 'کابل بافت سفید و لوازم آیفون شناور بالای جعبه باز' },
+  { src: '/assets/unbox/ib4-phone.jpg', alt: 'آیفون ۱۷ پرو سبز با نوار دوربین تمام‌عرض، ایستاده با نور سبز' },
 ];
 
 const UNBOX_COPY = [
