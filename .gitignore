@@ -1,0 +1,46 @@
+# وابستگی‌ها
+node_modules/
+.pnp/
+.pnp.js
+
+# خروجی بیلد
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# محیط و سکرت‌ها
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# لاگ‌ها
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# کش ابزارها
+.cache/
+.turbo/
+coverage/
+
+# فایل‌های آپلودی محلی (در حالت عادی روی MinIO/S3 هستند)
+uploads/
+storage/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# دیتابیس محلی
+*.sql.gz
+*.dump
