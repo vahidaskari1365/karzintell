@@ -29,9 +29,9 @@ export class NotificationsService implements OnModuleInit {
     private readonly pushSubs: Repository<PushSubscription>,
     private readonly queue: QueueService,
   ) {
-    // مصرف‌کننده‌های صف (Background Jobs)
-    this.queue.register('sms.send', (p) => this.deliverSms(p.phone, p.message));
-    this.queue.register('sms.send_otp', (p) => this.deliverOtpSms(p.phone, p.code));
+    // مصرف‌کننده‌های صف (Background Jobs) با پشتیبانی از فالبک پیامک دوم در صورت شکست اولیه
+    this.queue.register('sms.send', (p) => this.deliverSmsWithFallback(p.phone, p.message));
+    this.queue.register('sms.send_otp', (p) => this.deliverOtpSmsWithFallback(p.phone, p.code));
     this.queue.register('email.send', (p) => this.deliverEmail(p.to, p.subject, p.text));
   }
 
@@ -129,6 +129,70 @@ export class NotificationsService implements OnModuleInit {
   /** ارسال پیامک — از طریق صف پس‌زمینه (بدون بلاک کردن درخواست) */
   async sendSms(phone: string, message: string): Promise<void> {
     await this.queue.enqueue('sms.send', { phone, message });
+  }
+
+  /** متدهای کمکی برای هندل کردن ارسال‌های با فالبک پنل پیامک دوم در صورت داون بودن پنل اول */
+  private async deliverSmsWithFallback(phone: string, message: string) {
+    try {
+      await this.deliverSms(phone, message);
+    } catch (primaryError) {
+      this.logger.warn(`Primary SMS gateway failed: ${(primaryError as Error).message}. Attempting secondary backup gateway (IPPanel/FarazSMS)...`);
+      const backupApiKey = process.env.BACKUP_SMS_API_KEY;
+      const backupSender = process.env.BACKUP_SMS_SENDER || '3000505';
+      if (backupApiKey) {
+        try {
+          const url = `https://ippanel.com/services/sms/send/simple`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `AccessKey ${backupApiKey}` },
+            body: JSON.stringify({
+              recipient: [phone],
+              sender: backupSender,
+              message,
+            }),
+          });
+          if (res.ok) {
+            this.logger.log(`✅ Backup SMS sent successfully to ${phone}`);
+            return;
+          }
+        } catch (backupError) {
+          this.logger.error(`Backup SMS gateway also failed: ${(backupError as Error).message}`);
+        }
+      }
+      throw primaryError;
+    }
+  }
+
+  private async deliverOtpSmsWithFallback(phone: string, code: string) {
+    try {
+      await this.deliverOtpSms(phone, code);
+    } catch (primaryError) {
+      this.logger.warn(`Primary OTP SMS gateway failed: ${(primaryError as Error).message}. Attempting secondary backup OTP...`);
+      const backupApiKey = process.env.BACKUP_SMS_API_KEY;
+      const backupTemplate = process.env.BACKUP_SMS_OTP_TEMPLATE || 'otp';
+      if (backupApiKey) {
+        try {
+          const url = `https://ippanel.com/services/sms/pattern/send`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `AccessKey ${backupApiKey}` },
+            body: JSON.stringify({
+              pattern_code: backupTemplate,
+              originator: process.env.BACKUP_SMS_SENDER || '3000505',
+              recipient: phone,
+              values: { code },
+            }),
+          });
+          if (res.ok) {
+            this.logger.log(`✅ Backup OTP sent successfully to ${phone}`);
+            return;
+          }
+        } catch (backupError) {
+          this.logger.error(`Backup OTP gateway also failed: ${(backupError as Error).message}`);
+        }
+      }
+      throw primaryError;
+    }
   }
 
   /** اجرای واقعی ارسال پیامک (داخل ورکر صف) */
