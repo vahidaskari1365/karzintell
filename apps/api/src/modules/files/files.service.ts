@@ -82,4 +82,111 @@ export class FilesService {
       }),
     );
   }
+
+  /** آپلود مستقیم بافر فایل و بهینه‌سازی فرمت و رزولوشن آن به WebP در ۳ سایز */
+  async uploadAndOptimize(fileBuffer: Buffer, originalName: string, mimeType: string, purpose: string, ownerId: number) {
+    let sharp: any;
+    try {
+      sharp = require('sharp');
+    } catch {
+      this.logger.warn('کتابخانه Sharp نصب نشده است؛ تصویر بهینه‌سازی نخواهد شد.');
+    }
+
+    const folder = PURPOSE_FOLDERS[purpose] || 'misc';
+    const originalExt = originalName.split('.').pop() || 'bin';
+    const baseUuid = uuid();
+
+    if (sharp && mimeType.startsWith('image/') && mimeType !== 'image/gif') {
+      try {
+        // ۱. تصویر بزرگ (Large) - حداکثر ۱۲۰۰ پیکسل عرض/ارتفاع
+        const largeBuffer = await sharp(fileBuffer)
+          .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toBuffer();
+        const largePath = `${folder}/${baseUuid}_large.webp`;
+        await this.uploadBufferToS3(largeBuffer, largePath, 'image/webp');
+
+        // ۲. تصویر متوسط (Medium) - حداکثر ۶۰۰ پیکسل عرض/ارتفاع
+        const mediumBuffer = await sharp(fileBuffer)
+          .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toBuffer();
+        const mediumPath = `${folder}/${baseUuid}_medium.webp`;
+        await this.uploadBufferToS3(mediumBuffer, mediumPath, 'image/webp');
+
+        // ۳. تصویر کوچک (Thumbnail) - ۱۵۰ در ۱۵۰ کراپ شده
+        const thumbBuffer = await sharp(fileBuffer)
+          .resize(150, 150, { fit: 'cover' })
+          .webp({ quality: 85 })
+          .toBuffer();
+        const thumbPath = `${folder}/${baseUuid}_thumb.webp`;
+        await this.uploadBufferToS3(thumbBuffer, thumbPath, 'image/webp');
+
+        const record = await this.files.save(
+          this.files.create({
+            path: largePath,
+            purpose,
+            originalName,
+            mimeType: 'image/webp',
+            sizeBytes: largeBuffer.length,
+            ownerId,
+          }),
+        );
+
+        return {
+          id: record.id,
+          path: largePath,
+          publicUrl: this.publicUrl(largePath),
+          sizes: {
+            large: this.publicUrl(largePath),
+            medium: this.publicUrl(mediumPath),
+            thumbnail: this.publicUrl(thumbPath),
+          }
+        };
+      } catch (e) {
+        this.logger.error(`Sharp image optimization failed: ${(e as Error).message}`);
+      }
+    }
+
+    // فالبک برای تصاویر متحرک گیف، ویدیو یا در صورت خطا
+    const ext = EXT_BY_MIME[mimeType] || originalExt;
+    const path = `${folder}/${baseUuid}.${ext}`;
+    await this.uploadBufferToS3(fileBuffer, path, mimeType);
+
+    const record = await this.files.save(
+      this.files.create({
+        path,
+        purpose,
+        originalName,
+        mimeType,
+        sizeBytes: fileBuffer.length,
+        ownerId,
+      }),
+    );
+
+    return {
+      id: record.id,
+      path,
+      publicUrl: this.publicUrl(path),
+    };
+  }
+
+  private async uploadBufferToS3(buffer: Buffer, path: string, mimeType: string) {
+    try {
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: env.s3.bucket,
+          Key: path,
+          Body: buffer,
+          ContentType: mimeType,
+        }),
+      );
+    } catch (e) {
+      this.logger.error(`S3 direct upload failed for ${path}: ${(e as Error).message}`);
+      throw new ServiceUnavailableException({
+        code: 'STORAGE_UNAVAILABLE',
+        message: 'خطا در بارگذاری فایل در فضای S3 یا MinIO',
+      });
+    }
+  }
 }

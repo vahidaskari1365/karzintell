@@ -1,5 +1,6 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { IsIn, IsMimeType, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 import { CurrentUser, RequirePermissions } from '../../common/decorators';
 import { AuthUser } from '../../common/types';
@@ -37,6 +38,24 @@ export class FilesController {
   @Post('files/confirm')
   async confirm(@Body() dto: ConfirmDto, @CurrentUser() user: AuthUser) {
     return { data: await this.files.confirm(dto, user.id) };
+  }
+
+  @Post('files/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async upload(
+    @UploadedFile() file: any,
+    @Query('purpose') purpose: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return {
+      data: await this.files.uploadAndOptimize(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        purpose || 'misc',
+        user.id,
+      ),
+    };
   }
 
   @Post('admin/files/presign')

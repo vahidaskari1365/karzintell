@@ -253,6 +253,18 @@ export class ProductsService {
     const slug = await this.uniqueSlug(dto.slug || dto.name);
     await this.assertUniqueCode(dto.code);
 
+    // تولید خودکار توضیحات، ویژگی‌های کلیدی و جدول مشخصات فنی در صورت خالی بودن
+    const autoFilled = this.generateAutoSpecsAndDescription(dto.name, dto.categoryId);
+    if (!dto.description || !dto.description.trim()) {
+      dto.description = autoFilled.description;
+    }
+    if (!dto.features || !dto.features.length) {
+      dto.features = autoFilled.features;
+    }
+    if (!dto.specs || !dto.specs.length) {
+      dto.specs = autoFilled.specs;
+    }
+
     const productId = await this.em.transaction(async (tx) => {
       const product = await tx.getRepository(Product).save(
         tx.getRepository(Product).create({
@@ -491,5 +503,105 @@ export class ProductsService {
     const clash = await this.products.findOne({ where: { code } });
     if (clash && clash.id !== excludeId)
       throw new ConflictException({ code: 'CODE_TAKEN', message: 'کد محصول تکراری است' });
+  }
+
+  /** تولید هوشمند و اتوماتیک فیلدهای توضیحات، مشخصات فنی و ویژگی‌های محصول بر اساس نام و دسته */
+  private generateAutoSpecsAndDescription(name: string, categoryId: number) {
+    let description = `<p>محصول فوق‌العاده باکیفیت و با دوام <strong>${name}</strong> با تضمین اصالت و گارانتی معتبر در فروشگاه کارزینتل عرضه می‌شود.</p>`;
+    let features: string[] = ['تضمین اصالت کالا', 'ارسال سریع به سراسر کشور', 'پشتیبانی ۲۴ ساعته', 'بهترین قیمت بازار'];
+    let specs: any[] = [];
+
+    const lowerName = name.toLowerCase();
+
+    // تشخیص برند
+    let brand = 'اپل';
+    if (lowerName.includes('samsung') || name.includes('سامسونگ')) brand = 'سامسونگ';
+    else if (lowerName.includes('xiaomi') || lowerName.includes('redmi') || name.includes('شیائومی') || name.includes('ردمی')) brand = 'شیائومی';
+    else if (lowerName.includes('huawei') || name.includes('هوآوی')) brand = 'هوآوی';
+    else if (lowerName.includes('anker') || name.includes('انکر')) brand = 'انکر';
+
+    // ۱. گوشی هوشمند
+    if (categoryId === 6 || lowerName.includes('iphone') || lowerName.includes('galaxy') || name.includes('گوشی') || lowerName.includes('redmi')) {
+      let storage = '128 گیگابایت';
+      let storageValId = 6; // default 128
+      if (lowerName.includes('256') || lowerName.includes('256gb')) { storage = '256 گیگابایت'; storageValId = 7; }
+      else if (lowerName.includes('512') || lowerName.includes('512gb')) { storage = '512 گیگابایت'; storageValId = 8; }
+      else if (lowerName.includes('64') || lowerName.includes('64gb')) { storage = '64 گیگابایت'; storageValId = 5; }
+
+      let ram = '8 گیگابایت';
+      let ramValId = 11; // default 8
+      if (lowerName.includes('4gb') || lowerName.includes(' رم 4')) { ram = '4 گیگابایت'; ramValId = 9; }
+      else if (lowerName.includes('6gb') || lowerName.includes(' رم 6')) { ram = '6 گیگابایت'; ramValId = 10; }
+      else if (lowerName.includes('12gb') || lowerName.includes(' رم 12')) { ram = '12 گیگابایت'; ramValId = 12; }
+
+      let screen = '6.1 اینچ';
+      if (lowerName.includes('plus') || lowerName.includes('pro max') || lowerName.includes('ultra') || lowerName.includes('max')) {
+        screen = '6.7 اینچ';
+      }
+
+      description = `
+        <p>گوشی هوشمند <strong>${name}</strong> یکی از جدیدترین و پیشرفته‌ترین محصولات برند محبوب <strong>${brand}</strong> در بازار است. این محصول با برخورداری از سخت‌افزار قدرتمند، برای تمامی فعالیت‌های روزانه، گیمینگ سبک و عکاسی حرفه‌ای انتخابی بی‌نظیر به شمار می‌رود.</p>
+        <h3>صفحه‌نمایش و کیفیت تصویر</h3>
+        <p>مجهز به یک نمایشگر باکیفیت و با تراکم پیکسلی بسیار بالا که تصاویری زنده، پویا و با رنگ‌های عمیق را نمایش می‌دهد. شدت روشنایی عالی این پنل به شما اجازه می‌دهد حتی زیر نور مستقیم خورشید نیز به راحتی با دستگاه کار کنید.</p>
+        <h3>سخت‌افزار و کارایی</h3>
+        <p>در قلب تپنده این دستگاه، پردازنده‌ای قدرتمند همراه با <strong>${ram} حافظه رم</strong> قرار گرفته است که اجرای همزمان برنامه‌ها (Multitasking) و بازی‌ها را بسیار روان و بدون کوچک‌ترین تاخیری ممکن می‌سازد. همچنین، با <strong>${storage} حافظه داخلی</strong>، فضای کافی برای ذخیره‌سازی عکس‌ها، ویدیوها و اپلیکیشن‌های خود خواهید داشت.</p>
+        <h3>دوربین و ثبت لحظات</h3>
+        <p>دوربین فوق‌العاده هوشمند این محصول به شما اجازه می‌دهد در هر شرایط نوری، عکس‌هایی با جزئیات خیره‌کننده، نویز کم و رنگ‌های کاملاً طبیعی ثبت کنید. سنسورهای پیشرفته به همراه پردازش نرم‌افزاری هوش مصنوعی، کیفیتی در سطح آتلیه را به شما ارائه می‌دهند.</p>
+      `;
+
+      features = [
+        `صفحه‌نمایش درخشان و باکیفیت ${screen}`,
+        `پردازنده قدرتمند و بهینه ${brand}`,
+        `حافظه داخلی با ظرفیت بالای ${storage}`,
+        `رم ${ram} جهت مولتی‌تسکینگ فوق‌العاده روان`,
+        'سیستم دوربین هوشمند پیشرفته با رزولوشن عالی',
+        'باتری با طول عمر بالا همراه با پشتیبانی از شارژ سریع',
+      ];
+
+      specs = [
+        { attributeId: 2, attributeValueId: storageValId }, // حافظه داخلی
+        { attributeId: 3, attributeValueId: ramValId },     // حافظه رم
+        { attributeId: 4, customValue: screen },            // اندازه صفحه نمایش
+      ];
+    }
+    // ۲. ساعت هوشمند
+    else if (categoryId === 3 || lowerName.includes('watch') || name.includes('ساعت') || lowerName.includes('band')) {
+      description = `
+        <p>ساعت هوشمند <strong>${name}</strong> از برند پیشرو <strong>${brand}</strong>، همیار سلامتی و ورزش شماست. این گجت شیک و مدرن، با اتصال به تلفن همراه شما، امکانات متعددی را از پایش خواب تا سنجش اکسیژن خون روی مچ دست شما فراهم می‌سازد.</p>
+        <h3>طراحی و ساخت</h3>
+        <p>دارای بدنه مقاوم و ضد حساسیت با وزن بسیار سبک که برای استفاده‌های طولانی‌مدت و ورزشی کاملاً ایده‌آل است. بندهای قابل تعویض به شما این امکان را می‌دهند تا ظاهر ساعت را با استایل روزانه خود هماهنگ کنید.</p>
+        <h3>پایش سلامتی و سنسورها</h3>
+        <p>مجهز به پیشرفته‌ترین سنسورهای اندازه‌گیری ضربان قلب، سطح اکسیژن خون (SpO2) و پایش مداوم سطح استرس و کیفیت خواب شبانه. این گجت به شما کمک می‌کند همواره بر وضعیت بدنی خود نظارت کامل داشته باشید.</p>
+      `;
+
+      features = [
+        'پایش ۲۴ ساعته ضربان قلب و اکسیژن خون',
+        'مقاومت کامل در برابر نفوذ آب (استاندارد ضدآب)',
+        'پشتیبانی از ده‌ها حالت ورزشی مختلف',
+        'باتری بهینه با شارژدهی فوق‌العاده چند روزه',
+        'نمایش پیام‌ها و اعلان‌های فارسی شبکه‌های اجتماعی',
+      ];
+
+      specs = [
+        { attributeId: 4, customValue: '1.9 اینچ' }, // اندازه صفحه نمایش
+      ];
+    }
+    // ۳. هدفون و صوتی
+    else if (categoryId === 4 || lowerName.includes('buds') || lowerName.includes('headphone') || name.includes('هدفون') || lowerName.includes('earphone')) {
+      description = `
+        <p>هندزفری بی‌سیم <strong>${name}</strong> تجربه‌ای جدید از شنیدن موسیقی را به شما هدیه می‌دهد. این گجت با بهره‌گیری از تکنولوژی‌های پیشرفته کاهش نویز و بیس قدرتمند، انتخابی بی‌نظیر برای علاقمندان به موسیقی و مکالمات شفاف است.</p>
+        <h3>کیفیت صدا و بیس عمیق</h3>
+        <p>درایورهای دینامیک و بهینه‌سازی شده صدا، صدایی شفاف با تفکیک عالی فرکانس‌های زیر و بم را پخش می‌کنند که لذت شنیدن موسیقی را دوچندان می‌کند.</p>
+      `;
+
+      features = [
+        'مکالمه باکیفیت و شفاف با حذف نویز محیطی فعال',
+        'فناوری اتصال سریع بلوتوث ۵.۳ / ۵.۴',
+        'طراحی ارگونومیک و سبک برای راحتی گوش‌ها',
+        'باتری قدرتمند با بازدهی تا ۳۰ ساعت همراه با کیس شارژ',
+      ];
+    }
+
+    return { description, features, specs };
   }
 }

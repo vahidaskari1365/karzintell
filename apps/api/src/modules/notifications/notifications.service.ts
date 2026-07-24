@@ -31,6 +31,7 @@ export class NotificationsService implements OnModuleInit {
   ) {
     // مصرف‌کننده‌های صف (Background Jobs)
     this.queue.register('sms.send', (p) => this.deliverSms(p.phone, p.message));
+    this.queue.register('sms.send_otp', (p) => this.deliverOtpSms(p.phone, p.code));
     this.queue.register('email.send', (p) => this.deliverEmail(p.to, p.subject, p.text));
   }
 
@@ -145,8 +146,28 @@ export class NotificationsService implements OnModuleInit {
     this.logger.log(`[SMS provider=${env.sms.provider}] ${phone}: ${message}`);
   }
 
+  /** ارسال پیامک یکبار مصرف OTP از طریق سرویس خدماتی ضد بلک‌لیست (Lookup) کاوه‌نگار */
+  private async deliverOtpSms(phone: string, code: string) {
+    if (env.sms.provider === 'log' || !env.sms.apiKey) {
+      this.logger.log(`[OTP SMS→${phone}] Code: ${code}`);
+      return;
+    }
+    if (env.sms.provider === 'kavenegar') {
+      const template = process.env.KAVENEGAR_OTP_TEMPLATE || 'otp';
+      const url = `https://api.kavenegar.com/v1/${env.sms.apiKey}/verify/lookup.json?receptor=${encodeURIComponent(phone)}&token=${encodeURIComponent(code)}&template=${encodeURIComponent(template)}`;
+      const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) {
+        this.logger.warn(`kavenegar lookup failed for ${phone}, trying fallback standard send...`);
+        const fallbackUrl = `https://api.kavenegar.com/v1/${env.sms.apiKey}/sms/send.json?receptor=${encodeURIComponent(phone)}&message=${encodeURIComponent(`کارزینتل\nکد تأیید شما: ${code}`)}`;
+        await fetch(fallbackUrl, { method: 'POST' });
+      }
+      return;
+    }
+    this.logger.log(`[SMS provider=${env.sms.provider}] OTP ${phone}: ${code}`);
+  }
+
   async sendOtpSms(phone: string, code: string): Promise<void> {
-    await this.sendSms(phone, `کارزینتل\nکد تأیید شما: ${code}`);
+    await this.queue.enqueue('sms.send_otp', { phone, code });
   }
 
   /** ارسال ایمیل — از طریق صف پس‌زمینه */
