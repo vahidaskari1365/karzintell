@@ -3,6 +3,7 @@ import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { OrderItem, Product, ProductQuestion, Review } from '../../database/entities';
 import { paginate } from '../../common/utils';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ReviewsService {
@@ -12,6 +13,7 @@ export class ReviewsService {
     @InjectRepository(Product) private readonly products: Repository<Product>,
     @InjectRepository(OrderItem) private readonly orderItems: Repository<OrderItem>,
     @InjectEntityManager() private readonly em: EntityManager,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // --------------------------------------------------- عمومی
@@ -127,6 +129,14 @@ export class ReviewsService {
       review.sellerReply = body;
       review.repliedAt = new Date();
       await this.reviews.save(review);
+
+      // ارسال پیامک پاسخ به ثبت دیدگاه
+      const user = await this.em.query(`SELECT phone, full_name AS fullName FROM users WHERE id = ? LIMIT 1`, [review.userId]);
+      if (user?.[0]?.phone) {
+        const product = await this.products.findOne({ where: { id: review.productId } });
+        const msg = `سلام ${user[0].fullName} عزیز\nپاسخ جدیدی برای دیدگاه شما در محصول «${product?.name || 'محصول منتخب'}» ثبت شد.\nکارزینتل`;
+        await this.notifications.sendSms(user[0].phone, msg).catch(() => undefined);
+      }
     }
     return review;
   }
@@ -139,10 +149,20 @@ export class ReviewsService {
       q.answeredBy = adminId;
       q.answeredAt = new Date();
       q.status = 'answered';
+      await this.questions.save(q);
+
+      // ارسال پیامک پاسخ به سوال محصول
+      const user = await this.em.query(`SELECT phone, full_name AS fullName FROM users WHERE id = ? LIMIT 1`, [q.userId]);
+      if (user?.[0]?.phone) {
+        const product = await this.products.findOne({ where: { id: q.productId } });
+        const msg = `سلام ${user[0].fullName} عزیز\nپاسخ سوال شما درباره محصول «${product?.name || 'محصول منتخب'}» ثبت شد.\nکارزینتل`;
+        await this.notifications.sendSms(user[0].phone, msg).catch(() => undefined);
+      }
     } else {
       q.status = 'rejected';
+      await this.questions.save(q);
     }
-    return this.questions.save(q);
+    return q;
   }
 
   private async refreshProductRating(productId: number) {

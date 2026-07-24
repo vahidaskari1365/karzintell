@@ -56,6 +56,14 @@ const CHARCOAL_SEEDS: Array<[string, string, string]> = [
 ];
 
 function CinematicHero() {
+  const [isMobile, setIsMobile] = useState(true);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const total = UNBOX_FRAMES.length; // ۴ فریم = ۳ اسکرول
   const targetRef = useRef<HTMLElement | null>(null);
   const p = useStickyProgress(targetRef);
@@ -72,6 +80,39 @@ function CinematicHero() {
   const w3 = wave(3 * segT); // مرز سوم: شوک‌ویو تولد صحنه‌ی نهایی
   const glowBoost = Math.min(1, w1 + w2 + w3); // نور صحنه در اوج هر برش دم می‌گیرد
   const purpleGlow = frameWindow(p, 3, total, 0.24) * 0.55; // آکسنت بنفش گوشی در سکانس نهایی با صحنه هم‌خوان می‌شود
+
+  if (isMobile) {
+    return (
+      <section className={`${FULL} relative overflow-hidden bg-[radial-gradient(120%_95%_at_50%_12%,#1a2125_0%,#0c0f10_72%)] py-12 px-4 text-center border-b border-white/5`}>
+        <div className="relative z-10 mx-auto max-w-xl space-y-6">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-black text-emerald-400">
+            <Zap className="h-3.5 w-3.5" />
+            جشنواره اختصاصی کارزینتل
+          </span>
+          <h1 className="text-2xl font-black text-white sm:text-3xl">فروشگاه آنلاین قطعات و گجت‌های الکترونیک</h1>
+          <p className="text-xs leading-6 text-slate-300">
+            جدیدترین پرچمداران، قطعات تخصصی، ساعت هوشمند و لوازم جانبی با ضمانت اصالت کالا و ارسال سریع به سراسر ایران
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link href="/categories/mobile" className="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/25">خرید موبایل</Link>
+            <Link href="/search" className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-xs font-bold text-slate-300">جستجوی کالا</Link>
+          </div>
+          {/* تک عکس هیرو - بنر بسیار سبک و باکیفیت آیفون ۱۸ پرو */}
+          <div className="relative mx-auto mt-6 w-full max-w-sm overflow-hidden rounded-2xl bg-[#10130f] shadow-2xl ring-1 ring-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/unbox/rb4-phone.jpg"
+              alt="کارزینتل - آیفون ۱۸ پرو"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
+        {/* افکت نوری پس‌زمینه */}
+        <div className="absolute -bottom-10 right-0 h-44 w-44 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-10 left-10 h-44 w-44 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
+      </section>
+    );
+  }
 
   return (
     <section ref={targetRef} className={`${FULL}`} style={{ height: `${total * 100 + 35}vh` }}>

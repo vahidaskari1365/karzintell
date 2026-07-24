@@ -91,6 +91,17 @@ export class TicketsService {
       ticket.status = 'pending_customer';
       await this.tickets.save(ticket);
       await this.notifications.notify(ticket.userId, 'ticket.replied', 'پاسخ جدید به تیکت شما', `تیکت «${ticket.subject}» پاسخ داده شد.`, { ticketId: id });
+
+      // ارسال پیامک پاسخ جدید به تیکت مشتری
+      const user = await this.tickets.manager.createQueryBuilder()
+        .select(['u.phone', 'u.fullName'])
+        .from('users', 'u')
+        .where('u.id = :id', { id: ticket.userId })
+        .getRawOne();
+      if (user?.u_phone) {
+        const msg = `سلام ${user.u_fullName} عزیز\nتیکت پشتیبانی شما با عنوان «${ticket.subject}» پاسخ داده شد.\nکارزینتل\nkarzintell.ir/account/tickets`;
+        await this.notifications.sendSms(user.u_phone, msg).catch(() => undefined);
+      }
     }
     return this.adminDetail(id);
   }
