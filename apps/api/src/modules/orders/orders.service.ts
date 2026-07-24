@@ -408,6 +408,8 @@ export class OrdersService {
     if (!order) throw new NotFoundException('سفارش یافت نشد');
     let shipment = await this.shipments.findOne({ where: { orderId: id } });
     if (!shipment) shipment = this.shipments.create({ orderId: id, provider: dto.provider });
+    const oldTracking = shipment.trackingCode;
+
     Object.assign(shipment, {
       provider: dto.provider,
       method: dto.method ?? shipment.method,
@@ -417,7 +419,21 @@ export class OrdersService {
       shippedAt: dto.status === 'picked_up' || dto.status === 'in_transit' ? new Date() : shipment.shippedAt,
       deliveredAt: dto.status === 'delivered' ? new Date() : shipment.deliveredAt,
     });
-    return this.shipments.save(shipment);
+    
+    const saved = await this.shipments.save(shipment);
+
+    // ارسال خودکار پیامک اطلاع‌رسانی مرسوله پستی/تیپاکس
+    if (saved.trackingCode && saved.trackingCode !== oldTracking) {
+      const addr = order.addressJson as any;
+      const phone = addr?.receiverPhone;
+      if (phone) {
+        const providerName = saved.provider === 'post' ? 'پست پیشتاز' : saved.provider === 'tipax' ? 'تیپاکس' : saved.provider;
+        const msg = `سفارش شما با کد ${order.code} تحویل ${providerName} گردید.\nکد رهگیری مرسوله: ${saved.trackingCode}\nکارزینتل`;
+        await this.notifications.sendSms(phone, msg).catch(() => undefined);
+      }
+    }
+    
+    return saved;
   }
 
   private async addHistory(orderId: number, from: string | null, to: string, note: string | null, changedBy: number | null, tx: EntityManager) {

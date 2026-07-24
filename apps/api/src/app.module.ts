@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
+import { DataSource } from 'typeorm';
 
 import { env } from './config/configuration';
 import { ALL_ENTITIES } from './database/entities';
@@ -105,4 +106,13 @@ import { HealthModule } from './modules/health/health.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+  constructor(
+    private readonly queue: QueueService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  onApplicationBootstrap() {
+    this.queue.setDataSource(this.dataSource);
+  }
+}

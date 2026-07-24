@@ -134,6 +134,34 @@ async function main() {
     console.log('   ⏭  ادمین از قبل موجود است');
   }
 
+  // اضافه کردن یوزر vahid.askari1986@gmail.com به عنوان ادمین ارشد (درخواستی کاربر)
+  const vahidEmail = 'vahid.askari1986@gmail.com';
+  const existingVahid = await ds.query('SELECT id FROM users WHERE email = ?', [vahidEmail]);
+  if (!existingVahid.length) {
+    const hashVahid = await bcrypt.hash('Vahid@0142', env.bcryptRounds);
+    await ds.query(
+      `INSERT INTO users (full_name, email, phone, password_hash, status, must_change_password, email_verified_at, phone_verified_at)
+       VALUES ('وحید عسگری', ?, '09120000142', ?, 'active', 0, NOW(), NOW())`,
+      [vahidEmail, hashVahid],
+    );
+    const vahidUser = await ds.query('SELECT id FROM users WHERE email = ?', [vahidEmail]);
+    if (vahidUser.length) {
+      const vahidId = vahidUser[0].id;
+      await ds.query('INSERT IGNORE INTO role_user (role_id, user_id, assigned_by) VALUES (1, ?, 1)', [vahidId]);
+      console.log('   ✅ یوزر vahid.askari1986@gmail.com با نقش ادمین با موفقیت ایجاد شد.');
+    }
+  } else {
+    // بروزرسانی پسورد و نقش ادمینی برای یوزر موجود
+    const hashVahid = await bcrypt.hash('Vahid@0142', env.bcryptRounds);
+    const vahidId = existingVahid[0].id;
+    await ds.query(
+      `UPDATE users SET password_hash = ?, status = 'active', must_change_password = 0 WHERE id = ?`,
+      [hashVahid, vahidId]
+    );
+    await ds.query('INSERT IGNORE INTO role_user (role_id, user_id, assigned_by) VALUES (1, ?, 1)', [vahidId]);
+    console.log('   ✅ یوزر vahid.askari1986@gmail.com ارتقا یافت و رمز بروزرسانی شد.');
+  }
+
   // 4) انبار پیش‌فرض
   await ds.query(
     "INSERT IGNORE INTO warehouses (id, name, code, province, city) VALUES (1, 'انبار مرکزی', 'MAIN', 'تهران', 'تهران')",

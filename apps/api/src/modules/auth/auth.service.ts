@@ -374,4 +374,61 @@ export class AuthService {
 
     await this.otps.update(row.id, { consumedAt: new Date() });
   }
+
+  // -------------------------------------------------------- ورود با گوگل
+  async googleLogin(idToken: string, ip?: string, ua?: string) {
+    let email: string;
+    let fullName: string;
+    let avatar: string | null = null;
+
+    try {
+      const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+      if (!res.ok) throw new Error('خطا در احراز هویت توکن گوگل');
+      const payload: any = await res.json();
+      if (!payload.email || payload.email_verified !== 'true') {
+        throw new Error('ایمیل گوگل تایید نشده است');
+      }
+      email = payload.email.trim().toLowerCase();
+      fullName = payload.name || email.split('@')[0];
+      avatar = payload.picture || null;
+    } catch (e) {
+      throw new UnauthorizedException({
+        code: 'GOOGLE_AUTH_FAILED',
+        message: (e as Error).message || 'تایید توکن گوگل ناموفق بود',
+      });
+    }
+
+    let user = await this.users.findOne({ where: { email } });
+    if (!user) {
+      // ثبت‌نام خودکار کاربر جدید با گوگل
+      const randomPass = uuid();
+      user = await this.users.save(
+        this.users.create({
+          fullName,
+          email,
+          phone: `google-${Date.now()}`,
+          passwordHash: await bcrypt.hash(randomPass, env.bcryptRounds),
+          status: 'active',
+          avatarPath: avatar,
+          emailVerifiedAt: new Date(),
+        } as Partial<User>),
+      );
+      await this.rbac.assignCustomerRole(user.id);
+    } else {
+      if (user.status === 'suspended') {
+        throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
+      }
+      if (!user.emailVerifiedAt) {
+        await this.users.update(user.id, { emailVerifiedAt: new Date(), status: 'active' });
+      }
+      if (avatar && !user.avatarPath) {
+        await this.users.update(user.id, { avatarPath: avatar });
+      }
+    }
+
+    await this.users.update(user.id, { lastLoginAt: new Date() });
+    const tokens = await this.issueTokens(user.id, ip, ua);
+    const authUser = await this.rbac.buildAuthUser(user.id);
+    return { tokens, user: authUser };
+  }
 }

@@ -137,6 +137,23 @@ export class AuthController {
 
   @Public()
   @HttpCode(200)
+  @Post('google')
+  async googleLogin(
+    @Body() dto: { idToken: string },
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    const result = await this.auth.googleLogin(
+      dto.idToken,
+      req.ip,
+      req.headers['user-agent'],
+    );
+    this.setRefreshCookie(res, result.tokens.refreshToken);
+    return { data: { accessToken: result.tokens.accessToken, user: result.user } };
+  }
+
+  @Public()
+  @HttpCode(200)
   @Post('reset-password')
   async reset(@Body() dto: ResetPasswordDto) {
     return { data: await this.auth.resetPassword(dto) };

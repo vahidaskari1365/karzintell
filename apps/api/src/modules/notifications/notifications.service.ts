@@ -29,8 +29,9 @@ export class NotificationsService implements OnModuleInit {
     private readonly pushSubs: Repository<PushSubscription>,
     private readonly queue: QueueService,
   ) {
-    // مصرف‌کننده‌های صف (Background Jobs)
-    this.queue.register('sms.send', (p) => this.deliverSms(p.phone, p.message));
+    // مصرف‌کننده‌های صف (Background Jobs) با پشتیبانی از فالبک پیامک دوم در صورت شکست اولیه
+    this.queue.register('sms.send', (p) => this.deliverSmsWithFallback(p.phone, p.message));
+    this.queue.register('sms.send_otp', (p) => this.deliverOtpSmsWithFallback(p.phone, p.code));
     this.queue.register('email.send', (p) => this.deliverEmail(p.to, p.subject, p.text));
   }
 
@@ -130,6 +131,70 @@ export class NotificationsService implements OnModuleInit {
     await this.queue.enqueue('sms.send', { phone, message });
   }
 
+  /** متدهای کمکی برای هندل کردن ارسال‌های با فالبک پنل پیامک دوم در صورت داون بودن پنل اول */
+  private async deliverSmsWithFallback(phone: string, message: string) {
+    try {
+      await this.deliverSms(phone, message);
+    } catch (primaryError) {
+      this.logger.warn(`Primary SMS gateway failed: ${(primaryError as Error).message}. Attempting secondary backup gateway (IPPanel/FarazSMS)...`);
+      const backupApiKey = process.env.BACKUP_SMS_API_KEY;
+      const backupSender = process.env.BACKUP_SMS_SENDER || '3000505';
+      if (backupApiKey) {
+        try {
+          const url = `https://ippanel.com/services/sms/send/simple`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `AccessKey ${backupApiKey}` },
+            body: JSON.stringify({
+              recipient: [phone],
+              sender: backupSender,
+              message,
+            }),
+          });
+          if (res.ok) {
+            this.logger.log(`✅ Backup SMS sent successfully to ${phone}`);
+            return;
+          }
+        } catch (backupError) {
+          this.logger.error(`Backup SMS gateway also failed: ${(backupError as Error).message}`);
+        }
+      }
+      throw primaryError;
+    }
+  }
+
+  private async deliverOtpSmsWithFallback(phone: string, code: string) {
+    try {
+      await this.deliverOtpSms(phone, code);
+    } catch (primaryError) {
+      this.logger.warn(`Primary OTP SMS gateway failed: ${(primaryError as Error).message}. Attempting secondary backup OTP...`);
+      const backupApiKey = process.env.BACKUP_SMS_API_KEY;
+      const backupTemplate = process.env.BACKUP_SMS_OTP_TEMPLATE || 'otp';
+      if (backupApiKey) {
+        try {
+          const url = `https://ippanel.com/services/sms/pattern/send`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `AccessKey ${backupApiKey}` },
+            body: JSON.stringify({
+              pattern_code: backupTemplate,
+              originator: process.env.BACKUP_SMS_SENDER || '3000505',
+              recipient: phone,
+              values: { code },
+            }),
+          });
+          if (res.ok) {
+            this.logger.log(`✅ Backup OTP sent successfully to ${phone}`);
+            return;
+          }
+        } catch (backupError) {
+          this.logger.error(`Backup OTP gateway also failed: ${(backupError as Error).message}`);
+        }
+      }
+      throw primaryError;
+    }
+  }
+
   /** اجرای واقعی ارسال پیامک (داخل ورکر صف) */
   private async deliverSms(phone: string, message: string) {
     if (env.sms.provider === 'log' || !env.sms.apiKey) {
@@ -145,8 +210,28 @@ export class NotificationsService implements OnModuleInit {
     this.logger.log(`[SMS provider=${env.sms.provider}] ${phone}: ${message}`);
   }
 
+  /** ارسال پیامک یکبار مصرف OTP از طریق سرویس خدماتی ضد بلک‌لیست (Lookup) کاوه‌نگار */
+  private async deliverOtpSms(phone: string, code: string) {
+    if (env.sms.provider === 'log' || !env.sms.apiKey) {
+      this.logger.log(`[OTP SMS→${phone}] Code: ${code}`);
+      return;
+    }
+    if (env.sms.provider === 'kavenegar') {
+      const template = process.env.KAVENEGAR_OTP_TEMPLATE || 'otp';
+      const url = `https://api.kavenegar.com/v1/${env.sms.apiKey}/verify/lookup.json?receptor=${encodeURIComponent(phone)}&token=${encodeURIComponent(code)}&template=${encodeURIComponent(template)}`;
+      const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) {
+        this.logger.warn(`kavenegar lookup failed for ${phone}, trying fallback standard send...`);
+        const fallbackUrl = `https://api.kavenegar.com/v1/${env.sms.apiKey}/sms/send.json?receptor=${encodeURIComponent(phone)}&message=${encodeURIComponent(`کارزینتل\nکد تأیید شما: ${code}`)}`;
+        await fetch(fallbackUrl, { method: 'POST' });
+      }
+      return;
+    }
+    this.logger.log(`[SMS provider=${env.sms.provider}] OTP ${phone}: ${code}`);
+  }
+
   async sendOtpSms(phone: string, code: string): Promise<void> {
-    await this.sendSms(phone, `کارزینتل\nکد تأیید شما: ${code}`);
+    await this.queue.enqueue('sms.send_otp', { phone, code });
   }
 
   /** ارسال ایمیل — از طریق صف پس‌زمینه */

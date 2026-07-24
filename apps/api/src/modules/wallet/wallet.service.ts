@@ -100,4 +100,97 @@ export class WalletService {
     );
     return locked;
   }
+
+  /** درخواست برداشت نقدی از کیف پول به شبا */
+  async requestWithdrawal(userId: number, amount: number, shaba: string, cardHolder: string) {
+    if (amount < 100000) {
+      throw new DomainException('BAD_REQUEST', 'حداقل مبلغ برداشت ۱۰,۰۰۰ تومان (۱۰۰,۰۰۰ ریال) است', 400);
+    }
+    
+    return this.em.transaction(async (tx) => {
+      const wallet = await this.ensureWallet(userId, tx);
+      const locked = await tx.getRepository(Wallet)
+        .createQueryBuilder('w')
+        .setLock('pessimistic_write')
+        .where('w.id = :id', { id: wallet.id })
+        .getOneOrFail();
+
+      if (Number(locked.balance) < amount) {
+        throw new DomainException('INSUFFICIENT_BALANCE', 'موجودی کیف پول کافی نیست', 402);
+      }
+
+      locked.balance = Number(locked.balance) - amount;
+      await tx.getRepository(Wallet).save(locked);
+
+      const saved = await tx.getRepository(WalletTransaction).save(
+        tx.getRepository(WalletTransaction).create({
+          walletId: locked.id,
+          type: 'withdraw',
+          amount,
+          balanceAfter: locked.balance,
+          description: `درخواست تسویه‌حساب نقدی به شبا ${shaba} بنام ${cardHolder} [وضعیت: در انتظار واریز]`,
+        }),
+      );
+      return saved;
+    });
+  }
+
+  /** لیست درخواست‌های تسویه حساب برای ادمین */
+  async listAdminWithdrawals() {
+    return this.em.getRepository(WalletTransaction).find({
+      where: { type: 'withdraw' },
+      order: { id: 'DESC' },
+    });
+  }
+
+  /** تایید پرداخت شبا توسط ادمین */
+  async approveWithdrawal(transactionId: number) {
+    const txRepo = this.em.getRepository(WalletTransaction);
+    const transaction = await txRepo.findOne({ where: { id: transactionId, type: 'withdraw' } });
+    if (!transaction) throw new NotFoundException('درخواست تسویه یافت نشد');
+    if (!transaction.description?.includes('[وضعیت: در انتظار واریز]')) {
+      throw new DomainException('ALREADY_PROCESSED', 'این تراکنش قبلا پردازش شده است', 400);
+    }
+    transaction.description = transaction.description.replace('[وضعیت: در انتظار واریز]', '[وضعیت: واریز شد (پایا/ساتنا)]');
+    await txRepo.save(transaction);
+    return { approved: true };
+  }
+
+  /** رد درخواست تسویه توسط ادمین — برگشت وجه به کیف پول */
+  async rejectWithdrawal(transactionId: number, reason: string) {
+    return this.em.transaction(async (tx) => {
+      const txRepo = tx.getRepository(WalletTransaction);
+      const transaction = await txRepo.findOne({ where: { id: transactionId, type: 'withdraw' } });
+      if (!transaction) throw new NotFoundException('درخواست تسویه یافت نشد');
+      if (!transaction.description?.includes('[وضعیت: در انتظار واریز]')) {
+        throw new DomainException('ALREADY_PROCESSED', 'این تراکنش قبلا پردازش شده است', 400);
+      }
+
+      const wallet = await tx.getRepository(Wallet).findOne({ where: { id: transaction.walletId } });
+      if (!wallet) throw new NotFoundException('کیف پول یافت نشد');
+      const locked = await tx.getRepository(Wallet)
+        .createQueryBuilder('w')
+        .setLock('pessimistic_write')
+        .where('w.id = :id', { id: wallet.id })
+        .getOneOrFail();
+
+      locked.balance = Number(locked.balance) + Number(transaction.amount);
+      await tx.getRepository(Wallet).save(locked);
+
+      transaction.description = transaction.description.replace('[وضعیت: در انتظار واریز]', `[وضعیت: رد شد - عودت به کیف پول — علت: ${reason || 'عدم تطابق نام شبا'}]`);
+      await txRepo.save(transaction);
+
+      // ثبت تراکنش برگشتی
+      await txRepo.save(
+        txRepo.create({
+          walletId: locked.id,
+          type: 'refund',
+          amount: transaction.amount,
+          balanceAfter: locked.balance,
+          description: `برگشت وجه تسویه حساب رد شده تراکنش #${transaction.id}`,
+        }),
+      );
+      return { rejected: true };
+    });
+  }
 }
