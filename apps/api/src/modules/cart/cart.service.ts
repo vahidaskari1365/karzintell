@@ -1,11 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Cart, CartItem, Coupon, Product, ProductVariant } from '../../database/entities';
 import { DomainException } from '../../common/http-exception.filter';
 import { FilesService } from '../files/files.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { SettingsService } from '../settings/settings.service';
+import { RedisService } from '../../common/redis.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { env } from '../../config/configuration';
 
 export interface CartView {
@@ -35,6 +38,8 @@ export class CartService {
     private readonly files: FilesService,
     private readonly coupons: CouponsService,
     private readonly settings: SettingsService,
+    private readonly redis: RedisService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** یافتن/ساخت سبد باز برای کاربر یا مهمان */
@@ -84,6 +89,7 @@ export class CartService {
     const subtotal = items.reduce((s: number, i: { unitPrice: number; quantity: number }) => s + i.unitPrice * i.quantity, 0);
     let couponDiscount = 0;
     let couponCode: string | null = null;
+    let isFreeShippingCoupon = false;
     if (cart.couponId && userId) {
       try {
         const coupon = await this.em.getRepository(Coupon).findOne({ where: { id: cart.couponId } });
@@ -92,6 +98,9 @@ export class CartService {
           const { discount } = await this.coupons.validate(coupon.code, userId, subtotal, lines);
           couponDiscount = discount;
           couponCode = coupon.code;
+          if (coupon.campaign === 'free_shipping' || coupon.code.startsWith('FREESHIP') || coupon.title?.includes('ارسال رایگان')) {
+            isFreeShippingCoupon = true;
+          }
         }
       } catch {
         couponDiscount = 0;
@@ -103,7 +112,7 @@ export class CartService {
     const tax = payable > 0 ? Math.round((payable * env.order.taxPercent) / 100) : 0;
     const freeOver = Number(await this.settings.get('store.free_shipping_threshold', 0)) || 0;
     const flat = Number(await this.settings.get('store.shipping_flat', 250000)) || 0;
-    const shipping = payable <= 0 || (freeOver > 0 && payable >= freeOver) ? 0 : flat;
+    const shipping = payable <= 0 || (freeOver > 0 && payable >= freeOver) || isFreeShippingCoupon ? 0 : flat;
 
     return {
       id: cart.id,
@@ -208,5 +217,42 @@ export class CartService {
 
   async markConverted(cartId: number, manager?: EntityManager) {
     await (manager || this.em).getRepository(Cart).update(cartId, { status: 'converted', couponId: null });
+  }
+
+  /** cron: ارسال خودکار پیامک یادآوری سبد خرید رها شده به کاربران پس از ۴ ساعت */
+  @Cron(CronExpression.EVERY_HOUR)
+  async recoverAbandonedCarts() {
+    const fourHoursAgo = new Date(Date.now() - 4 * 3600 * 1000);
+    const twelveHoursAgo = new Date(Date.now() - 12 * 3600 * 1000);
+
+    // پیدا کردن سبدهای باز که بین ۴ تا ۱۲ ساعت پیش بروزرسانی شده‌اند و متعلق به کاربران ثبت‌نامی هستند
+    const carts = await this.carts.createQueryBuilder('c')
+      .innerJoin('users', 'u', 'u.id = c.user_id')
+      .where("c.status = 'open' AND c.updated_at BETWEEN :twelveHoursAgo AND :fourHoursAgo", { twelveHoursAgo, fourHoursAgo })
+      .select(['c.id AS id', 'u.phone AS phone', 'u.fullName AS fullName'])
+      .getRawMany();
+
+    for (const c of carts) {
+      try {
+        const key = `cart:recovery:notified:${c.id}`;
+        const alreadyNotified = await this.redis.get(key);
+        if (alreadyNotified) continue;
+
+        // چک کنیم سبد خالی نباشد
+        const itemsCount = await this.items.count({ where: { cartId: c.id } });
+        if (itemsCount === 0) continue;
+
+        // ارسال پیامک با صف
+        await this.notifications.sendSms(
+          c.phone,
+          `سلام ${c.fullName} عزیز\nاقلامی در سبد خرید شما در کارزینتل جا مانده‌اند! با کد تخفیف ارسال رایگان FREESHIP همین حالا خرید خود را نهایی کنید.\nkarzintell.ir/cart`,
+        );
+
+        // نشانه گذاری برای عدم ارسال مجدد
+        await this.redis.set(key, '1', 24 * 3600); // به مدت ۲۴ ساعت مجدد فرستاده نشود
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }

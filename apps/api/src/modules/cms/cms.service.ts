@@ -5,6 +5,7 @@ import { Banner, BannerPosition, BlogPost, Faq, Page } from '../../database/enti
 import { RedisService } from '../../common/redis.service';
 import { FilesService } from '../files/files.service';
 import { paginate, sanitizeHtml, slugify } from '../../common/utils';
+import { env } from '../../config/configuration';
 
 @Injectable()
 export class CmsService {
@@ -198,5 +199,39 @@ export class CmsService {
   async removePage(id: number) {
     await this.pages.softDelete(id);
     return { deleted: true };
+  }
+
+  /** دریافت فید داینامیک محصولات برای ترب (Torob) و ایمالز (Emalls) */
+  async getTorobFeed() {
+    const query = `
+      SELECT 
+        v.id AS page_unique_id,
+        CONCAT(p.name, ' ', COALESCE(v.title, '')) AS title,
+        p.slug AS product_slug,
+        v.price AS price,
+        v.compare_at_price AS old_price,
+        (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image,
+        EXISTS(SELECT 1 FROM inventory i WHERE i.variant_id = v.id AND (i.quantity - i.reserved) > 0) AS in_stock,
+        b.name AS brand_name,
+        c.name AS category_name
+      FROM products p
+      INNER JOIN product_variants v ON v.product_id = p.id AND v.is_active = 1 AND v.deleted_at IS NULL
+      LEFT JOIN brands b ON b.id = p.brand_id
+      LEFT JOIN categories c ON c.id = p.category_id
+      WHERE p.status = 'published' AND p.deleted_at IS NULL
+    `;
+    const rows = await this.banners.manager.query(query);
+    const baseUrl = env.webUrl || 'https://karzintell.ir';
+    return rows.map((r: any) => ({
+      page_unique_id: String(r.page_unique_id),
+      title: r.title.trim(),
+      page_url: `${baseUrl}/products/${r.product_slug}`,
+      price: Number(r.price),
+      old_price: r.old_price ? Number(r.old_price) : null,
+      availability: r.in_stock ? 'instock' : 'outofstock',
+      image_url: this.files.publicUrl(r.image) || '',
+      brand: r.brand_name || '',
+      category: r.category_name || '',
+    }));
   }
 }

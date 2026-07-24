@@ -103,6 +103,12 @@ export class CmsController {
   async faqs() {
     return { data: await this.cms.activeFaqs() };
   }
+
+  @Public()
+  @Get('marketing/torob')
+  async torobFeed() {
+    return { data: await this.cms.getTorobFeed() };
+  }
 }
 
 @ApiTags('admin/cms')
