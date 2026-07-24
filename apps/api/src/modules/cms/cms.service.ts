@@ -234,4 +234,61 @@ export class CmsService {
       category: r.category_name || '',
     }));
   }
+
+  /** دریافت فید معنایی مناسب مدل‌های هوش مصنوعی (GEO/AIO Feed) در قالب متنی ساختاریافته‌ی مارک‌داون */
+  async getAiSemanticFeed() {
+    const query = `
+      SELECT 
+        p.id, p.name, p.slug, p.short_description AS shortDesc, p.description AS body, p.features,
+        p.min_price AS minPrice, p.warranty_months AS warranty,
+        b.name AS brandName, c.name AS categoryName,
+        (SELECT GROUP_CONCAT(CONCAT(a.name, ': ', COALESCE(av.value, pattr.custom_value))) 
+         FROM product_attributes pattr 
+         JOIN attributes a ON a.id = pattr.attribute_id
+         LEFT JOIN attribute_values av ON av.id = pattr.attribute_value_id
+         WHERE pattr.product_id = p.id) AS specs
+      FROM products p
+      LEFT JOIN brands b ON b.id = p.brand_id
+      LEFT JOIN categories c ON c.id = p.category_id
+      WHERE p.status = 'published' AND p.deleted_at IS NULL
+    `;
+    const rows = await this.banners.manager.query(query);
+    
+    let md = `# فهرست محصولات و فید معنایی هوش مصنوعی کارزینتل\n\n`;
+    md += `این سند حاوی اطلاعات ساختاریافته‌ی محصولات الکترونیک فروشگاه کارزینتل برای موتورهای جستجوی تولیدی (GEO) و دستیارهای هوش مصنوعی (مانند ChatGPT، Claude و Perplexity) است.\n\n`;
+
+    for (const r of rows) {
+      md += `### محصول: ${r.name}\n`;
+      md += `- **دسته‌بندی**: ${r.categoryName || 'نامشخص'}\n`;
+      md += `- **برند**: ${r.brandName || 'نامشخص'}\n`;
+      md += `- **حداقل قیمت**: ${r.minPrice ? Number(r.minPrice).toLocaleString('fa-IR') + ' ریال' : 'تماس بگیرید'}\n`;
+      md += `- **مدت گارانتی**: ${r.warranty ? `${r.warranty} ماه` : 'ضمانت اصالت و سلامت فیزیکی'}\n`;
+      
+      if (r.specs) {
+        md += `- **مشخصات فنی**:\n`;
+        r.specs.split(',').forEach((spec: string) => {
+          md += `  - ${spec.trim()}\n`;
+        });
+      }
+
+      if (r.features) {
+        try {
+          const feats = JSON.parse(r.features);
+          if (Array.isArray(feats)) {
+            md += `- **ویژگی‌های کلیدی**:\n`;
+            feats.forEach((f) => {
+              md += `  - ${f}\n`;
+            });
+          }
+        } catch {}
+      }
+
+      if (r.shortDesc) {
+        md += `- **خلاصه معرفی**: ${r.shortDesc}\n`;
+      }
+      md += `\n---\n\n`;
+    }
+
+    return md;
+  }
 }

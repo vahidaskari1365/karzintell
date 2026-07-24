@@ -109,6 +109,12 @@ export class CmsController {
   async torobFeed() {
     return { data: await this.cms.getTorobFeed() };
   }
+
+  @Public()
+  @Get('marketing/ai-feed')
+  async aiFeed() {
+    return await this.cms.getAiSemanticFeed();
+  }
 }
 
 @ApiTags('admin/cms')
