@@ -10,7 +10,7 @@ import { DataSource } from 'typeorm';
 import { env } from './config/configuration';
 import { ALL_ENTITIES } from './database/entities';
 import { RedisModule } from './common/redis.module';
-import { QueueModule } from './common/queue.service';
+import { QueueModule, QueueService } from './common/queue.service';
 import { EnvelopeInterceptor } from './common/envelope.interceptor';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { JwtAuthGuard } from './common/jwt-auth.guard';
