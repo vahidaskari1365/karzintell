@@ -328,35 +328,9 @@ function BrandStrip() {
   );
 }
 
-// --------------------------------------------------------------- داده‌های نمایشی با تصویر واقعی
-/* تا وقتی بک‌اند آنلاین نیست یا دسته‌ای خالی است، صفحه اول با محصولات نمایشیِ خوش‌ساخت زنده می‌ماند؛
-   به محض آنلاین‌شدن API، محصولات واقعی جایگزین می‌شوند. */
-const P = (id: number, name: string, slug: string, brand: string, image: string, price: number, rating: number, sold: number): ProductCardType =>
-  ({ id, name, slug, brandName: brand, image, minPrice: price, ratingAvg: rating, ratingCount: sold, soldCount: sold, inStock: true });
-
-const PR_GALAXY = P(-101, 'گوشی موبایل سامسونگ گلکسی S25 اولترا 5G ظرفیت 256 گیگابایت', 'samsung-galaxy-s25-ultra', 'سامسونگ', '/assets/products/p-galaxy-green.jpg', 780_000_000, 4.8, 320);
-const PR_IPHONE = P(-102, 'گوشی موبایل اپل iPhone 16 Pro Max ظرفیت 256 گیگابایت', 'apple-iphone-16-pro-max', 'اپل', '/assets/products/p-iphone-gray.jpg', 890_000_000, 4.9, 287);
-const PR_REDMI = P(-103, 'گوشی موبایل شیائومی Redmi Note 14 Pro ظرفیت 256 گیگابایت', 'xiaomi-redmi-note-14-pro', 'شیائومی', '/assets/products/p-redmi-blue.jpg', 168_000_000, 4.6, 950);
-const PR_AWATCH = P(-104, 'ساعت هوشمند اپل واچ سری 10 آلومینیوم 46 میلی‌متری', 'apple-watch-series-10-46', 'اپل', '/assets/products/p-watch-black.jpg', 215_000_000, 4.9, 410);
-const PR_GWATCH = P(-105, 'ساعت هوشمند سامسونگ گلکسی واچ 7 مدل 44 میلی‌متری', 'samsung-galaxy-watch-7-44', 'سامسونگ', '/assets/products/p-watch-silver.jpg', 149_000_000, 4.7, 388);
-const PR_AIRPODS = P(-106, 'هندزفری بی‌سیم اپل AirPods Pro 2 با کیس شارژ MagSafe', 'apple-airpods-pro-2', 'اپل', '/assets/products/p-buds-white.jpg', 128_000_000, 4.8, 620);
-const PR_SONY = P(-107, 'هدفون بی‌سیم سونی WH-1000XM5 با نویزکنسلینگ', 'sony-wh-1000xm5', 'سونی', '/assets/products/p-headphone-green.jpg', 198_000_000, 4.9, 214);
-const PR_CHARGER = P(-108, 'شارژر بی‌سیم سریع 15 وات انکر مدل PowerWave', 'anker-powerwave-15w', 'انکر', '/assets/products/p-charger-white.jpg', 18_500_000, 4.5, 1200);
-const PR_POWERBANK = P(-109, 'پاوربانک 20000 میلی‌آمپر انکر PowerCore با نمایشگر', 'anker-powercore-20000', 'انکر', '/assets/products/p-powerbank-silver.jpg', 24_800_000, 4.7, 890);
-
-const FALLBACK_STAGE_PRODUCTS: Record<string, ProductCardType[]> = {
-  mobile: [PR_GALAXY, PR_IPHONE, PR_REDMI],
-  smartwatch: [PR_AWATCH, PR_GWATCH],
-  audio: [PR_AIRPODS, PR_SONY],
-  accessories: [PR_CHARGER, PR_POWERBANK],
-};
-const FALLBACK_NEWEST: ProductCardType[] = [PR_GALAXY, PR_AWATCH, PR_AIRPODS, PR_IPHONE, PR_REDMI, PR_SONY, PR_GWATCH, PR_CHARGER, PR_POWERBANK];
-const FALLBACK_BEST: ProductCardType[] = [...FALLBACK_NEWEST].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0));
-
-const pickProducts = (items: ProductCardType[] | undefined, fallback: ProductCardType[]) =>
-  items && items.length ? items : fallback;
-
 // --------------------------------------------------------------- اسکرول سینمایی فروشگاه (ورود به قفسه‌ی هر دسته)
+/* محصولات فقط از API می‌آیند؛ هیچ محصول نمایشی/الکی در فرانت هاردکد نشده است.
+   اگر دسته‌ای محصولی نداشت، پیام «به‌زودی» نشان داده می‌شود. */
 function MiniGlassCard({ p }: { p: ProductCardType }) {
   return (
     <Link
@@ -512,7 +486,7 @@ function CinematicCategoryScroll({ tree }: { tree: CategoryNode[] }) {
             >
               <CategoryStage
                 cat={c}
-                items={pickProducts(stageQueries[i]?.data, FALLBACK_STAGE_PRODUCTS[c.slug] || FALLBACK_BEST.slice(0, 4))}
+                items={stageQueries[i]?.data || []}
                 isLoading={!!stageQueries[i]?.isLoading}
                 idx={i}
                 total={n}
@@ -756,8 +730,8 @@ export default function HomePage() {
     retry: 1,
   });
 
-  const newestItems = pickProducts(newest, FALLBACK_NEWEST);
-  const bestItems = pickProducts(bestSellers, FALLBACK_BEST);
+  const newestItems = newest || [];
+  const bestItems = bestSellers || [];
 
   return (
     <div>
@@ -778,15 +752,19 @@ export default function HomePage() {
       <TrustRow />
       <FinaleCTA />
 
-      {/* 🛍 فروشگاه کلاسیک */}
+      {/* 🛍 فروشگاه کلاسیک — فقط اگر محصول واقعی از API آمده باشد */}
       <div className="pb-4 pt-2">
-        <ShopSection title="تازه‌رسیده‌ها" desc="جدیدترین مدل‌هایی که همین روزها به قفسه‌های کارزینتل رسیده‌اند" href="/search?sort=-publishedAt">
-          {loadingNew ? <PageLoading /> : <ProductGrid items={newestItems} />}
-        </ShopSection>
+        {newestItems.length > 0 && (
+          <ShopSection title="تازه‌رسیده‌ها" desc="جدیدترین مدل‌هایی که همین روزها به قفسه‌های کارزینتل رسیده‌اند" href="/search?sort=-publishedAt">
+            {loadingNew ? <PageLoading /> : <ProductGrid items={newestItems} />}
+          </ShopSection>
+        )}
 
-        <ShopSection title="منتخب کارشناس‌ها" desc="گزیده‌ای که تیم خرید ما با وسواس انتخاب کرده است" href="/search">
-          <ProductGrid items={bestItems.slice(0, 5)} />
-        </ShopSection>
+        {bestItems.length > 0 && (
+          <ShopSection title="منتخب کارشناس‌ها" desc="گزیده‌ای که تیم خرید ما با وسواس انتخاب کرده است" href="/search">
+            <ProductGrid items={bestItems.slice(0, 5)} />
+          </ShopSection>
+        )}
       </div>
     </div>
   );
