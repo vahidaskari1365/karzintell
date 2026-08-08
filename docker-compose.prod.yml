@@ -1,0 +1,198 @@
+# ============================================================================
+#  کارزینتل — استقرار Production (دیتابیس + بک‌اند + فرانت، یک‌دستوری)
+#  اجرا:  cp .env.example .env   ← مقادیر واقعی را پر کنید
+#        docker compose -f docker-compose.prod.yml up -d --build
+#  نکته: بار اول که دیتابیس خالی است، جدول‌ها خودکار ساخته و seed اجرا می‌شود.
+# ============================================================================
+name: karzintell
+
+services:
+  # ------------------------------------------------------------- پایگاه‌داده
+  mysql:
+    image: mysql:8.0
+    container_name: karzintell-mysql
+    command: >-
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_0900_ai_ci
+      --default-time-zone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
+      MYSQL_DATABASE: ${DB_NAME:-karzintell}
+      MYSQL_USER: ${DB_USER:-karzintell}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ کش/صف
+  redis:
+    image: redis:7-alpine
+    container_name: karzintell-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-secret}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secret}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------ جستجو
+  meilisearch:
+    image: getmeili/meilisearch:v1.8
+    container_name: karzintell-meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_API_KEY:-masterKey123}
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: production
+    volumes:
+      - meili_data:/meili_data
+    restart: unless-stopped
+
+  # ---------------------------------------------------- ذخیره‌سازی فایل (S3)
+  minio:
+    image: minio/minio:latest
+    container_name: karzintell-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-karzintell}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-secret_secret_secret}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ساخت باکت پیش‌فرض (یک بار)
+  minio-init:
+    image: minio/mc:latest
+    container_name: karzintell-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >-
+      /bin/sh -c "
+      /usr/bin/mc alias set local http://minio:9000 ${S3_ACCESS_KEY:-karzintell} ${S3_SECRET_KEY:-secret_secret_secret};
+      /usr/bin/mc mb --ignore-existing local/${S3_BUCKET:-karzintell};
+      /usr/bin/mc anonymous set download local/${S3_BUCKET:-karzintell};
+      exit 0;"
+
+  # ------------------------------------------------------------- بک‌اند (API)
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: karzintell-api
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-http://localhost:4000}
+      WEB_URL: ${WEB_URL:-http://localhost:3000}
+      SWAGGER: "false"
+      # دیتابیس — به سرویس mysql داخل شبکه داکر اشاره می‌کند
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-karzintell}
+      DB_USER: ${DB_USER:-karzintell}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
+      DB_LOGGING: "false"
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-secret}
+      REDIS_DB: "0"
+      REDIS_PREFIX: "krz:"
+      # جستجو
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_API_KEY: ${MEILI_API_KEY:-masterKey123}
+      MEILI_INDEX: products
+      # فایل‌ها
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION:-ir-thr-at1}
+      S3_BUCKET: ${S3_BUCKET:-karzintell}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-karzintell}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-secret_secret_secret}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/karzintell}
+      # امنیت / JWT
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
+      JWT_ACCESS_TTL_SEC: ${JWT_ACCESS_TTL_SEC:-900}
+      JWT_REFRESH_TTL_SEC: ${JWT_REFRESH_TTL_SEC:-2592000}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-10}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,https://karzintell.vercel.app}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      # درگاه پرداخت
+      PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-manual}
+      ZARINPAL_MERCHANT_ID: ${ZARINPAL_MERCHANT_ID:-}
+      ZARINPAL_SANDBOX: ${ZARINPAL_SANDBOX:-true}
+      IDPAY_API_KEY: ${IDPAY_API_KEY:-}
+      IDPAY_SANDBOX: ${IDPAY_SANDBOX:-true}
+      NEXTPAY_API_KEY: ${NEXTPAY_API_KEY:-}
+      MELLAT_TERMINAL_ID: ${MELLAT_TERMINAL_ID:-}
+      MELLAT_USERNAME: ${MELLAT_USERNAME:-}
+      MELLAT_PASSWORD: ${MELLAT_PASSWORD:-}
+      SAMAN_TERMINAL_ID: ${SAMAN_TERMINAL_ID:-}
+      PAYMENT_CALLBACK_BASE: ${PAYMENT_CALLBACK_BASE:-http://localhost:4000/api/v1/payments/callback}
+      PAYMENT_FRONT_RESULT_URL: ${PAYMENT_FRONT_RESULT_URL:-http://localhost:3000/checkout/callback}
+      # اعلان مرورگر
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:no-reply@karzintell.ir}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      # پیامک
+      SMS_DRIVER: ${SMS_DRIVER:-log}
+      SMS_API_KEY: ${SMS_API_KEY:-}
+      SMS_SENDER: ${SMS_SENDER:-}
+      KAVENEGAR_OTP_TEMPLATE: ${KAVENEGAR_OTP_TEMPLATE:-karzintell-otp}
+      BACKUP_SMS_API_KEY: ${BACKUP_SMS_API_KEY:-}
+      BACKUP_SMS_SENDER: ${BACKUP_SMS_SENDER:-3000505}
+      BACKUP_SMS_OTP_TEMPLATE: ${BACKUP_SMS_OTP_TEMPLATE:-otp}
+      # ایمیل
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: "${SMTP_FROM:-کارزینتل <no-reply@karzintell.ir>}"
+      # سفارش
+      ORDER_TAX_PERCENT: ${ORDER_TAX_PERCENT:-9}
+      ORDER_PENDING_EXPIRE_MIN: ${ORDER_PENDING_EXPIRE_MIN:-60}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  # ------------------------------------------------------------- فرانت‌اند
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_STORAGE_URL: ${NEXT_PUBLIC_STORAGE_URL:-http://localhost:9000/karzintell}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    container_name: karzintell-web
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+  meili_data:
+  minio_data:
