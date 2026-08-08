@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-  BadgeCheck, BookOpen, Cable, ChevronDown, Cpu, Headphones, Laptop, Rocket, ShieldCheck, ShoppingBag, Smartphone,
+  BadgeCheck, Cpu, Headphones, Laptop, Rocket, ShieldCheck, Smartphone,
   Star, Truck, Watch, Zap,
 } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
@@ -39,279 +39,82 @@ const GT = ({ children }: { children: React.ReactNode }) => (
   <span className="bg-gradient-to-l from-emerald-400 via-green-400 to-teal-400 bg-clip-text text-transparent">{children}</span>
 );
 
-// =============================================================== هیرو — آنباکسینگ سینمایی با عکس‌های واقعیِ خودِ مشتری (آیفون ۱۸ پرو)
-/* موتور اسکرول: lib/scroll-engine.ts (رویداد خام + rAF + فال‌بک، کراس‌فید متقاطع واقعی) */
-/* سه اسکرول = سه سکانس: بازشدن درِ جعبه → محتویات داخل جعبه → صحنه‌ی شناور پرده‌برداری */
-const UNBOX_FRAMES = [
-  { src: '/assets/unbox/rb1-box.jpg', alt: 'جعبه‌ی سفید مهروموم‌شده‌ی آیفون ۱۸ پرو زیر نور استودیو، روی صحنه‌ی سبز تیره' },
-  { src: '/assets/unbox/rb2-lid.jpg', alt: 'درِ سفید جعبه کمی باز شده و بدنه‌ی تیره‌ی گوشی داخل قابش دیده می‌شود؛ صحنه‌ی سبز سینمایی' },
-  { src: '/assets/unbox/rb3-gear.jpg', alt: 'سینی باز جعبه با گوشی صفحه‌سیاه، کابل بافت USB-C و دفترچه روی نور استودیوی سبز' },
-  { src: '/assets/unbox/rb4-phone.jpg', alt: 'صحنه‌ی شناور آنباکسینگ: آیفون بنفش با سه لنز، پین سیم‌کارت، برگه‌ها و کابل روی سبز تیره' },
-];
-
-/* ذرات ظریف برای فضای صحنه */
-const CHARCOAL_SEEDS: Array<[string, string, string]> = [
-  ['12%', '30%', '0s'], ['20%', '68%', '1.2s'], ['33%', '22%', '.8s'], ['82%', '26%', '1.5s'],
-  ['90%', '58%', '.5s'], ['72%', '80%', '2s'], ['45%', '15%', '1.8s'], ['8%', '82%', '2.3s'],
-];
+// =============================================================== هیرو — کاور اختصاصی برند به‌عنوان پس‌زمینه با متن‌های اصلی سایت
+/* تصویر: assets/hero-cover.png | متن‌ها همان پیام‌های همیشگی هیرو، روی تصویر */
 
 function CinematicHero() {
-  const [isMobile, setIsMobile] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
+
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  const total = UNBOX_FRAMES.length; // ۴ فریم = ۳ اسکرول
-  const targetRef = useRef<HTMLElement | null>(null);
-  const p = useStickyProgress(targetRef);
-  const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
-
-  // ─── موشن‌گرفی اسکرول‌محور: هر حرکت مستقیم از انگشت کاربر فرمان می‌گیرد (مثل اسکراب تایم‌لاین فیلم) ───
-  const segT = 1 / total;
-  const H = segT * 0.24; // نیمه‌پهنای هم‌پوشانی کراس‌فید
-  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-  // شدت موج هر مرز: دقیقاً در لحظه‌ی تعویض صحنه اوج می‌گیرد و بعد آرام می‌خوابد — مثل ضرب‌آهنگ برش فیلم
-  const wave = (b: number) => clamp01((p - (b - H)) / (2 * H)) * (1 - clamp01((p - b) / segT));
-  const w1 = wave(segT);     // مرز اول: بازشدن درِ جعبه ← پرتوهای نور از شکاف
-  const w2 = wave(2 * segT); // مرز دوم: برخاستن محتویات به هوا
-  const w3 = wave(3 * segT); // مرز سوم: شوک‌ویو تولد صحنه‌ی نهایی
-  const glowBoost = Math.min(1, w1 + w2 + w3); // نور صحنه در اوج هر برش دم می‌گیرد
-  const purpleGlow = frameWindow(p, 3, total, 0.24) * 0.55; // آکسنت بنفش گوشی در سکانس نهایی با صحنه هم‌خوان می‌شود
-
-  if (isMobile) {
-    return (
-      <section className={`${FULL} relative overflow-hidden bg-[radial-gradient(120%_95%_at_50%_12%,#1a2125_0%,#0c0f10_72%)] py-12 px-4 text-center border-b border-white/5`}>
-        <div className="relative z-10 mx-auto max-w-xl space-y-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-black text-emerald-400">
-            <Zap className="h-3.5 w-3.5" />
-            جشنواره اختصاصی کارزینتل
-          </span>
-          <h1 className="text-2xl font-black text-white sm:text-3xl">فروشگاه آنلاین قطعات و گجت‌های الکترونیک</h1>
-          <p className="text-xs leading-6 text-slate-300">
-            جدیدترین پرچمداران، قطعات تخصصی، ساعت هوشمند و لوازم جانبی با ضمانت اصالت کالا و ارسال سریع به سراسر ایران
-          </p>
-          <div className="flex justify-center gap-3">
-            <Link href="/categories/mobile" className="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/25">خرید موبایل</Link>
-            <Link href="/search" className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-xs font-bold text-slate-300">جستجوی کالا</Link>
-          </div>
-          {/* تک عکس هیرو - بنر بسیار سبک و باکیفیت آیفون ۱۸ پرو */}
-          <div className="relative mx-auto mt-6 w-full max-w-sm overflow-hidden rounded-2xl bg-[#10130f] shadow-2xl ring-1 ring-white/10">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/assets/unbox/rb4-phone.jpg"
-              alt="کارزینتل - آیفون ۱۸ پرو"
-              className="h-full w-full object-cover"
-            />
-          </div>
-        </div>
-        {/* افکت نوری پس‌زمینه */}
-        <div className="absolute -bottom-10 right-0 h-44 w-44 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -top-10 left-10 h-44 w-44 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
-      </section>
+    const v = videoRef.current;
+    if (!v || videoReady) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVideoReady(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '300px' },
     );
-  }
+    io.observe(v);
+    return () => io.disconnect();
+  }, [videoReady]);
+
+  useEffect(() => {
+    if (!videoReady) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const t = setTimeout(() => v.play().catch(() => {}), 0);
+    return () => clearTimeout(t);
+  }, [videoReady]);
 
   return (
-    <section ref={targetRef} className={`${FULL}`} style={{ height: `${total * 100 + 35}vh` }}>
-      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — آنباکسینگ آیفون ۱۸ پرو</h1>
+    <section className={`${FULL} relative flex min-h-[94svh] items-center justify-center overflow-hidden bg-[#0c0f10] text-center`}>
+      <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — با ضمانت اصالت و ارسال سریع</h1>
 
-      {/* ساختار دقیقاً هم‌الگو با اسکرول قفسه‌های پایین صفحه که روی دستگاه شما سالم کار می‌کند */}
-      <div className="sticky top-0 h-[100svh] overflow-hidden bg-[radial-gradient(120%_95%_at_50%_12%,#1a2125_0%,#0c0f10_72%)]">
-        {/* صحنه‌ی ذغالی سینما + تقویت نور در اوج هر برش + لایه‌ی همیشه‌زنده‌ی فیلم */}
-        <div aria-hidden className="absolute inset-0">
-          <div
-            className="absolute inset-x-0 bottom-0 top-[40%] bg-[radial-gradient(62%_58%_at_50%_76%,rgba(16,185,129,.18),transparent_72%)]"
-            style={{ opacity: 0.5 + glowBoost * 0.5 }}
-          />
-          {/* پرتوی سینمایی رقصان پشت قاب‌ها — مثل نور پروژکتورِ سالن سینما */}
-          <div
-            className="rays-sway absolute inset-x-[-22%] bottom-0 top-[44%] bg-[conic-gradient(from_-90deg_at_50%_100%,transparent_0deg,rgba(16,185,129,0.12)_8deg,transparent_17deg,rgba(255,255,255,0.05)_23deg,transparent_31deg,rgba(16,185,129,0.10)_41deg,transparent_54deg)]"
-            style={{ opacity: 0.55 + glowBoost * 0.45 }}
-          />
-          {/* هاله‌ی بنفش سکانس نهایی — هم‌رنگ گوشی */}
-          <div className="absolute inset-x-[22%] bottom-[6%] h-64 rounded-full bg-violet-500/25 blur-3xl" style={{ opacity: purpleGlow }} />
-          <div className="absolute inset-0 bg-[radial-gradient(130%_100%_at_50%_0%,transparent_56%,rgba(5,7,8,.62))]" />
-          {CHARCOAL_SEEDS.map(([x, y, d], i) => (
-            <i key={i} className="neon-seed" style={{ left: x, top: y, animationDelay: d, opacity: 0.35 }} />
-          ))}
-          {/* جرقه‌های شناور — هوای صحنه همیشه در حرکت است */}
-          {[['16%', '32%', '0s'], ['80%', '26%', '1.3s'], ['28%', '64%', '2.4s'], ['68%', '58%', '3.2s'], ['50%', '18%', '4.1s'], ['86%', '50%', '5s']].map(([x, y, d], n) => (
-            <i key={n} className="spark-drift absolute block h-1 w-1 rounded-full bg-emerald-300/80" style={{ left: x, top: y, animationDelay: d }} />
-          ))}
-        </div>
+      {/* پیش‌بارگذاری پُستر (عکس) — صفحه حتی قبل از رسیدن ویدیو هم کامل و تند بالا می‌آید */}
+      <link rel="preload" as="image" href="/assets/hero-cover.png" />
 
-        {/* پیش‌بارگذاری هر ۴ فریم — قبل از اولین اسکرول آماده‌اند */}
-        {UNBOX_FRAMES.map((f) => (
-          <link key={f.src} rel="preload" as="image" href={f.src} />
-        ))}
+      {/* ویدیوی هیرو — فقط وقتی واردِ دید شد بارگذاری می‌شود؛ پُسترِ PNG نمایش فوری می‌دهد */}
+      <video
+        ref={videoRef}
+        src={videoReady ? '/assets/hero-cover2.mp4' : undefined}
+        poster="/assets/hero-cover.png"
+        autoPlay
+        muted
+        loop
+        playsInline
+        disablePictureInPicture
+        preload={videoReady ? 'auto' : 'none'}
+        onError={() => setVideoReady(false)}
+        className="absolute inset-0 h-full w-full select-none object-cover object-center"
+      />
 
-        {/* چهار قاب واقعی — هر سکانس با ورود سه‌بعدیِ مختص خودش، هم‌ریتم با آنباکس واقعی */}
-        {UNBOX_FRAMES.map((f, i) => {
-          const active = i === idx;
-          const enter = i === 0 ? 1 : clamp01((p - (i * segT - H)) / (2 * H));            // روند ورود — دقیقاً همگام با کراس‌فید
-          const exit = i === total - 1 ? 0 : clamp01((p - ((i + 1) * segT - H)) / (2 * H)); // روند خروج — صحنه به‌سمت بیننده می‌آید
-          const local = clamp01((p - i * segT) / segT);                                   // پیشرفت داخل سکانس
-          // زبانه‌ی ورود هر صحنه — موشن‌گرفی همان لحظه‌ی آنباکس:
-          let enter3d = '';
-          if (i === 1) enter3d = ` translateY(${(1 - enter) * 90}px) rotateX(-${(1 - enter) * 16}deg)`; // درِ جعبه به‌سمت بیننده باز می‌شود و می‌نشیند
-          if (i === 2) enter3d = ` translateY(${(1 - enter) * 130}px) scale(${0.9 + enter * 0.1})`;     // محتویات از دلِ جعبه سربرمی‌آورند
-          if (i === 3) enter3d = ` scale(${0.78 + enter * 0.22}) rotate(${(1 - enter) * -6}deg)`;        // شات نهایی با ضرب تولد پیدا می‌کند
-          const driftY = (i % 2 === 0 ? 1 : -1) * local * 12;         // شناوری ظریف داخل صحنه — نفس کشیدن تصویر
-          const driftScale = 1 + local * 0.05 + exit * 0.08;          // دوربین آهسته نزدیک می‌شود؛ هنگام برش به‌سمت بیننده
-          return (
-            <div
-              key={f.src}
-              aria-hidden={!active}
-              className="absolute inset-0 will-change-[opacity]"
-              style={{
-                opacity: frameWindow(p, i, total, 0.24),
-                transition: 'opacity .18s linear',
-                pointerEvents: active ? 'auto' : 'none',
-                zIndex: active ? 10 : 0,
-              }}
-            >
-              <div className="flex h-full items-center justify-center px-4 pb-10" style={{ perspective: '1500px' }}>
-                <div
-                  className="relative w-[min(92vw,calc(54svh*1.4406))] sm:w-[min(74vw,calc(54svh*1.4406))] lg:w-[min(58vw,calc(56svh*1.4406))]"
-                  style={{
-                    aspectRatio: '1200/833',
-                    transform: `translateY(${driftY}px) scale(${driftScale})${enter3d}`,
-                    transformStyle: 'preserve-3d',
-                    transition: 'transform .12s linear',
-                  }}
-                >
-                  {/* سکانس زنده: نفس‌کشیدن فیلم + برق دوربین روی قاب */}
-                  <div className="film-breath relative h-full w-full" style={{ animationDelay: `${i * 0.9}s` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={f.src} alt={f.alt} draggable={false}
-                      fetchPriority={i === 0 ? 'high' : undefined}
-                      className="h-full w-full select-none rounded-[2rem] object-cover object-center shadow-[0_45px_140px_-18px_rgba(0,0,0,0.9)] ring-1 ring-white/15"
-                      style={{ transform: `scale(${1.045 - local * 0.045})`, transition: 'transform .12s linear' }}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0'; }}
-                    />
-                    {/* برق لنز که چرخه‌ای روی قاب می‌غزه — حس پخش زنده‌ی فیلم */}
-                    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2rem]">
-                      <div
-                        className="sheen-sweep absolute -top-[30%] bottom-[-30%] right-0 w-[38%] bg-gradient-to-l from-transparent via-white/15 to-transparent"
-                        style={{ animationDelay: `${1.2 + i * 1.5}s` }}
-                      />
-                    </div>
-                  </div>
-                  {/* قاب نئون ظریف دور عکس */}
-                  <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[2rem] shadow-[inset_0_0_0_1px_rgba(16,185,129,0.10)]" />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* لایه‌ی تیره برای خوانایی متن روی تصویر */}
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(120%_95%_at_50%_20%,rgba(5,7,8,0.30)_0%,rgba(5,7,8,0.72)_100%)]" />
+      {/* هاله‌ی نئونی امضای برند در پایین */}
+      <div aria-hidden className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-emerald-500/15 via-emerald-500/5 to-transparent" />
 
-        {/* ─── موج ۱: پرتوهای نور از شکاف جعبه — هنگام بازشدن در ─── */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 top-[34%] z-[15]" style={{ opacity: w1 }}>
-          <div
-            className="absolute inset-x-[-25%] bottom-[16%] h-full bg-[conic-gradient(from_-90deg_at_50%_100%,transparent_0deg,rgba(74,222,128,0.30)_10deg,transparent_20deg,rgba(255,255,255,0.18)_28deg,transparent_38deg,rgba(16,185,129,0.26)_50deg,transparent_62deg)]"
-            style={{ transform: `scaleY(${0.35 + w1 * 0.75})`, transformOrigin: '50% 100%' }}
-          />
-          <div className="absolute inset-x-[34%] bottom-[24%] h-20 rounded-full bg-emerald-400/40 blur-3xl" />
-        </div>
+      <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-24">
+        <h2 className="animate-caption-in text-3xl font-black leading-snug text-white sm:text-4xl lg:text-5xl">
+          <span className="bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">کارزین</span>{' '}
+          <span className="bg-gradient-to-b from-emerald-400 to-emerald-600 bg-clip-text text-transparent">تل</span>
+          ؛ <GT>قلب تپنده‌ی تکنولوژی</GT>
+        </h2>
 
-        {/* ─── موج ۲: کابل، دفترچه و گوشی از دلِ جعبه به هوا برمی‌خیزند ─── */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 z-[15]" style={{ opacity: w2 }}>
-          {[
-            { Icon: Cable, x: '22%', k: 1.0, r: -14 },
-            { Icon: Smartphone, x: '47%', k: 1.6, r: 6 },
-            { Icon: BookOpen, x: '70%', k: 0.8, r: 12 },
-          ].map(({ Icon, x, k, r }, n) => (
-            <Icon
-              key={n}
-              className="absolute h-9 w-9 text-emerald-200 drop-shadow-[0_0_16px_rgba(16,185,129,0.75)] sm:h-11 sm:w-11"
-              style={{ left: x, bottom: '22%', transform: `translateY(${-w2 * 150 * k}px) rotate(${r * w2}deg)`, transition: 'transform .16s linear' }}
-            />
-          ))}
-        </div>
+        <p className="animate-caption-in mt-5 text-lg font-extrabold text-slate-100 sm:text-xl" style={{ animationDelay: '.15s' }}>
+          فروشگاه آنلاین قطعات و گجت‌های الکترونیک
+        </p>
 
-        {/* ─── موج ۳: حلقه‌ی شوک‌ویو + بارش ذرات — تولد شات نهایی ─── */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 z-[15]" style={{ opacity: w3 }}>
-          <div
-            className="absolute left-1/2 top-1/2 h-28 w-28 rounded-full border-2 border-emerald-300/80"
-            style={{ transform: `translate(-50%,-50%) scale(${0.3 + w3 * 3})`, opacity: 1 - w3 }}
-          />
-          <div className="absolute left-1/2 top-1/2 h-40 w-40 rounded-full bg-white/25 blur-2xl" style={{ transform: 'translate(-50%,-50%)', opacity: 0.5 * (1 - w3) }} />
-          {Array.from({ length: 12 }, (_, n) => (
-            <span
-              key={n}
-              className="absolute left-1/2 top-1/2 block h-1.5 w-1.5 rounded-full bg-emerald-200"
-              style={{ transform: `translate(-50%,-50%) rotate(${n * 30}deg) translateX(${w3 * (150 + (n % 4) * 45)}px)`, opacity: 1 - w3 }}
-            />
-          ))}
-        </div>
-
-        {/* دو پیام برند در دو سوی صحنه — ثابت در کنار همه‌ی سکانس‌ها */}
-        <div className="pointer-events-none absolute right-6 top-1/2 z-20 hidden max-w-[15rem] -translate-y-1/2 text-right drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)] lg:block xl:right-16 xl:max-w-[17rem]">
-          <span className="mb-3 block h-0.5 w-12 rounded-full bg-gradient-to-l from-emerald-400 to-transparent" />
-          <h2 className="animate-caption-in text-2xl font-black leading-snug text-white xl:text-3xl">
-            کارزینتل؛ <span className="text-emerald-400">قلب تپنده‌ی تکنولوژی</span>
-          </h2>
-          <p className="mt-3 text-xs leading-6 text-slate-300/90 xl:text-sm xl:leading-7">
-            هر قطعه با ضمانت اصالت و ارسال سریع به دست تو
-          </p>
-        </div>
-        <div className="pointer-events-none absolute left-6 top-1/2 z-20 hidden max-w-[15rem] -translate-y-1/2 text-right drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)] lg:block xl:left-16 xl:max-w-[17rem]">
-          <span className="mb-3 block h-0.5 w-12 rounded-full bg-gradient-to-r from-emerald-400 to-transparent" />
-          <h2 className="animate-caption-in text-2xl font-black leading-snug text-white xl:text-3xl" style={{ animationDelay: '.15s' }}>
-            همه‌ی دنیای دیجیتال، <span className="text-emerald-400">یک‌جا</span>
-          </h2>
-          <p className="mt-3 text-xs leading-6 text-slate-300/90 xl:text-sm xl:leading-7">
-            از جدیدترین گوشی‌ها تا خاص‌ترین وسایل جانبی
-          </p>
-        </div>
-
-        {/* سکانس پایانی: فقط دکمه‌های خرید، تمیز و مینیمال — مرکز پایین صحنه */}
-        {idx === total - 1 && (
-          <div key={idx} className="animate-caption-in absolute inset-x-0 bottom-24 z-20 flex justify-center">
-            <div className="flex flex-wrap justify-center gap-3">
-              <Magnetic>
-                <Link
-                  href="/search?category=mobile"
-                  className="pulse-glow inline-flex items-center gap-2 rounded-2xl bg-gradient-to-l from-emerald-500 to-green-600 px-6 py-3 text-sm font-black text-slate-950 transition-transform hover:scale-105"
-                >
-                  <ShoppingBag className="h-4.5 w-4.5" /> مشاهده و خرید
-                </Link>
-              </Magnetic>
-              <Magnetic>
-                <Link
-                  href="/search"
-                  className="glass-dark inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-slate-200 transition hover:border-emerald-400/40 hover:text-emerald-300"
-                >
-                  ورود به فروشگاه
-                </Link>
-              </Magnetic>
-            </div>
-          </div>
-        )}
-
-        {/* خط پیشرفت پایین */}
-        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto h-1 w-56 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full origin-right bg-gradient-to-l from-emerald-400 to-teal-300" style={{ transform: `scaleX(${p})` }} />
-        </div>
-
-        {/* راهنمای اسکرول — فقط سکانس اول (بدون کتابخانه؛ خالص CSS تا هیچ‌وقت گیر نکند) */}
-        <div
-          className={`absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 animate-bounce flex-col items-center gap-1 text-slate-400 transition-opacity duration-300 ${
-            idx === 0 ? 'opacity-100' : 'pointer-events-none opacity-0'
-          }`}
-        >
-          <span className="text-2xs font-bold">اسکرول کن — جعبه باز می‌شود</span>
-          <ChevronDown className="h-5 w-5" />
-        </div>
+        <p className="animate-caption-in mx-auto mt-3 max-w-xl text-xs leading-6 text-slate-300/95 sm:text-sm sm:leading-7" style={{ animationDelay: '.25s' }}>
+          جدیدترین پرچمداران، قطعات تخصصی، ساعت هوشمند و لوازم جانبی با ضمانت اصالت کالا و ارسال سریع به سراسر ایران
+        </p>
       </div>
     </section>
   );
 }
-
 // --------------------------------------------------------------- نوار برندها (روشن)
 function BrandStrip() {
   const brands = ['سامسونگ', 'اپل', 'شیائومی', 'انکر', 'جی‌بی‌ال', 'سونی', 'هوآوی', 'ریلمی', 'ونوس', 'گرین‌لاین'];
@@ -769,3 +572,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+
