@@ -299,8 +299,8 @@ async function main() {
       'post', 'published', 'راهنمای خرید گوشی ۲۰۲۶ | وبلاگ کارزینتل', NOW())`,
   );
 
-  // 7) محصول نمونه (برای دمو) — فقط اگر SAMPLE_DATA=1
-  if (process.env.SAMPLE_DATA !== '0' && (await ds.query('SELECT COUNT(*) AS c FROM products'))[0].c === 0) {
+  // 7) محصول نمونه (برای دمو) — فقط اگر SAMPLE_DATA=1 (پیش‌فرض: خاموش؛ محصولات واقعی از پنل ادمین افزوده می‌شوند)
+  if (process.env.SAMPLE_DATA === '1' && (await ds.query('SELECT COUNT(*) AS c FROM products'))[0].c === 0) {
     const colorValues = await ds.query(`SELECT av.id, av.value FROM attribute_values av WHERE av.attribute_id = 1 LIMIT 2`);
     const storageValue = await ds.query(`SELECT id FROM attribute_values WHERE attribute_id = 2 AND value = '128'`);
     await ds.query(
