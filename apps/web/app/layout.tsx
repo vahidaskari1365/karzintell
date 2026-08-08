@@ -25,9 +25,8 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} | فروشگاه قطعات الکترونیک`,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
-    images: [{ url: '/icon.svg', width: 512, height: 512, alt: SITE_NAME }],
   },
-  twitter: { card: 'summary', title: SITE_NAME, description: SITE_DESCRIPTION },
+  twitter: { card: 'summary_large_image', title: SITE_NAME, description: SITE_DESCRIPTION },
 };
 
 export const viewport: Viewport = {

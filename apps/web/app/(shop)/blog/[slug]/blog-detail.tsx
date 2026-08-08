@@ -61,9 +61,40 @@ export function BlogDetail({ slug }: { slug: string }) {
             '@context': 'https://schema.org',
             '@type': 'Article',
             headline: post.title,
+            description: post.excerpt || undefined,
             image: post.coverUrl ? [post.coverUrl] : undefined,
             datePublished: post.publishedAt || undefined,
-            publisher: { '@type': 'Organization', name: 'کارزینتل' },
+            dateModified: post.publishedAt || undefined,
+            inLanguage: 'fa-IR',
+            author: { '@type': 'Organization', name: 'کارزینتل' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'کارزینتل',
+              logo: { '@type': 'ImageObject', url: `${typeof window !== 'undefined' ? window.location.origin : ''}/icon.svg` },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': typeof window !== 'undefined' ? window.location.href : undefined,
+            },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'خانه', item: typeof window !== 'undefined' ? window.location.origin : undefined },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: post.kind === 'news' ? 'اخبار' : 'وبلاگ',
+                item: typeof window !== 'undefined' ? `${window.location.origin}/${post.kind === 'news' ? 'news' : 'blog'}` : undefined,
+              },
+              { '@type': 'ListItem', position: 3, name: post.title },
+            ],
           }),
         }}
       />

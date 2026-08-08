@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ProductDetail } from './product-detail';
+import { mediaUrl } from '@/lib/branding';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -14,16 +15,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         const title = p.metaTitle || `${p.name} | کارزینتل`;
         const description = p.metaDescription || p.shortDescription || p.name;
         const primaryImage = p.images?.find((img: any) => img.isPrimary)?.url || p.images?.[0]?.url;
-        
+
         return {
           title,
           description,
           alternates: { canonical: `/products/${slug}` },
           openGraph: {
-            type: 'website',
+            type: 'product' as unknown as 'website',
             title,
             description,
-            images: primaryImage ? [{ url: primaryImage }] : undefined,
+            images: primaryImage ? [{ url: mediaUrl(primaryImage) as string, alt: p.name }] : undefined,
           },
         };
       }

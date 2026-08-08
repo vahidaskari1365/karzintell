@@ -283,31 +283,72 @@ export function ProductDetail({ slug }: { slug: string }) {
 
   const inStock = (selected?.stock ?? 0) > 0;
 
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const productUrl = `${siteUrl}/products/${product.slug}`;
+  const priceValidUntil = new Date();
+  priceValidUntil.setFullYear(priceValidUntil.getFullYear() + 1);
+
   // داده ساخت‌یافته گوگل (Schema.org Product)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
+    '@id': productUrl,
     name: product.name,
     description: product.shortDescription || product.name,
     image: product.images.map((i) => i.url).filter(Boolean),
+    url: productUrl,
     brand: product.brand ? { '@type': 'Brand', name: product.brand.name } : undefined,
     sku: selected?.sku || product.code || undefined,
+    itemCondition: 'https://schema.org/NewCondition',
     aggregateRating:
       product.ratingCount > 0
-        ? { '@type': 'AggregateRating', ratingValue: product.ratingAvg, reviewCount: product.ratingCount }
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: product.ratingAvg,
+            bestRating: 5,
+            reviewCount: product.ratingCount,
+          }
         : undefined,
     offers: {
       '@type': 'Offer',
       priceCurrency: 'IRR',
       price: selected?.price ?? product.minPrice ?? 0,
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      url: productUrl,
+      itemCondition: 'https://schema.org/NewCondition',
+      priceValidUntil: priceValidUntil.toISOString().slice(0, 10),
+      seller: { '@type': 'Organization', name: 'کارزینتل' },
     },
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'خانه', item: siteUrl },
+      ...(product.category
+        ? [
+            {
+              '@type': 'ListItem' as const,
+              position: 2,
+              name: product.category.name,
+              item: `${siteUrl}/categories/${product.category.slug}`,
+            },
+          ]
+        : []),
+      {
+        '@type': 'ListItem',
+        position: product.category ? 3 : 2,
+        name: product.name,
+        item: productUrl,
+      },
+    ],
   };
 
   return (
     <div className="py-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       {/* مسیر */}
       <nav className="mb-5 flex items-center gap-2 text-xs text-slate-400">
         <Link href="/" className="hover:text-slate-300">خانه</Link>
