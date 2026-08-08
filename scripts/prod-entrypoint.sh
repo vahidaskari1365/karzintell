@@ -28,8 +28,11 @@ TABLES=$(mysql -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" -uroot -p"${DB_ROOT_PA
 
 if [ "${TABLES:-0}" = "0" ]; then
   echo "[init] building database schema (tables not found) ..."
+  # حذف DROP/CREATE/USE — دیتابیس توسط کانتینر MySQL از قبل ساخته شده است
+  grep -vE "^DROP DATABASE|^CREATE DATABASE|^USE " /app/database/schema.sql > /tmp/krz-schema-prod.sql
   mysql -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" -uroot -p"${DB_ROOT_PASSWORD:-root_secret}" \
-    < /app/database/schema.sql
+    < /tmp/krz-schema-prod.sql
+  rm -f /tmp/krz-schema-prod.sql
   # اطمینان از دسترسی کاربر اپلیکیشن به دیتابیس
   mysql -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" -uroot -p"${DB_ROOT_PASSWORD:-root_secret}" \
     -e "GRANT ALL PRIVILEGES ON \`${DB_NAME:-karzintell}\`.* TO '${DB_USER:-karzintell}'@'%'; FLUSH PRIVILEGES;"
