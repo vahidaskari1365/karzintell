@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Package, Scale, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X } from 'lucide-react';
+import { ChevronDown, Heart, LayoutDashboard, LayoutGrid, LogOut, Menu, Package, Scale, Search, ShoppingCart, Ticket, User as UserIcon, Wallet, X } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { useAuthStore, hasPermission, toast } from '@/lib/auth-store';
 import { CategoryNode } from '@/lib/types';
@@ -66,6 +66,7 @@ export function Header() {
   const router = useRouter();
   const { user, hydrated, clearAuth } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
   const cartCount = useCartCount();
 
   const { data: tree } = useQuery({
@@ -99,25 +100,55 @@ export function Header() {
           <BrandName dark className="text-[1.35rem]" />
         </Link>
 
-        {/* دسته‌بندی‌ها - دسکتاپ */}
+        {/* منوی اصلی - دسکتاپ */}
         <nav className="hidden items-center gap-1 lg:flex">
-          {(tree || []).slice(0, 5).map((c) => (
-            <div key={c.id} className="group relative">
-              <Link href={`/categories/${c.slug}`} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-emerald-600/10 hover:text-emerald-700 transition-colors">
-                {c.name}
-                {c.children?.length > 0 && <ChevronDown className="h-3.5 w-3.5" />}
-              </Link>
-              {c.children?.length > 0 && (
-                <div className="invisible absolute right-0 top-full z-50 min-w-44 rounded-xl border border-black/[0.06] bg-white/92 backdrop-blur-xl p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:opacity-100">
-                  {c.children.map((ch) => (
-                    <Link key={ch.id} href={`/categories/${ch.slug}`} className="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-emerald-600/10 hover:text-emerald-700">
+          <Link href="/" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-emerald-600/10 hover:text-emerald-700">
+            صفحه اصلی
+          </Link>
+          <div className="group relative" onMouseLeave={() => setCatOpen(false)}>
+            <button
+              onClick={() => setCatOpen((o) => !o)}
+              aria-expanded={catOpen}
+              className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-emerald-600/10 hover:text-emerald-700"
+            >
+              <LayoutGrid className="h-4 w-4" /> محصولات
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {/* لیست کشویی دسته‌بندی‌ها — با هاور یا کلیک باز می‌شود */}
+            <div
+              className={`invisible absolute right-0 top-full z-50 min-w-60 rounded-xl border border-black/[0.06] bg-white/92 p-2 opacity-0 shadow-xl backdrop-blur-xl transition-all group-hover:visible group-hover:opacity-100 ${
+                catOpen ? 'visible opacity-100' : ''
+              }`}
+            >
+              {(tree || []).map((c) => (
+                <div key={c.id} className="mb-0.5">
+                  <Link
+                    href={`/categories/${c.slug}`}
+                    onClick={() => setCatOpen(false)}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-emerald-600/10 hover:text-emerald-700"
+                  >
+                    {c.name}
+                    {c.children?.length > 0 && <ChevronDown className="h-3 w-3 -rotate-90 text-slate-400" />}
+                  </Link>
+                  {c.children?.map((ch) => (
+                    <Link
+                      key={ch.id}
+                      href={`/categories/${ch.slug}`}
+                      onClick={() => setCatOpen(false)}
+                      className="block rounded-lg py-1.5 pe-3 ps-6 text-sm text-slate-500 hover:bg-emerald-600/10 hover:text-emerald-700"
+                    >
                       {ch.name}
                     </Link>
                   ))}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
+          {user && (
+            <Link href="/account/orders" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-emerald-600/10 hover:text-emerald-700">
+              <Package className="h-4 w-4" /> پیگیری سفارش
+            </Link>
+          )}
         </nav>
 
         {/* جستجو */}
@@ -181,9 +212,18 @@ export function Header() {
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} />
           <div className="absolute inset-y-0 start-0 w-72 overflow-y-auto bg-white/95 p-4 shadow-2xl backdrop-blur-xl">
             <div className="mb-4 flex items-center justify-between">
-              <span className="font-bold">دسته‌بندی‌ها</span>
+              <span className="font-bold">منو</span>
               <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 text-slate-700 hover:bg-black/5"><X className="h-5 w-5" /></button>
             </div>
+            <Link href="/" onClick={() => setMobileOpen(false)} className="mb-1 block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-emerald-600/10 hover:text-emerald-700">
+              صفحه اصلی
+            </Link>
+            {user && (
+              <Link href="/account/orders" onClick={() => setMobileOpen(false)} className="mb-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-emerald-600/10 hover:text-emerald-700">
+                <Package className="h-4 w-4" /> پیگیری سفارش
+              </Link>
+            )}
+            <span className="mb-1 mt-3 block px-3 text-xs font-bold text-slate-400">دسته‌بندی‌ها</span>
             {(tree || []).map((c) => (
               <div key={c.id} className="mb-1">
                 <Link href={`/categories/${c.slug}`} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-800 hover:bg-emerald-600/10 hover:text-emerald-700">
