@@ -43,52 +43,23 @@ const GT = ({ children }: { children: React.ReactNode }) => (
 /* تصویر: assets/hero-cover.png | متن‌ها همان پیام‌های همیشگی هیرو، روی تصویر */
 
 function CinematicHero() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [videoReady, setVideoReady] = useState(false);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || videoReady) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVideoReady(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: '300px' },
-    );
-    io.observe(v);
-    return () => io.disconnect();
-  }, [videoReady]);
-
-  useEffect(() => {
-    if (!videoReady) return;
-    const v = videoRef.current;
-    if (!v) return;
-    const t = setTimeout(() => v.play().catch(() => {}), 0);
-    return () => clearTimeout(t);
-  }, [videoReady]);
-
   return (
     <section className={`${FULL} relative flex min-h-[94svh] items-center justify-center overflow-hidden bg-[#0c0f10] text-center`}>
       <h1 className="sr-only">کارزینتل | فروشگاه موبایل، ساعت هوشمند، هدفون و قطعات الکترونیک — با ضمانت اصالت و ارسال سریع</h1>
 
-      {/* پیش‌بارگذاری پُستر (عکس) — صفحه حتی قبل از رسیدن ویدیو هم کامل و تند بالا می‌آید */}
+      {/* پیش‌بارگذاری پُستر؛ تا لحظه‌ی آماده‌شدن ویدیو نمایش داده می‌شود */}
       <link rel="preload" as="image" href="/assets/hero-cover.png" />
 
-      {/* ویدیوی هیرو — فقط وقتی واردِ دید شد بارگذاری می‌شود؛ پُسترِ PNG نمایش فوری می‌دهد */}
+      {/* ویدیوی هیرو — از ابتدای باز شدن صفحه پخش می‌شود */}
       <video
-        ref={videoRef}
-        src={videoReady ? '/assets/hero-cover2.mp4' : undefined}
+        src="/assets/hero-cover2.mp4"
         poster="/assets/hero-cover.png"
         autoPlay
         muted
         loop
         playsInline
         disablePictureInPicture
-        preload={videoReady ? 'auto' : 'none'}
-        onError={() => setVideoReady(false)}
+        preload="auto"
         className="absolute inset-0 h-full w-full select-none object-cover object-center"
       />
 
