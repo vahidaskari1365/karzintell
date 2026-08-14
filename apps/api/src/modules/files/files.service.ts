@@ -1,4 +1,4 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
@@ -23,6 +23,23 @@ const EXT_BY_MIME: Record<string, string> = {
   'video/mp4': 'mp4', 'video/webm': 'webm',
 };
 
+/** فهرست بسته‌ی انواع مجاز برای آپلود — از بارگذاری HTML/SVG/JS و اسکریپت جلوگیری می‌کند */
+export const ALLOWED_UPLOAD_MIME_TYPES: ReadonlySet<string> = new Set(Object.keys(EXT_BY_MIME));
+
+/** حداکثر حجم مجاز هر فایل آپلودی (۱۰ مگابایت) */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** پسوندهای امن مجاز برای مسیر فایل (جلوگیری از مسیرپیمایی و فایل‌های اجرایی) */
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm']);
+
+function assertSafePath(path: string) {
+  if (path.includes('..') || path.startsWith('/') || /[\u0000-\u001f]/.test(path))
+    throw new BadRequestException({ code: 'INVALID_PATH', message: 'مسیر فایل نامعتبر است' });
+  const ext = path.split('.').pop()?.toLowerCase() || '';
+  if (!ALLOWED_EXTENSIONS.has(ext))
+    throw new BadRequestException({ code: 'INVALID_PATH', message: 'پسوند فایل مجاز نیست' });
+}
+
 @Injectable()
 export class FilesService {
   private readonly logger = new Logger('Files');
@@ -43,8 +60,10 @@ export class FilesService {
 
   /** presign برای آپلود مستقیم کلاینت به MinIO/S3 */
   async presign(input: { purpose: string; mimeType: string; originalName?: string }, ownerId: number) {
+    if (!ALLOWED_UPLOAD_MIME_TYPES.has(input.mimeType))
+      throw new BadRequestException({ code: 'FILE_TYPE_NOT_ALLOWED', message: 'نوع فایل مجاز نیست' });
     const folder = PURPOSE_FOLDERS[input.purpose] || 'misc';
-    const ext = EXT_BY_MIME[input.mimeType] || (input.originalName?.split('.').pop() || 'bin').slice(0, 8);
+    const ext = EXT_BY_MIME[input.mimeType];
     const path = `${folder}/${uuid()}.${ext}`;
 
     try {
@@ -71,6 +90,9 @@ export class FilesService {
   }
 
   async confirm(input: { path: string; purpose: string; originalName?: string; mimeType?: string; sizeBytes?: number }, ownerId: number) {
+    assertSafePath(input.path);
+    if (input.mimeType && !ALLOWED_UPLOAD_MIME_TYPES.has(input.mimeType))
+      throw new BadRequestException({ code: 'FILE_TYPE_NOT_ALLOWED', message: 'نوع فایل مجاز نیست' });
     return this.files.save(
       this.files.create({
         path: input.path,

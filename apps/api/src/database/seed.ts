@@ -11,7 +11,7 @@ import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { ALL_ENTITIES } from './entities';
 import { env } from '../config/configuration';
-import { slugify } from '../common/utils';
+import { slugify, tempPassword } from '../common/utils';
 
 const PERMISSIONS: Array<[string, string, string]> = [
   ['dashboard.view', 'مشاهده داشبورد', 'dashboard'],
@@ -118,48 +118,63 @@ async function main() {
     }
   }
 
-  // 3) ادمین پیش‌فرض
-  const adminPhone = '09000000000';
-  const existing = await ds.query('SELECT id FROM users WHERE phone = ?', [adminPhone]);
+  // 3) ادمین پیش‌فرض — رمز از متغیر محیطی خوانده می‌شود؛ هیچ رمز ثابتی در کد نیست.
+  //    اگر SEED_ADMIN_PASSWORD ست نشده باشد، یک رمز تصادفی تولید و فقط یک‌بار چاپ می‌شود.
+  const adminPhone = process.env.SEED_ADMIN_PHONE || '09000000000';
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@karzintell.ir';
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || tempPassword();
+  const existing = await ds.query(
+    'SELECT id FROM users WHERE phone = ? OR email = ?',
+    [adminPhone, adminEmail],
+  );
   if (!existing.length) {
-    const hash = await bcrypt.hash('Admin@123456', env.bcryptRounds);
+    const hash = await bcrypt.hash(adminPassword, env.bcryptRounds);
     await ds.query(
       `INSERT INTO users (id, full_name, email, phone, password_hash, status, must_change_password, email_verified_at, phone_verified_at)
-       VALUES (1, 'مدیر ارشد کارزینتل', 'admin@karzintell.ir', ?, ?, 'active', 1, NOW(), NOW())`,
-      [adminPhone, hash],
+       VALUES (1, 'مدیر ارشد کارزینتل', ?, ?, ?, 'active', 1, NOW(), NOW())`,
+      [adminEmail, adminPhone, hash],
     );
     await ds.query('INSERT IGNORE INTO role_user (role_id, user_id, assigned_by) VALUES (1, 1, 1)');
-    console.log('   ✅ admin@karzintell.ir / Admin@123456 (تغییر رمز در اولین ورود اجباری است)');
-  } else {
-    console.log('   ⏭  ادمین از قبل موجود است');
-  }
-
-  // اضافه کردن یوزر vahid.askari1986@gmail.com به عنوان ادمین ارشد (درخواستی کاربر)
-  const vahidEmail = 'vahid.askari1986@gmail.com';
-  const existingVahid = await ds.query('SELECT id FROM users WHERE email = ?', [vahidEmail]);
-  if (!existingVahid.length) {
-    const hashVahid = await bcrypt.hash('Vahid@0142', env.bcryptRounds);
-    await ds.query(
-      `INSERT INTO users (full_name, email, phone, password_hash, status, must_change_password, email_verified_at, phone_verified_at)
-       VALUES ('وحید عسگری', ?, '09120000142', ?, 'active', 0, NOW(), NOW())`,
-      [vahidEmail, hashVahid],
-    );
-    const vahidUser = await ds.query('SELECT id FROM users WHERE email = ?', [vahidEmail]);
-    if (vahidUser.length) {
-      const vahidId = vahidUser[0].id;
-      await ds.query('INSERT IGNORE INTO role_user (role_id, user_id, assigned_by) VALUES (1, ?, 1)', [vahidId]);
-      console.log('   ✅ یوزر vahid.askari1986@gmail.com با نقش ادمین با موفقیت ایجاد شد.');
+    if (process.env.SEED_ADMIN_PASSWORD) {
+      console.log('   ✅ ادمین پیش‌فرض با رمز تنظیم‌شده از SEED_ADMIN_PASSWORD ایجاد شد (تغییر رمز اجباری).');
+    } else {
+      console.log(`   ✅ ادمین پیش‌فرض ایجاد شد: ${adminEmail}`);
+      console.log(`   🔐 رمز موقت (فقط این‌بار نمایش داده می‌شود — تغییر رمز اجباری): ${adminPassword}`);
     }
   } else {
-    // بروزرسانی پسورد و نقش ادمینی برای یوزر موجود
-    const hashVahid = await bcrypt.hash('Vahid@0142', env.bcryptRounds);
-    const vahidId = existingVahid[0].id;
-    await ds.query(
-      `UPDATE users SET password_hash = ?, status = 'active', must_change_password = 0 WHERE id = ?`,
-      [hashVahid, vahidId]
+    console.log('   ⏭  ادمین از قبل موجود است (رمز عبور تغییر داده نمی‌شود)');
+  }
+
+  // ادمین ارشد اضافی اختیاری — فقط از متغیر محیطی؛ بدون رمز ثابت
+  const extraEmail = process.env.SEED_EXTRA_SUPER_ADMIN_EMAIL;
+  if (extraEmail) {
+    const extraPhone = process.env.SEED_EXTRA_SUPER_ADMIN_PHONE || '';
+    const extraPassword = process.env.SEED_EXTRA_SUPER_ADMIN_PASSWORD || tempPassword();
+    const extraExisting = await ds.query(
+      'SELECT id FROM users WHERE email = ?' + (extraPhone ? ' OR phone = ?' : ''),
+      extraPhone ? [extraEmail, extraPhone] : [extraEmail],
     );
-    await ds.query('INSERT IGNORE INTO role_user (role_id, user_id, assigned_by) VALUES (1, ?, 1)', [vahidId]);
-    console.log('   ✅ یوزر vahid.askari1986@gmail.com ارتقا یافت و رمز بروزرسانی شد.');
+    let extraId: number | null = null;
+    if (extraExisting.length) {
+      extraId = extraExisting[0].id;
+    } else {
+      const hashExtra = await bcrypt.hash(extraPassword, env.bcryptRounds);
+      const ins = await ds.query(
+        `INSERT INTO users (full_name, email, phone, password_hash, status, must_change_password, email_verified_at, phone_verified_at)
+         VALUES ('مدیر ارشد', ?, ?, ?, 'active', 1, NOW(), NOW())`,
+        [extraEmail, extraPhone || `admin-${Date.now()}`, hashExtra],
+      );
+      extraId = ins.insertId;
+      if (process.env.SEED_EXTRA_SUPER_ADMIN_PASSWORD) {
+        console.log(`   ✅ ادمین ارشد اضافی ایجاد شد: ${extraEmail}`);
+      } else {
+        console.log(`   ✅ ادمین ارشد اضافی ایجاد شد: ${extraEmail}`);
+        console.log(`   🔐 رمز موقت (فقط این‌بار): ${extraPassword}`);
+      }
+    }
+    if (extraId) {
+      await ds.query('INSERT IGNORE INTO role_user (role_id, user_id, assigned_by) VALUES (1, ?, 1)', [extraId]);
+    }
   }
 
   // 4) انبار پیش‌فرض

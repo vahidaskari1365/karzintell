@@ -176,9 +176,20 @@ export class NextpayAdapter implements GatewayAdapter {
 
 // ---------------------------------------------------------------- بانک ملت (به‌پرداخت)
 const MELLAT_PGW = 'https://bpm.shaparak.ir/pgwchannel/services/pgw?wsdl';
+
+/** فرار XML برای جلوگیری از تزریق در بدنه SOAP (ورودی‌ها ممکن است از callback کاربر بیایند) */
+function xmlEscape(value: string | number): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 function mellatSoap(method: string, fields: Record<string, string | number>) {
   const body = Object.entries(fields)
-    .map(([k, v]) => `<int:${k}>${v}</int:${k}>`)
+    .map(([k, v]) => `<int:${xmlEscape(k)}>${xmlEscape(v)}</int:${xmlEscape(k)}>`)
     .join('');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:int="http://interfaces.core.sw.bps.com/">

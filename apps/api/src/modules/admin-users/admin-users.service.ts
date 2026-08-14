@@ -7,12 +7,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { Permission, PermissionUser, Role, User } from '../../database/entities';
+import { Permission, PermissionUser, Role, RoleUser, User } from '../../database/entities';
 import { env } from '../../config/configuration';
 import { paginate, tempPassword } from '../../common/utils';
 import { RbacService } from '../rbac/rbac.service';
 import { AdminCreateUserDto, AdminUpdateUserDto } from './admin-users.dto';
 import { DomainException } from '../../common/http-exception.filter';
+import { AuthUser, isSuper } from '../../common/types';
+import { isPrivilegedPermission } from '@karzintell/shared';
 
 @Injectable()
 export class AdminUsersService {
@@ -21,6 +23,7 @@ export class AdminUsersService {
     @InjectRepository(Role) private readonly roles: Repository<Role>,
     @InjectRepository(Permission) private readonly permissions: Repository<Permission>,
     @InjectRepository(PermissionUser) private readonly permUsers: Repository<PermissionUser>,
+    @InjectRepository(RoleUser) private readonly roleUsers: Repository<RoleUser>,
     private readonly rbac: RbacService,
   ) {}
 
@@ -99,7 +102,7 @@ export class AdminUsersService {
   }
 
   /** ساخت کاربر توسط ادمین → رمز موقت + تخصیص نقش */
-  async create(dto: AdminCreateUserDto, adminId: number) {
+  async create(dto: AdminCreateUserDto, admin: AuthUser) {
     const phone = dto.phone.trim();
     const email = dto.email?.trim().toLowerCase() || null;
     const clash = await this.users.findOne({ where: [{ phone }, ...(email ? [{ email }] : [])] });
@@ -120,8 +123,8 @@ export class AdminUsersService {
 
     if (dto.roleIds?.length) {
       const roles = await this.roles.findBy({ id: In(dto.roleIds) });
-      this.assertNoSuperGrant(roles.map((r) => r.name), adminId);
-      await this.rbac.assignRoles(user.id, roles.map((r) => r.id), adminId);
+      this.assertNoSuperGrant(roles.map((r) => r.name), admin);
+      await this.rbac.assignRoles(user.id, roles.map((r) => r.id), admin.id);
     }
 
     return {
@@ -131,11 +134,12 @@ export class AdminUsersService {
     };
   }
 
-  async update(id: number, dto: AdminUpdateUserDto, adminId: number) {
+  async update(id: number, dto: AdminUpdateUserDto, admin: AuthUser) {
     const user = await this.users.findOne({ where: { id }, relations: { roles: true } });
     if (!user) throw new NotFoundException('کاربر یافت نشد');
-    if (user.roles?.some((r) => r.name === 'super_admin') && adminId !== user.id)
-      this.assertNoSuperGrant(['super_admin'], adminId);
+    // فقط super_admin می‌تواند حساب super_admin (از جمله رمز عبور آن) را تغییر دهد
+    if (user.roles?.some((r) => r.name === 'super_admin'))
+      this.assertNoSuperGrant(['super_admin'], admin);
 
     if (dto.phone) {
       const c = await this.users.findOne({ where: { phone: dto.phone } });
@@ -154,12 +158,12 @@ export class AdminUsersService {
     return this.findOne(id);
   }
 
-  async remove(id: number, adminId: number) {
+  async remove(id: number, admin: AuthUser) {
     const user = await this.users.findOne({ where: { id }, relations: { roles: true } });
     if (!user) throw new NotFoundException('کاربر یافت نشد');
     if (user.roles?.some((r) => r.name === 'super_admin'))
       throw new ForbiddenException({ code: 'FORBIDDEN', message: 'حذف super_admin مجاز نیست' });
-    if (id === adminId)
+    if (id === admin.id)
       throw new DomainException('BAD_REQUEST', 'نمی‌توانید حساب خودتان را حذف کنید', 400);
     await this.users.softDelete(id);
     await this.rbac.invalidateUser(id);
@@ -167,31 +171,38 @@ export class AdminUsersService {
   }
 
   /** تخصیص نقش‌ها */
-  async assignRoles(id: number, roleIds: number[], adminId: number) {
+  async assignRoles(id: number, roleIds: number[], admin: AuthUser) {
     const target = await this.users.findOne({ where: { id }, relations: { roles: true } });
     if (!target) throw new NotFoundException('کاربر یافت نشد');
+    // فقط super_admin می‌تواند نقش‌های super_admin را تغییر دهد
+    if (target.roles?.some((r) => r.name === 'super_admin'))
+      this.assertNoSuperGrant(['super_admin'], admin);
     const roles = roleIds.length ? await this.roles.findBy({ id: In(roleIds) }) : [];
-    this.assertNoSuperGrant(roles.map((r) => r.name), adminId);
+    this.assertNoSuperGrant(roles.map((r) => r.name), admin);
     // جلوگیری از حذف آخرین سوپر ادمین
     const wasSuper = (target.roles || []).some((r) => r.name === 'super_admin');
     const willBeSuper = roles.some((r) => r.name === 'super_admin');
     if (wasSuper && !willBeSuper) {
-      const superCount = await this.users.manager
-        .createQueryBuilder('ru', 'ru')
-        .innerJoin('roles', 'r', 'r.id = ru.role_id AND r.name = :n', { n: 'super_admin' })
-        .from('role_user', 'ru')
+      const superCount = await this.roleUsers
+        .createQueryBuilder('ru')
+        .innerJoin('roles', 'r', 'r.id = ru.role_id')
+        .where('r.name = :n', { n: 'super_admin' })
         .getCount();
       if (superCount <= 1)
         throw new DomainException('LAST_SUPER_ADMIN', 'حذف آخرین مدیر ارشد مجاز نیست', 409);
     }
-    await this.rbac.assignRoles(id, roles.map((r) => r.id), adminId);
+    await this.rbac.assignRoles(id, roles.map((r) => r.id), admin.id);
     return this.findOne(id);
   }
 
   /** override دسترسی‌های موردی (allow/deny) */
-  async assignPermissions(id: number, items: Array<{ permission: string; type: 'allow' | 'deny' }>, adminId: number) {
+  async assignPermissions(id: number, items: Array<{ permission: string; type: 'allow' | 'deny' }>, admin: AuthUser) {
     const target = await this.users.findOne({ where: { id } });
     if (!target) throw new NotFoundException('کاربر یافت نشد');
+    // فقط super_admin می‌تواند مجوزهای قدرت را اعطا کند یا حساب super_admin را تغییر دهد
+    if (target.roles?.some((r) => r.name === 'super_admin'))
+      this.assertNoSuperGrant(['super_admin'], admin);
+    this.assertNoPrivilegedGrant(items.map((i) => i.permission), admin);
     const names = items.map((i) => i.permission);
     const perms = names.length ? await this.permissions.findBy({ name: In(names) }) : [];
     await this.permUsers.delete({ userId: id });
@@ -201,7 +212,7 @@ export class AdminUsersService {
           userId: id,
           permissionId: p.id,
           type: items.find((i) => i.permission === p.name)?.type || 'allow',
-          grantedBy: adminId,
+          grantedBy: admin.id,
         })),
       );
     }
@@ -209,11 +220,23 @@ export class AdminUsersService {
     return this.findOne(id);
   }
 
-  /** super_admin فقط توسط super_admin قابل تخصیص است */
-  private assertNoSuperGrant(targetRoleNames: string[], adminId: number) {
-    // بررسی سطح ادمین جاری توسط کنترلر/گارد مشخص است؛ اینجا فقط لاگ امنیتی:
-    if (targetRoleNames.includes('super_admin') && !adminId) {
-      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'فقط مدیر ارشد می‌تواند نقش super_admin بدهد' });
+  /** نقش super_admin فقط توسط super_admin قابل تخصیص است */
+  private assertNoSuperGrant(targetRoleNames: string[], admin: AuthUser) {
+    if (targetRoleNames.includes('super_admin') && !isSuper(admin)) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'فقط مدیر ارشد می‌تواند نقش super_admin را تخصیص دهد یا تغییر دهد',
+      });
+    }
+  }
+
+  /** مجوزهای قدرت فقط توسط super_admin قابل اعطا هستند (جلوگیری از ارتقای سطح دسترسی) */
+  private assertNoPrivilegedGrant(permissions: string[], admin: AuthUser) {
+    if (!isSuper(admin) && permissions.some((p) => isPrivilegedPermission(p))) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'اعطای این مجوزها فقط توسط مدیر ارشد مجاز است',
+      });
     }
   }
 }

@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { RequirePermissions } from '../../common/decorators';
+import { RequirePermissions, CurrentUser } from '../../common/decorators';
+import { AuthUser } from '../../common/types';
 import { RolesService } from './roles.service';
 
 class CreateRoleDto {
@@ -56,14 +57,14 @@ export class RolesController {
 
   @Post('roles')
   @RequirePermissions('roles.create')
-  async create(@Body() dto: CreateRoleDto) {
-    return { data: await this.roles.create(dto) };
+  async create(@Body() dto: CreateRoleDto, @CurrentUser() admin: AuthUser) {
+    return { data: await this.roles.create(dto, admin) };
   }
 
   @Patch('roles/:id')
   @RequirePermissions('roles.update')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
-    return { data: await this.roles.update(id, dto) };
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto, @CurrentUser() admin: AuthUser) {
+    return { data: await this.roles.update(id, dto, admin) };
   }
 
   @Delete('roles/:id')

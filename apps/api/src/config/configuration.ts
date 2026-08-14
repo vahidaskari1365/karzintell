@@ -118,3 +118,47 @@ export const env = {
 } as const;
 
 export default () => env;
+
+/**
+ * سخت‌گیری امنیتی در Production: اگر اسرار حیاتی روی مقادیر پیش‌فرض/ضعیف باقی
+ * مانده باشند، برنامه از راه‌اندازی خودداری می‌کند (Fail-Closed) تا سایت با
+ * تنظیمات ناامن بالا نیاید.
+ */
+const WEAK_SECRETS = [
+  'dev-access-secret-change-me',
+  'dev-refresh-secret-change-me',
+  'change-me-access-secret',
+  'change-me-refresh-secret',
+  'secret',
+  'root_secret',
+  'masterKey123',
+  'minioadmin',
+  'secret_secret_secret',
+];
+
+export function assertSecureConfiguration() {
+  if (!env.isProd) return;
+
+  const problems: string[] = [];
+
+  const check = (label: string, value: string | undefined, minLen = 0) => {
+    if (!value) return problems.push(`${label} تنظیم نشده است`);
+    if (WEAK_SECRETS.includes(value)) return problems.push(`${label} برابر مقدار پیش‌فرض است`);
+    if (minLen && value.length < minLen) return problems.push(`${label} کوتاه‌تر از ${minLen} کاراکتر است`);
+  };
+
+  check('JWT_ACCESS_SECRET', process.env.JWT_ACCESS_SECRET, 32);
+  check('JWT_REFRESH_SECRET', process.env.JWT_REFRESH_SECRET, 32);
+  check('DB_PASSWORD', process.env.DB_PASSWORD);
+  check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
+
+  if (problems.length) {
+    throw new Error(
+      `[امنیت] تنظیمات Production ناامن است؛ برای راه‌اندازی امن، مقادیر زیر را اصلاح کنید:\n` +
+        problems.map((p) => `  - ${p}`).join('\n') +
+        `\n  (مثلاً: openssl rand -base64 48 برای تولید JWT_SECRET)`,
+    );
+  }
+}
+
+assertSecureConfiguration();

@@ -4,6 +4,8 @@ import { In, Repository } from 'typeorm';
 import { Permission, Role } from '../../database/entities';
 import { RbacService } from './rbac.service';
 import { slugify } from '../../common/utils';
+import { AuthUser, isSuper } from '../../common/types';
+import { isPrivilegedPermission } from '@karzintell/shared';
 
 @Injectable()
 export class RolesService {
@@ -27,20 +29,21 @@ export class RolesService {
     return Object.entries(groups).map(([group, items]) => ({ group, items }));
   }
 
-  async create(dto: { name: string; label: string; description?: string; permissionIds?: number[] }) {
+  async create(dto: { name: string; label: string; description?: string; permissionIds?: number[] }, admin: AuthUser) {
     const name = slugify(dto.name).replace(/-/g, '_');
     if (await this.roles.findOne({ where: [{ name }, { name: dto.name }] }))
       throw new ConflictException({ code: 'ROLE_TAKEN', message: 'نام نقش تکراری است' });
     const perms = dto.permissionIds?.length
       ? await this.permissions.findBy({ id: In(dto.permissionIds) })
       : [];
+    this.assertNoPrivilegedGrant(perms.map((p) => p.name), admin);
     const role = await this.roles.save(
       this.roles.create({ name, label: dto.label, description: dto.description ?? null, permissions: perms }),
     );
     return role;
   }
 
-  async update(id: number, dto: { label?: string; description?: string; permissionIds?: number[] }) {
+  async update(id: number, dto: { label?: string; description?: string; permissionIds?: number[] }, admin: AuthUser) {
     const role = await this.roles.findOne({ where: { id }, relations: { permissions: true } });
     if (!role) throw new NotFoundException('نقش یافت نشد');
     if (role.name === 'super_admin' && dto.permissionIds)
@@ -49,13 +52,25 @@ export class RolesService {
     if (dto.label !== undefined) role.label = dto.label;
     if (dto.description !== undefined) role.description = dto.description;
     if (dto.permissionIds) {
-      role.permissions = dto.permissionIds.length
+      const perms = dto.permissionIds.length
         ? await this.permissions.findBy({ id: In(dto.permissionIds) })
         : [];
+      this.assertNoPrivilegedGrant(perms.map((p) => p.name), admin);
+      role.permissions = perms;
     }
     await this.roles.save(role);
     await this.rbac.invalidateAll();
     return this.roles.findOne({ where: { id }, relations: { permissions: true } });
+  }
+
+  /** اعطای مجوزهای قدرت فقط توسط super_admin مجاز است */
+  private assertNoPrivilegedGrant(permissionNames: string[], admin: AuthUser) {
+    if (!isSuper(admin) && permissionNames.some((p) => isPrivilegedPermission(p))) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'اعطای این مجوزها فقط توسط مدیر ارشد مجاز است',
+      });
+    }
   }
 
   async remove(id: number) {
