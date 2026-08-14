@@ -48,7 +48,7 @@ export class AdminUsersController {
   @Post()
   @RequirePermissions('users.create')
   async create(@Body() dto: AdminCreateUserDto, @CurrentUser() admin: AuthUser) {
-    return { data: await this.service.create(dto, admin.id) };
+    return { data: await this.service.create(dto, admin) };
   }
 
   @Patch(':id')
@@ -58,13 +58,13 @@ export class AdminUsersController {
     @Body() dto: AdminUpdateUserDto,
     @CurrentUser() admin: AuthUser,
   ) {
-    return { data: await this.service.update(id, dto, admin.id) };
+    return { data: await this.service.update(id, dto, admin) };
   }
 
   @Delete(':id')
   @RequirePermissions('users.delete')
   async remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() admin: AuthUser) {
-    return { data: await this.service.remove(id, admin.id) };
+    return { data: await this.service.remove(id, admin) };
   }
 
   @Put(':id/roles')
@@ -74,7 +74,7 @@ export class AdminUsersController {
     @Body() dto: AssignRolesDto,
     @CurrentUser() admin: AuthUser,
   ) {
-    return { data: await this.service.assignRoles(id, dto.roleIds, admin.id) };
+    return { data: await this.service.assignRoles(id, dto.roleIds, admin) };
   }
 
   @Put(':id/permissions')
@@ -84,6 +84,6 @@ export class AdminUsersController {
     @Body() dto: AssignPermissionsDto,
     @CurrentUser() admin: AuthUser,
   ) {
-    return { data: await this.service.assignPermissions(id, dto.items, admin.id) };
+    return { data: await this.service.assignPermissions(id, dto.items, admin) };
   }
 }

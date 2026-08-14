@@ -10,7 +10,8 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { RbacService } from "./rbac.service";
-import { RequirePermissions } from "../../common/decorators";
+import { RequirePermissions, CurrentUser } from "../../common/decorators";
+import { AuthUser } from "../../common/types";
 import { PERMISSION_GROUPS } from "@karzintell/shared";
 
 /** مدیریت نقش‌ها و مجوزها (پنل اپراتور) */
@@ -33,8 +34,8 @@ export class RbacController {
 
   @Post("roles")
   @RequirePermissions("roles.create")
-  createRole(@Body() body: { name: string; title: string; permissions?: string[] }) {
-    return this.rbac.createRole(body.name, body.title, body.permissions ?? []);
+  createRole(@Body() body: { name: string; title: string; permissions?: string[] }, @CurrentUser() admin: AuthUser) {
+    return this.rbac.createRole(body.name, body.title, body.permissions ?? [], admin);
   }
 
   @Patch("roles/:id")
@@ -42,8 +43,9 @@ export class RbacController {
   updateRole(
     @Param("id", ParseIntPipe) id: number,
     @Body() body: { title?: string; description?: string; permissions?: string[] },
+    @CurrentUser() admin: AuthUser,
   ) {
-    return this.rbac.updateRole(id, body);
+    return this.rbac.updateRole(id, body, admin);
   }
 
   @Delete("roles/:id")

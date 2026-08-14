@@ -22,6 +22,10 @@ import { DomainException } from '../../common/http-exception.filter';
 const OTP_TTL_MIN = 2;
 const OTP_MAX_ATTEMPTS = 5;
 
+// محدودیت ورود برای جلوگیری از حملات brute-force
+const LOGIN_MAX_FAILURES = 10; // حداکثر تلاش ناموفق
+const LOGIN_WINDOW_SEC = 15 * 60; // در بازه ۱۵ دقیقه
+
 interface TokenBundle {
   accessToken: string;
   refreshToken: string;
@@ -74,16 +78,42 @@ export class AuthService {
   // ------------------------------------------------------------- ورود رمز
   async login(identifier: string, password: string, ip?: string, ua?: string) {
     const id = identifier.trim().toLowerCase();
+
+    // ضد brute-force: اگر از این شناسه یا IP تعداد تلاش ناموفق زیاد شده، قفل موقت
+    const failKey = `login:fail:${sha256(id)}`;
+    const ipKey = `login:fail:ip:${ip || 'unknown'}`;
+    const [idFails, ipFails] = await Promise.all([
+      this.redis.get(failKey),
+      this.redis.get(ipKey),
+    ]);
+    if ((idFails && Number(idFails) >= LOGIN_MAX_FAILURES) || (ipFails && Number(ipFails) >= LOGIN_MAX_FAILURES * 3)) {
+      throw new UnauthorizedException({
+        code: 'LOGIN_LOCKED',
+        message: 'تعداد تلاش‌های ناموفق زیاد است — چند دقیقه بعد دوباره تلاش کنید',
+      });
+    }
+
     const user = await this.users
       .createQueryBuilder('u')
       .addSelect('u.passwordHash')
       .addSelect('u.twoFactorSecret')
       .where('LOWER(u.email) = :id OR u.phone = :id', { id })
       .getOne();
-    if (!user || !(await bcrypt.compare(password, user.passwordHash)))
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      await Promise.all([
+        this.redis.incrWithTtl(failKey, LOGIN_WINDOW_SEC),
+        this.redis.incrWithTtl(ipKey, LOGIN_WINDOW_SEC),
+      ]);
       throw new UnauthorizedException({ code: 'BAD_CREDENTIALS', message: 'نام کاربری یا رمز عبور اشتباه است' });
+    }
     if (user.status === 'suspended')
       throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
+
+    // ورود موفق → پاک‌کردن شمارنده تلاش‌های ناموفق
+    await Promise.all([
+      this.redis.del(failKey),
+      this.redis.del(ipKey),
+    ]);
 
     // ورود دومرحله‌ای فعال → صدور بلیت چالش (بدون توکن)
     if (user.twoFactorEnabled && user.twoFactorSecret) {
@@ -385,8 +415,13 @@ export class AuthService {
       const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
       if (!res.ok) throw new Error('خطا در احراز هویت توکن گوگل');
       const payload: any = await res.json();
-      if (!payload.email || payload.email_verified !== 'true') {
+      if (!payload.email || (payload.email_verified !== 'true' && payload.email_verified !== true)) {
         throw new Error('ایمیل گوگل تایید نشده است');
+      }
+      // اعتبارسنجی audience: توکن باید برای اپلیکیشن ما صادر شده باشد
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      if (clientId && payload.aud !== clientId && payload.azp !== clientId) {
+        throw new Error('توکن گوگل برای این اپلیکیشن صادر نشده است');
       }
       email = payload.email.trim().toLowerCase();
       fullName = payload.name || email.split('@')[0];

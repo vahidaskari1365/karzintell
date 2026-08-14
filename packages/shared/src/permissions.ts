@@ -61,6 +61,26 @@ export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
 
 export const ALL_PERMISSION_KEYS: PermissionKey[] = PERMISSIONS.map((p) => p.key);
 
+/**
+ * مجوزهای «قدرت» (Privileged) — این مجوزها مستقیماً به کنترل دسترسی و امنیت
+ * سیستم مرتبط‌اند و فقط super_admin اجازه دارد آن‌ها را به کاربران یا نقش‌ها
+ * اعطا کند. اعطای این مجوزها توسط یک ادمین غیر-super مساوی با ارتقای سطح
+ * دسترسی (Privilege Escalation) است و باید مسدود شود.
+ */
+export const PRIVILEGED_PERMISSIONS: ReadonlySet<string> = new Set<PermissionKey>([
+  "users.assign_role",
+  "users.delete",
+  "roles.create",
+  "roles.update",
+  "roles.delete",
+  "settings.manage",
+  "audit.view",
+]);
+
+/** آیا این مجوز یک مجوز قدرت است؟ (فقط super_admin می‌تواند آن را اعطا کند) */
+export const isPrivilegedPermission = (perm: string): boolean =>
+  PRIVILEGED_PERMISSIONS.has(perm as PermissionKey);
+
 /** گروه‌بندی مجوزها برای نمایش ماتریسی در پنل ادمین */
 export const PERMISSION_GROUPS: Record<string, string> = {
   dashboard: "داشبورد",
