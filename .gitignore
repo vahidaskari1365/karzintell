@@ -44,3 +44,5 @@ Thumbs.db
 # دیتابیس محلی
 *.sql.gz
 *.dump
+
+.vercel
