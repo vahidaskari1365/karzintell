@@ -1,0 +1,23 @@
+{
+  "name": "karzintell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "کارزینتل — پلتفرم فروشگاه اینترنتی قطعات الکترونیکی (موبایل، ساعت هوشمند، هدفون و لوازم جانبی)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
+    "seed": "npm run seed -w apps/api",
+    "test": "npm run test -w apps/api",
+    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
