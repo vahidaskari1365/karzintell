@@ -78,7 +78,7 @@ const ROLES: Array<{ id: number; name: string; label: string; description: strin
 
 async function main() {
   const ds = new DataSource({
-    type: 'mysql',
+    type: 'pg',
     host: env.db.host,
     port: env.db.port,
     username: env.db.username,
