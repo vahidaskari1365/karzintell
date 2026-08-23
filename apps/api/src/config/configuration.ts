@@ -35,10 +35,10 @@ export const env = {
 
   db: {
     host: process.env.DB_HOST || "localhost",
-    port: int(process.env.DB_PORT, 3306),
-    username: process.env.DB_USER || "karzintell",
-    password: process.env.DB_PASSWORD || "secret",
-    database: process.env.DB_NAME || "karzintell",
+    port: int(process.env.DB_PORT, 5432),
+    username: process.env.DB_USER || "postgres",
+    password: process.env.DB_PASSWORD || "change-me-secure-password",
+    database: process.env.DB_NAME || "postgres",
     logging: bool(process.env.DB_LOGGING, false),
   },
 
@@ -53,15 +53,15 @@ export const env = {
   },
 
   jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET || "dev-access-secret-change-me",
-    refreshSecret: process.env.JWT_REFRESH_SECRET || "dev-refresh-secret-change-me",
+    accessSecret: process.env.JWT_ACCESS_SECRET || "change-me-access-secret-32chars-minimum",
+    refreshSecret: process.env.JWT_REFRESH_SECRET || "change-me-refresh-secret-32chars-minimum",
     accessTtl: int(process.env.JWT_ACCESS_TTL_SEC, 900),
     refreshTtl: int(process.env.JWT_REFRESH_TTL_SEC, 30 * 24 * 3600),
   },
 
   meili: {
     host: process.env.MEILI_HOST || "http://localhost:7700",
-    masterKey: process.env.MEILI_API_KEY || "masterKey123",
+    masterKey: process.env.MEILI_API_KEY || "change-me-meilisearch-key",
     index: process.env.MEILI_INDEX || "products",
   },
 
@@ -84,8 +84,8 @@ export const env = {
     endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
     region: process.env.S3_REGION || "us-east-1",
     bucket: process.env.S3_BUCKET || "karzintell",
-    accessKey: process.env.S3_ACCESS_KEY || "minioadmin",
-    secretKey: process.env.S3_SECRET_KEY || "minioadmin",
+    accessKey: process.env.S3_ACCESS_KEY || "change-me-access-key",
+    secretKey: process.env.S3_SECRET_KEY || "change-me-secret-key",
     publicUrl: process.env.S3_PUBLIC_URL || "http://localhost:9000/karzintell",
   },
 
@@ -134,6 +134,7 @@ const WEAK_SECRETS = [
   'masterKey123',
   'minioadmin',
   'secret_secret_secret',
+  'change-me-secure-password',
 ];
 
 export function assertSecureConfiguration() {
