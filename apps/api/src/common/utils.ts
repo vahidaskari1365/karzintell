@@ -77,14 +77,26 @@ export const sanitizeHtml = (html: string): string => {
 export const randomToken = (bytes = 48): string => randomBytes(bytes).toString('base64url');
 
 /**
- * اجرای SQL خام با placeholder قابل‌حمل. TypeORM در QueryBuilder پارامترها را
- * تبدیل می‌کند، اما EntityManager.query به‌صورت مستقیم از syntax درایور استفاده
- * می‌کند؛ این wrapper از فراموش‌شدن تبدیل ? به $1 در PostgreSQL جلوگیری می‌کند.
+ * اجرای SQL خام با placeholder سازگار با MySQL.
+ * TypeORM در QueryBuilder پارامترها را تبدیل می‌کند،
+ * اما EntityManager.query به‌صورت مستقیم از syntax درایور استفاده می‌کند.
+ * این wrapper فقط placeholder ? را نگه می‌دارد (MySQL syntax).
  */
 export type SqlClient = { query: (text: string, parameters?: unknown[]) => Promise<any> };
 
 export const dbQuery = (client: SqlClient, text: string, parameters: unknown[] = []) => {
-  let index = 0;
-  const query = text.replace(/\?/g, () => `$${++index}`);
-  return client.query(query, parameters);
+  // MySQL از ? برای placeholder استفاده می‌کند - نیازی به تبدیل نیست
+  return client.query(text, parameters);
+};
+
+/**
+ * اجرای SQL خام با قابلیت برگشت ID (برای MySQL INSERT)
+ */
+export const dbQueryWithId = async (client: SqlClient, text: string, parameters: unknown[] = []): Promise<number> => {
+  const result = await client.query(text, parameters);
+  // MySQL: INSERT باید LAST_INSERT_ID() یا select از جدول برگرداند
+  if (result.insertId !== undefined) {
+    return Number(result.insertId);
+  }
+  return 0;
 };

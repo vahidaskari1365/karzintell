@@ -10,10 +10,10 @@ import {
 
 @Entity('notifications')
 export class Notification {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint' })
+  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
   @Index()
   userId: number;
 
@@ -26,49 +26,54 @@ export class Notification {
   @Column({ length: 500, nullable: true })
   body: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  // MySQL uses json instead of jsonb
+  @Column({ type: 'json', nullable: true })
   data: Record<string, unknown> | null;
 
-  @Column({ type: 'enum', enum: ['database', 'sms', 'email', 'push'], default: 'database' })
+  @Column({ type: 'varchar', length: 20, default: 'database' })
   channel: 'database' | 'sms' | 'email' | 'push';
 
-  @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
+  // MySQL uses datetime instead of timestamptz
+  @Column({ name: 'read_at', type: 'datetime', nullable: true })
   readAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('settings')
 export class Setting {
-  @PrimaryColumn({ length: 100 })
+  @PrimaryColumn({ name: 'setting_key', length: 100 })
   key: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'setting_value', type: 'text', nullable: true })
   value: string | null;
 
-  @Column({ length: 50, default: 'general' })
+  @Column({ name: 'setting_group', length: 50, default: 'general' })
   group: string;
 
-  @Column({ type: 'enum', enum: ['string', 'number', 'boolean', 'json'], default: 'string' })
+  @Column({ name: 'setting_type', type: 'varchar', length: 20, default: 'string' })
   type: 'string' | 'number' | 'boolean' | 'json';
 
-  @Column({ name: 'is_public', default: false })
+  @Column({ name: 'is_public', type: 'tinyint', width: 1, default: 0, transformer: {
+    to: (v: boolean) => v ? 1 : 0,
+    from: (v: number) => !!v
+  }})
   isPublic: boolean;
 
-  @Column({ name: 'updated_by', type: 'bigint', nullable: true })
+  @Column({ name: 'updated_by', type: 'bigint', unsigned: true, nullable: true })
   updatedBy: number | null;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
 @Entity('audit_logs')
 export class AuditLog {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', nullable: true })
+  @Column({ name: 'user_id', type: 'bigint', unsigned: true, nullable: true })
   @Index()
   userId: number | null;
 
@@ -78,14 +83,15 @@ export class AuditLog {
   @Column({ name: 'subject_type', length: 50, nullable: true })
   subjectType: string | null;
 
-  @Column({ name: 'subject_id', type: 'bigint', nullable: true })
+  @Column({ name: 'subject_id', type: 'bigint', unsigned: true, nullable: true })
   @Index()
   subjectId: number | null;
 
-  @Column({ name: 'old_values', type: 'jsonb', nullable: true })
+  // MySQL uses json instead of jsonb
+  @Column({ name: 'old_values', type: 'json', nullable: true })
   oldValues: Record<string, unknown> | null;
 
-  @Column({ name: 'new_values', type: 'jsonb', nullable: true })
+  @Column({ name: 'new_values', type: 'json', nullable: true })
   newValues: Record<string, unknown> | null;
 
   @Column({ length: 45, nullable: true })
@@ -94,13 +100,13 @@ export class AuditLog {
   @Column({ name: 'user_agent', length: 255, nullable: true })
   userAgent: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('files')
 export class FileRecord {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
   @Column({ length: 20, default: 's3' })
@@ -121,19 +127,19 @@ export class FileRecord {
   @Column({ length: 50, nullable: true })
   purpose: string | null;
 
-  @Column({ name: 'owner_id', type: 'bigint', nullable: true })
+  @Column({ name: 'owner_id', type: 'bigint', unsigned: true, nullable: true })
   ownerId: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('push_subscriptions')
 export class PushSubscription {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint' })
+  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
   @Index()
   userId: number;
 
@@ -146,6 +152,6 @@ export class PushSubscription {
   @Column({ length: 255 })
   auth: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }

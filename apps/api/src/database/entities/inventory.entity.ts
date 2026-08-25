@@ -10,7 +10,7 @@ import {
 
 @Entity('warehouses')
 export class Warehouse {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ length: 100 })
@@ -34,34 +34,34 @@ export class Warehouse {
   @Column({ length: 15, nullable: true })
   phone: string | null;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
 @Entity('inventory')
 export class Inventory {
-  @PrimaryColumn({ name: 'variant_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'variant_id', type: 'bigint', unsigned: true })
   variantId: number;
 
-  @PrimaryColumn({ name: 'warehouse_id', type: 'integer' })
+  @PrimaryColumn({ name: 'warehouse_id', type: 'int', unsigned: true })
   warehouseId: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'int', unsigned: true, default: 0 })
   quantity: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'int', unsigned: true, default: 0 })
   reserved: number;
 
-  @Column({ name: 'low_stock_threshold', default: 5 })
+  @Column({ name: 'low_stock_threshold', type: 'int', unsigned: true, default: 5 })
   lowStockThreshold: number;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
@@ -69,40 +69,40 @@ export type StockMovementType = 'in' | 'out' | 'reserve' | 'release' | 'return' 
 
 @Entity('stock_movements')
 export class StockMovement {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'variant_id', type: 'bigint' })
+  @Column({ name: 'variant_id', type: 'bigint', unsigned: true })
   @Index()
   variantId: number;
 
-  @Column({ name: 'warehouse_id', type: 'integer' })
+  @Column({ name: 'warehouse_id', type: 'int', unsigned: true })
   warehouseId: number;
 
-  @Column({ type: 'enum', enum: ['in', 'out', 'reserve', 'release', 'return', 'adjust'] })
+  @Column({ type: 'varchar', length: 30 })
   type: StockMovementType;
 
-  @Column()
+  @Column({ type: 'int', unsigned: true })
   quantity: number;
 
-  @Column({ name: 'qty_before' })
+  @Column({ name: 'qty_before', type: 'int' })
   qtyBefore: number;
 
-  @Column({ name: 'qty_after' })
+  @Column({ name: 'qty_after', type: 'int' })
   qtyAfter: number;
 
   @Column({ name: 'reference_type', length: 30, nullable: true })
   referenceType: string | null;
 
-  @Column({ name: 'reference_id', type: 'bigint', nullable: true })
+  @Column({ name: 'reference_id', type: 'bigint', unsigned: true, nullable: true })
   referenceId: number | null;
 
   @Column({ length: 500, nullable: true })
   note: string | null;
 
-  @Column({ name: 'created_by', type: 'bigint', nullable: true })
+  @Column({ name: 'created_by', type: 'bigint', unsigned: true, nullable: true })
   createdBy: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }

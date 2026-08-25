@@ -12,7 +12,7 @@ import { User } from './user.entity';
 
 @Entity('roles')
 export class Role {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ length: 50, unique: true })
@@ -24,13 +24,13 @@ export class Role {
   @Column({ length: 255, nullable: true })
   description: string | null;
 
-  @Column({ name: 'is_system', default: false })
+  @Column({ name: 'is_system', type: 'tinyint', width: 1, default: 0 })
   isSystem: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 
   @ManyToMany(() => Permission, (p) => p.roles, { createForeignKeyConstraints: false })
@@ -47,7 +47,7 @@ export class Role {
 
 @Entity('permissions')
 export class Permission {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ length: 100, unique: true })
@@ -66,34 +66,34 @@ export class Permission {
 /** override دسترسی برای یک کاربر خاص (allow/deny) */
 @Entity('permission_user')
 export class PermissionUser {
-  @PrimaryColumn({ name: 'permission_id', type: 'integer' })
+  @PrimaryColumn({ name: 'permission_id', type: 'int', unsigned: true })
   permissionId: number;
 
-  @PrimaryColumn({ name: 'user_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'user_id', type: 'bigint', unsigned: true })
   userId: number;
 
-  @Column({ type: 'enum', enum: ['allow', 'deny'], default: 'allow' })
+  @Column({ type: 'varchar', length: 10, default: 'allow' })
   type: 'allow' | 'deny';
 
-  @Column({ name: 'granted_by', type: 'bigint', nullable: true })
+  @Column({ name: 'granted_by', type: 'bigint', unsigned: true, nullable: true })
   grantedBy: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
-/** ردیف pivot نقش-کاربر (برای خواندنی assigned_by) */
+/** ردیف pivot نقش-کاربر (برای خواندن assigned_by) */
 @Entity('role_user')
 export class RoleUser {
-  @PrimaryColumn({ name: 'role_id', type: 'integer' })
+  @PrimaryColumn({ name: 'role_id', type: 'int', unsigned: true })
   roleId: number;
 
-  @PrimaryColumn({ name: 'user_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'user_id', type: 'bigint', unsigned: true })
   userId: number;
 
-  @Column({ name: 'assigned_by', type: 'bigint', nullable: true })
+  @Column({ name: 'assigned_by', type: 'bigint', unsigned: true, nullable: true })
   assignedBy: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }

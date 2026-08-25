@@ -12,7 +12,7 @@ export type BannerPosition = 'home_hero' | 'home_middle' | 'home_bottom' | 'cate
 
 @Entity('banners')
 export class Banner {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
   @Column({ length: 150 })
@@ -30,36 +30,33 @@ export class Banner {
   @Column({ name: 'link_url', length: 500, nullable: true })
   linkUrl: string | null;
 
-  @Column({
-    type: 'enum',
-    enum: ['home_hero', 'home_middle', 'home_bottom', 'category_top', 'sidebar'],
-    default: 'home_hero',
-  })
+  @Column({ type: 'varchar', length: 30, default: 'home_hero' })
   @Index()
   position: BannerPosition;
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @Column({ name: 'starts_at', type: 'timestamptz', nullable: true })
+  // MySQL uses datetime instead of timestamptz
+  @Column({ name: 'starts_at', type: 'datetime', nullable: true })
   startsAt: Date | null;
 
-  @Column({ name: 'ends_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'ends_at', type: 'datetime', nullable: true })
   endsAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
 @Entity('pages')
 export class Page {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
   @Column({ length: 190 })
@@ -71,7 +68,7 @@ export class Page {
   @Column({ type: 'text' })
   body: string;
 
-  @Column({ type: 'enum', enum: ['draft', 'published'], default: 'draft' })
+  @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: 'draft' | 'published';
 
   @Column({ name: 'meta_title', length: 190, nullable: true })
@@ -80,85 +77,78 @@ export class Page {
   @Column({ name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime' })
   deletedAt: Date | null;
 }
 
 @Entity('tickets')
 export class Ticket {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint' })
+  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
   @Index()
   userId: number;
 
-  @Column({ name: 'order_id', type: 'bigint', nullable: true })
+  @Column({ name: 'order_id', type: 'bigint', unsigned: true, nullable: true })
   orderId: number | null;
 
-  @Column({ name: 'assigned_to', type: 'bigint', nullable: true })
+  @Column({ name: 'assigned_to', type: 'bigint', unsigned: true, nullable: true })
   @Index()
   assignedTo: number | null;
 
   @Column({ length: 190 })
   subject: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['sales', 'support', 'technical', 'financial', 'other'],
-    default: 'support',
-  })
+  @Column({ type: 'varchar', length: 30, default: 'support' })
   department: 'sales' | 'support' | 'technical' | 'financial' | 'other';
 
-  @Column({ type: 'enum', enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' })
+  @Column({ type: 'varchar', length: 20, default: 'medium' })
   priority: 'low' | 'medium' | 'high' | 'urgent';
 
-  @Column({
-    type: 'enum',
-    enum: ['open', 'pending_support', 'pending_customer', 'closed'],
-    default: 'open',
-  })
+  @Column({ type: 'varchar', length: 30, default: 'open' })
   @Index()
   status: 'open' | 'pending_support' | 'pending_customer' | 'closed';
 
-  @Column({ name: 'closed_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'closed_at', type: 'datetime', nullable: true })
   closedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
 @Entity('ticket_messages')
 export class TicketMessage {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'ticket_id', type: 'bigint' })
+  @Column({ name: 'ticket_id', type: 'bigint', unsigned: true })
   @Index()
   ticketId: number;
 
-  @Column({ name: 'sender_id', type: 'bigint' })
+  @Column({ name: 'sender_id', type: 'bigint', unsigned: true })
   senderId: number;
 
   @Column({ type: 'text' })
   body: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  // MySQL uses json instead of jsonb
+  @Column({ type: 'json', nullable: true })
   attachments: number[] | null;
 
-  @Column({ name: 'is_internal', default: false })
+  @Column({ name: 'is_internal', type: 'tinyint', width: 1, default: 0 })
   isInternal: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
@@ -166,7 +156,7 @@ export type BlogKind = 'post' | 'news';
 
 @Entity('blog_posts')
 export class BlogPost {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
   @Column({ length: 190 })
@@ -184,13 +174,13 @@ export class BlogPost {
   @Column({ name: 'cover_path', length: 500, nullable: true })
   coverPath: string | null;
 
-  @Column({ type: 'enum', enum: ['post', 'news'], default: 'post' })
+  @Column({ type: 'varchar', length: 10, default: 'post' })
   kind: BlogKind;
 
-  @Column({ type: 'enum', enum: ['draft', 'published'], default: 'draft' })
+  @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: 'draft' | 'published';
 
-  @Column({ name: 'author_id', type: 'bigint', nullable: true })
+  @Column({ name: 'author_id', type: 'bigint', unsigned: true, nullable: true })
   authorId: number | null;
 
   @Column({ name: 'meta_title', length: 190, nullable: true })
@@ -199,22 +189,23 @@ export class BlogPost {
   @Column({ name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
-  @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
+  // MySQL uses datetime instead of timestamptz
+  @Column({ name: 'published_at', type: 'datetime', nullable: true })
   publishedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime' })
   deletedAt: Date | null;
 }
 
 @Entity('faqs')
 export class Faq {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ length: 300 })
@@ -223,15 +214,15 @@ export class Faq {
   @Column({ type: 'text' })
   answer: string;
 
-  @Column({ name: 'sort_order', type: 'integer', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

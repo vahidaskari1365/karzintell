@@ -5,36 +5,37 @@ export type StockAlertStatus = 'open' | 'resolved';
 
 @Entity('stock_alerts')
 export class StockAlert {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'variant_id', type: 'bigint' })
+  @Column({ name: 'variant_id', type: 'bigint', unsigned: true })
   variantId: number;
 
-  @Column({ name: 'warehouse_id', type: 'integer' })
+  @Column({ name: 'warehouse_id', type: 'int', unsigned: true })
   warehouseId: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'int', unsigned: true, default: 0 })
   available: number;
 
-  @Column({ default: 5 })
+  @Column({ type: 'int', unsigned: true, default: 5 })
   threshold: number;
 
-  @Column({ name: 'alert_type', type: 'enum', enum: ['low_stock', 'out_of_stock'] })
+  @Column({ type: 'varchar', length: 30 })
   alertType: StockAlertType;
 
-  @Column({ type: 'enum', enum: ['open', 'resolved'], default: 'open' })
+  @Column({ type: 'varchar', length: 20, default: 'open' })
   status: StockAlertStatus;
 
-  @Column({ name: 'last_notified_at', type: 'timestamptz', nullable: true })
+  // MySQL uses datetime instead of timestamptz
+  @Column({ name: 'last_notified_at', type: 'datetime', nullable: true })
   lastNotifiedAt: Date | null;
 
-  @Column({ name: 'resolved_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'resolved_at', type: 'datetime', nullable: true })
   resolvedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

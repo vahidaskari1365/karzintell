@@ -11,6 +11,7 @@ const bool = (v: string | undefined, d: boolean): boolean =>
 /**
  * تنظیمات متمرکز برنامه (خوانده‌شده از متغیرهای محیطی — نمونه در .env.example ریشه)
  * تمام ماژول‌ها فقط از همین آبجکت استفاده می‌کنند.
+ * دیتابیس: MySQL 8 / MariaDB (سازگار با cPanel)
  */
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
@@ -26,7 +27,7 @@ export const env = {
   sentryDsn: process.env.SENTRY_DSN || "",
   corsOrigins: (
     process.env.CORS_ORIGINS ||
-    "http://localhost:3000,http://127.0.0.1:3000,https://karzintell.vercel.app"
+    "http://localhost:3000,http://127.0.0.1:3000,https://karzintell.ir"
   )
     .split(",")
     .map((s) => s.trim())
@@ -34,22 +35,20 @@ export const env = {
   bcryptRounds: int(process.env.BCRYPT_ROUNDS, 10),
 
   db: {
-    // Supabase PostgreSQL is the only supported runtime database.
-    type: "postgres" as const,
-    url: process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || "",
+    // MySQL / MariaDB برای هاست cPanel
+    type: "mysql" as const,
     host: process.env.DB_HOST || "localhost",
-    port: int(process.env.DB_PORT, 5432),
-    username: process.env.DB_USER || "postgres",
+    port: int(process.env.DB_PORT, 3306),
+    username: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "postgres",
-    ssl: bool(process.env.DB_SSL, !!(process.env.DATABASE_URL || process.env.SUPABASE_DB_URL)),
-    poolMax: int(process.env.DB_POOL_MAX, 10),
+    database: process.env.DB_NAME || "karzintell",
+    // SSL برای MySQL روی هاست محلی/معیمولی غیرفعال است
+    ssl: false,
+    poolSize: int(process.env.DB_POOL_SIZE, 10),
     logging: bool(process.env.DB_LOGGING, false),
-  },
-
-  supabase: {
-    url: process.env.SUPABASE_URL || "",
-    anonKey: process.env.SUPABASE_ANON_KEY || "",
+    // Charset برای پشتیبانی از UTF-8 فارسی
+    charset: "utf8mb4",
+    timezone: "+03:30", // Tehran timezone
   },
 
   redis: {
@@ -160,9 +159,8 @@ export function assertSecureConfiguration() {
 
   check('JWT_ACCESS_SECRET', process.env.JWT_ACCESS_SECRET, 32);
   check('JWT_REFRESH_SECRET', process.env.JWT_REFRESH_SECRET, 32);
-  if (env.db.url) check('DATABASE_URL', env.db.url, 20);
-  else check('DB_PASSWORD', process.env.DB_PASSWORD);
-  if (!env.db.url && !process.env.DB_HOST) problems.push('DATABASE_URL یا DB_HOST تنظیم نشده است');
+  check('DB_PASSWORD', process.env.DB_PASSWORD);
+  if (!process.env.DB_HOST && !process.env.DB_NAME) problems.push('DB_HOST و DB_NAME تنظیم نشده‌اند');
   if (env.redis.enabled) check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
 
   if (problems.length) {

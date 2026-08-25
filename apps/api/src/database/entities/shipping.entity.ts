@@ -22,39 +22,39 @@ export const SHIPPING_METHOD_TYPE_LABELS: Record<ShippingMethodType, string> = {
 
 @Entity('shipping_zones')
 export class ShippingZone {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ length: 120 })
   name: string;
 
-  /** آرایه نام استان‌ها؛ NULL = همه استان‌ها (منطقه پیش‌فرض) */
-  @Column({ type: 'jsonb', nullable: true })
+  /** آرایه نام استان‌ها؛ NULL = همه استان‌ها (منطقه پیش‌فرض) - MySQL uses json instead of jsonb */
+  @Column({ type: 'json', nullable: true })
   provinces: string[] | null;
 
-  /** آرایه نام شهرها؛ NULL = همه شهرهای منطقه */
-  @Column({ type: 'jsonb', nullable: true })
+  /** آرایه نام شهرها؛ NULL = همه شهرهای منطقه - MySQL uses json instead of jsonb */
+  @Column({ type: 'json', nullable: true })
   cities: string[] | null;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @Column({ name: 'sort_order', type: 'integer', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
 @Entity('shipping_methods')
 export class ShippingMethod {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
-  @Column({ name: 'zone_id', type: 'integer' })
+  @Column({ name: 'zone_id', type: 'int', unsigned: true })
   @Index()
   zoneId: number;
 
@@ -65,7 +65,7 @@ export class ShippingMethod {
   @Column({ length: 120 })
   name: string;
 
-  @Column({ type: 'enum', enum: SHIPPING_METHOD_TYPES, default: 'post' })
+  @Column({ type: 'varchar', length: 20, default: 'post' })
   type: ShippingMethodType;
 
   @Column({ type: 'bigint', default: 0, transformer: bigint })
@@ -78,15 +78,15 @@ export class ShippingMethod {
   @Column({ length: 100, nullable: true })
   eta: string | null;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @Column({ name: 'sort_order', type: 'integer', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

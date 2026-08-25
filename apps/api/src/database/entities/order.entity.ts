@@ -20,26 +20,21 @@ export type PaymentGateway = (typeof PAYMENT_GATEWAYS)[number];
 
 @Entity('orders')
 export class Order {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
   @Column({ length: 20, unique: true })
   code: string;
 
-  @Column({ name: 'user_id', type: 'bigint' })
+  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
   @Index()
   userId: number;
 
-  @Column({ type: 'enum', enum: ORDER_STATUSES, default: 'pending_payment' })
+  @Column({ type: 'varchar', length: 30, default: 'pending_payment' })
   @Index()
   status: OrderStatus;
 
-  @Column({
-    name: 'payment_status',
-    type: 'enum',
-    enum: ['unpaid', 'paid', 'failed', 'partially_refunded', 'refunded'],
-    default: 'unpaid',
-  })
+  @Column({ name: 'payment_status', type: 'varchar', length: 30, default: 'unpaid' })
   paymentStatus: PaymentStatus;
 
   @Column({ type: 'bigint', default: 0, transformer: bigint })
@@ -57,7 +52,7 @@ export class Order {
   @Column({ name: 'grand_total', type: 'bigint', default: 0, transformer: bigint })
   grandTotal: number;
 
-  @Column({ name: 'coupon_id', type: 'integer', nullable: true })
+  @Column({ name: 'coupon_id', type: 'int', unsigned: true, nullable: true })
   couponId: number | null;
 
   @Column({ name: 'coupon_code', length: 50, nullable: true })
@@ -66,7 +61,8 @@ export class Order {
   @Column({ name: 'shipping_method', length: 100, nullable: true })
   shippingMethod: string | null;
 
-  @Column({ name: 'address_json', type: 'jsonb' })
+  // MySQL uses json instead of jsonb
+  @Column({ name: 'address_json', type: 'json' })
   addressJson: Record<string, unknown>;
 
   @Column({ name: 'customer_note', type: 'text', nullable: true })
@@ -81,28 +77,29 @@ export class Order {
   @Column({ name: 'user_agent', length: 255, nullable: true })
   userAgent: string | null;
 
-  @Column({ name: 'placed_at', type: 'timestamptz', nullable: true })
+  // MySQL uses datetime instead of timestamptz
+  @Column({ name: 'placed_at', type: 'datetime', nullable: true })
   placedAt: Date | null;
 
-  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'paid_at', type: 'datetime', nullable: true })
   paidAt: Date | null;
 
-  @Column({ name: 'delivered_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'delivered_at', type: 'datetime', nullable: true })
   deliveredAt: Date | null;
 
-  @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'cancelled_at', type: 'datetime', nullable: true })
   cancelledAt: Date | null;
 
   @Column({ name: 'cancel_reason', length: 300, nullable: true })
   cancelReason: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime' })
   deletedAt: Date | null;
 
   items?: OrderItem[];
@@ -111,17 +108,17 @@ export class Order {
 
 @Entity('order_items')
 export class OrderItem {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'order_id', type: 'bigint' })
+  @Column({ name: 'order_id', type: 'bigint', unsigned: true })
   @Index()
   orderId: number;
 
-  @Column({ name: 'product_id', type: 'bigint' })
+  @Column({ name: 'product_id', type: 'bigint', unsigned: true })
   productId: number;
 
-  @Column({ name: 'variant_id', type: 'bigint' })
+  @Column({ name: 'variant_id', type: 'bigint', unsigned: true })
   variantId: number;
 
   @Column({ length: 64 })
@@ -136,7 +133,7 @@ export class OrderItem {
   @Column({ name: 'unit_price', type: 'bigint', transformer: bigint })
   unitPrice: number;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'int', unsigned: true })
   quantity: number;
 
   @Column({ name: 'discount_amount', type: 'bigint', default: 0, transformer: bigint })
@@ -145,19 +142,19 @@ export class OrderItem {
   @Column({ name: 'total_price', type: 'bigint', transformer: bigint })
   totalPrice: number;
 
-  @Column({ name: 'warranty_months', type: 'integer', nullable: true })
+  @Column({ name: 'warranty_months', type: 'int', unsigned: true, nullable: true })
   warrantyMonths: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('order_status_histories')
 export class OrderStatusHistory {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'order_id', type: 'bigint' })
+  @Column({ name: 'order_id', type: 'bigint', unsigned: true })
   @Index()
   orderId: number;
 
@@ -170,10 +167,10 @@ export class OrderStatusHistory {
   @Column({ length: 500, nullable: true })
   note: string | null;
 
-  @Column({ name: 'changed_by', type: 'bigint', nullable: true })
+  @Column({ name: 'changed_by', type: 'bigint', unsigned: true, nullable: true })
   changedBy: number | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
@@ -181,20 +178,17 @@ export type PaymentStatusRow = 'initiated' | 'pending' | 'paid' | 'failed' | 'ca
 
 @Entity('payments')
 export class Payment {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'order_id', type: 'bigint', nullable: true })
+  @Column({ name: 'order_id', type: 'bigint', unsigned: true, nullable: true })
   @Index()
   orderId: number | null;
 
-  @Column({ type: 'enum', enum: ['order', 'wallet_charge'], default: 'order' })
+  @Column({ type: 'varchar', length: 20, default: 'order' })
   purpose: 'order' | 'wallet_charge';
 
-  @Column({
-    type: 'enum',
-    enum: ['zarinpal', 'idpay', 'zibal', 'nextpay', 'mellat', 'saman', 'manual', 'wallet', 'cod'],
-  })
+  @Column({ type: 'varchar', length: 20 })
   gateway: PaymentGateway;
 
   @Column({ type: 'bigint', transformer: bigint })
@@ -203,11 +197,7 @@ export class Payment {
   @Column({ length: 3, default: 'IRR' })
   currency: string;
 
-  @Column({
-    type: 'enum',
-    enum: ['initiated', 'pending', 'paid', 'failed', 'cancelled', 'refunded'],
-    default: 'initiated',
-  })
+  @Column({ type: 'varchar', length: 20, default: 'initiated' })
   status: PaymentStatusRow;
 
   @Column({ length: 100, nullable: true })
@@ -219,25 +209,26 @@ export class Payment {
   @Column({ name: 'card_pan', length: 20, nullable: true })
   cardPan: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  // MySQL uses json instead of jsonb
+  @Column({ type: 'json', nullable: true })
   payload: Record<string, unknown> | null;
 
-  @Column({ name: 'paid_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'paid_at', type: 'datetime', nullable: true })
   paidAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }
 
 @Entity('shipments')
 export class Shipment {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'order_id', type: 'bigint' })
+  @Column({ name: 'order_id', type: 'bigint', unsigned: true })
   @Index()
   orderId: number;
 
@@ -250,25 +241,21 @@ export class Shipment {
   @Column({ name: 'tracking_code', length: 50, nullable: true })
   trackingCode: string | null;
 
-  @Column({
-    type: 'enum',
-    enum: ['pending', 'picked_up', 'in_transit', 'delivered', 'returned'],
-    default: 'pending',
-  })
+  @Column({ type: 'varchar', length: 20, default: 'pending' })
   status: 'pending' | 'picked_up' | 'in_transit' | 'delivered' | 'returned';
 
   @Column({ type: 'bigint', nullable: true, transformer: bigint })
   cost: number | null;
 
-  @Column({ name: 'shipped_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'shipped_at', type: 'datetime', nullable: true })
   shippedAt: Date | null;
 
-  @Column({ name: 'delivered_at', type: 'timestamptz', nullable: true })
+  @Column({ name: 'delivered_at', type: 'datetime', nullable: true })
   deliveredAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 }

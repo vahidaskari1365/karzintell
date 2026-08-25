@@ -54,18 +54,17 @@ import { HealthModule } from './modules/health/health.module';
     JwtModule.register({ global: true }),
     TypeOrmModule.forRoot({
       type: env.db.type,
-      ...(env.db.url ? { url: env.db.url } : {
-        host: env.db.host,
-        port: env.db.port,
-        username: env.db.username,
-        password: env.db.password,
-        database: env.db.database,
-      }),
+      host: env.db.host,
+      port: env.db.port,
+      username: env.db.username,
+      password: env.db.password,
+      database: env.db.database,
+      charset: env.db.charset,
+      timezone: env.db.timezone,
       entities: ALL_ENTITIES,
-      synchronize: false, // schema is applied by Supabase migrations
+      synchronize: false, // schema is applied by MySQL migrations
       logging: env.db.logging,
-      ssl: env.db.ssl ? { rejectUnauthorized: false } : false,
-      extra: { max: env.db.poolMax },
+      extra: { connectionLimit: env.db.poolSize },
     } as DataSourceOptions),
     RedisModule,
     QueueModule,

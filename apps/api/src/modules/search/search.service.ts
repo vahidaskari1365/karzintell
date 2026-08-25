@@ -22,7 +22,7 @@ export interface ProductSearchQuery {
 }
 
 /**
- * جستجو با Meilisearch؛ در نبودن Meili → fallback به PostgreSQL.
+ * جستجو با Meilisearch؛ در نبودن Meili → fallback به MySQL.
  * سینک: در رویدادهای محصول مستقیم (بدون صف) انجام می‌شود؛ در صورت خطا لاگ + reindex دستی.
  */
 @Injectable()
@@ -43,7 +43,7 @@ export class SearchService implements OnModuleInit {
       await this.configureIndex();
       this.logger.log('Meilisearch متصل شد');
     } catch {
-      this.logger.warn('Meilisearch در دسترس نیست — جستجو با PostgreSQL انجام می‌شود');
+      this.logger.warn('Meilisearch در دسترس نیست — جستجو با MySQL انجام می‌شود');
     }
   }
 
@@ -110,7 +110,7 @@ export class SearchService implements OnModuleInit {
       });
       return { items: res.hits, categories: [] };
     }
-    // fallback PostgreSQL: پیشنهاد محصول + دسته‌بندی
+    // fallback MySQL: پیشنهاد محصول + دسته‌بندی
     const like = `%${term}%`;
     const items = await dbQuery(this.products,
       `SELECT p.name, p.slug, p.min_price AS "minPrice", b.name AS "brandName", c.name AS "categoryName",
@@ -180,8 +180,8 @@ export class SearchService implements OnModuleInit {
               p.published_at AS "publishedAt", p.sold_count AS "soldCount", p.rating_avg AS "ratingAvg",
               p.status, p.features,
               (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image,
-              (SELECT STRING_AGG(sku, ' ') FROM product_variants WHERE product_id = p.id AND deleted_at IS NULL) AS skus,
-              (SELECT STRING_AGG(tag_id::text, ',') FROM product_tags WHERE product_id = p.id) AS "tagIdCsv",
+              (SELECT GROUP_CONCAT(sku SEPARATOR ' ') FROM product_variants WHERE product_id = p.id AND deleted_at IS NULL) AS skus,
+              (SELECT GROUP_CONCAT(tag_id) FROM product_tags WHERE product_id = p.id) AS "tagIdCsv",
               EXISTS(SELECT 1 FROM inventory i JOIN product_variants v ON v.id = i.variant_id
                      WHERE v.product_id = p.id AND v.is_active = TRUE AND v.deleted_at IS NULL AND (i.quantity - i.reserved) > 0) AS "inStock"
        FROM products p
@@ -224,14 +224,14 @@ export class SearchService implements OnModuleInit {
     };
   }
 
-  /** شناسه‌های دسته + تمام زیرمجموعه‌ها (برای فیلتر چندسطحی: دیجیتال ← موبایل ← ...) */
+  /** شناسه‌های دسته + تمام زیرمجموعه‌ها (MySQL recursive CTE) */
   private async categorySubtreeIds(slug: string): Promise<number[]> {
     try {
       const rows = await dbQuery(this.products,
         `WITH RECURSIVE sub AS (
            SELECT id FROM categories WHERE slug = ? AND deleted_at IS NULL
            UNION ALL
-           SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id WHERE c.deleted_at IS NULL
+           SELECT c.id FROM categories c JOIN sub ON c.parent_id = sub.id WHERE c.deleted_at IS NULL
          )
          SELECT id FROM sub`,
         [slug],
@@ -244,7 +244,7 @@ export class SearchService implements OnModuleInit {
     }
   }
 
-  // ------------------------------------------------- fallback به PostgreSQL
+  // ------------------------------------------------- fallback به MySQL
   private async searchDb(q: ProductSearchQuery) {
     const qb = this.products
       .createQueryBuilder('p')
@@ -263,7 +263,7 @@ export class SearchService implements OnModuleInit {
     if (q.q) qb.andWhere('(p.name LIKE :q OR p.code LIKE :q OR b.name LIKE :q)', { q: `%${q.q}%` });
     if (q.categorySlug) {
       const ids = await this.categorySubtreeIds(q.categorySlug);
-      if (!ids.length) return { items: [], total: 0, page: q.page, limit: q.limit, engine: 'postgres' as const };
+      if (!ids.length) return { items: [], total: 0, page: q.page, limit: q.limit, engine: 'mysql' as const };
       qb.andWhere('p.category_id IN (:...catIds)', { catIds: ids });
     }
     if (q.brandIds?.length) qb.andWhere('b.id IN (:...bids)', { bids: q.brandIds });
@@ -302,7 +302,7 @@ export class SearchService implements OnModuleInit {
       total,
       page: q.page,
       limit: q.limit,
-      engine: 'postgres' as const,
+      engine: 'mysql' as const,
     };
   }
 }

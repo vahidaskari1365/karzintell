@@ -18,17 +18,17 @@ export type ProductStatus = 'draft' | 'pending' | 'published' | 'archived';
 
 @Entity('products')
 export class Product {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
   @Column({ length: 50, nullable: true, unique: true })
   code: string | null;
 
-  @Column({ name: 'category_id', type: 'integer' })
+  @Column({ name: 'category_id', type: 'int', unsigned: true })
   @Index()
   categoryId: number;
 
-  @Column({ name: 'brand_id', type: 'integer', nullable: true })
+  @Column({ name: 'brand_id', type: 'int', unsigned: true, nullable: true })
   brandId: number | null;
 
   @Column({ length: 190 })
@@ -43,21 +43,18 @@ export class Product {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  /** ویژگی‌های کلیدی (بولت‌ها) */
-  @Column({ type: 'jsonb', nullable: true })
+  /** ویژگی‌های کلیدی (بولت‌ها) - MySQL uses json instead of jsonb */
+  @Column({ type: 'json', nullable: true })
   features: string[] | null;
 
-  @Column({
-    type: 'enum',
-    enum: ['draft', 'pending', 'published', 'archived'],
-    default: 'draft',
-  })
+  @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: ProductStatus;
 
-  @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
+  // MySQL uses datetime instead of timestamptz
+  @Column({ name: 'published_at', type: 'datetime', nullable: true })
   publishedAt: Date | null;
 
-  @Column({ name: 'weight_g', type: 'integer', nullable: true })
+  @Column({ name: 'weight_g', type: 'int', unsigned: true, nullable: true })
   weightG: number | null;
 
   @Column({ name: 'length_cm', type: 'decimal', precision: 6, scale: 2, nullable: true, transformer: bigint })
@@ -69,13 +66,13 @@ export class Product {
   @Column({ name: 'height_cm', type: 'decimal', precision: 6, scale: 2, nullable: true, transformer: bigint })
   heightCm: number | null;
 
-  @Column({ name: 'warranty_months', type: 'integer', nullable: true })
+  @Column({ name: 'warranty_months', type: 'int', unsigned: true, nullable: true })
   warrantyMonths: number | null;
 
   @Column({ name: 'rating_avg', type: 'decimal', precision: 3, scale: 2, default: 0, transformer: bigint })
   ratingAvg: number;
 
-  @Column({ name: 'rating_count', type: 'integer', default: 0 })
+  @Column({ name: 'rating_count', type: 'int', unsigned: true, default: 0 })
   ratingCount: number;
 
   @Column({ name: 'view_count', type: 'bigint', default: 0, transformer: bigint })
@@ -96,22 +93,22 @@ export class Product {
   @Column({ name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime' })
   deletedAt: Date | null;
 }
 
 @Entity('product_variants')
 export class ProductVariant {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'product_id', type: 'bigint' })
+  @Column({ name: 'product_id', type: 'bigint', unsigned: true })
   @Index()
   productId: number;
 
@@ -133,25 +130,25 @@ export class ProductVariant {
   @Column({ name: 'cost_price', type: 'bigint', nullable: true, transformer: bigint })
   costPrice: number | null;
 
-  @Column({ name: 'stock_total', default: 0 })
+  @Column({ name: 'stock_total', type: 'int', unsigned: true, default: 0 })
   stockTotal: number;
 
-  @Column({ name: 'weight_g', type: 'integer', nullable: true })
+  @Column({ name: 'weight_g', type: 'int', unsigned: true, nullable: true })
   weightG: number | null;
 
-  @Column({ name: 'is_default', default: false })
+  @Column({ name: 'is_default', type: 'tinyint', width: 1, default: 0 })
   isDefault: boolean;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at' })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime' })
   deletedAt: Date | null;
 
   /** ترکیب صفت‌ها (در سرویس پر می‌شود) */
@@ -160,26 +157,26 @@ export class ProductVariant {
 
 @Entity('product_variant_values')
 export class ProductVariantValue {
-  @PrimaryColumn({ name: 'variant_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'variant_id', type: 'bigint', unsigned: true })
   variantId: number;
 
-  @PrimaryColumn({ name: 'attribute_id', type: 'integer' })
+  @PrimaryColumn({ name: 'attribute_id', type: 'int', unsigned: true })
   attributeId: number;
 
-  @Column({ name: 'attribute_value_id', type: 'integer' })
+  @Column({ name: 'attribute_value_id', type: 'int', unsigned: true })
   attributeValueId: number;
 }
 
 @Entity('product_images')
 export class ProductImage {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'product_id', type: 'bigint' })
+  @Column({ name: 'product_id', type: 'bigint', unsigned: true })
   @Index()
   productId: number;
 
-  @Column({ name: 'variant_id', type: 'bigint', nullable: true })
+  @Column({ name: 'variant_id', type: 'bigint', unsigned: true, nullable: true })
   variantId: number | null;
 
   @Column({ length: 500 })
@@ -188,29 +185,29 @@ export class ProductImage {
   @Column({ length: 190, nullable: true })
   alt: string | null;
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 
-  @Column({ name: 'is_primary', default: false })
+  @Column({ name: 'is_primary', type: 'tinyint', width: 1, default: 0 })
   isPrimary: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('product_videos')
 export class ProductVideo {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'product_id', type: 'bigint' })
+  @Column({ name: 'product_id', type: 'bigint', unsigned: true })
   @Index()
   productId: number;
 
   @Column({ length: 190, nullable: true })
   title: string | null;
 
-  @Column({ type: 'enum', enum: ['upload', 'youtube', 'aparat'], default: 'upload' })
+  @Column({ type: 'varchar', length: 20, default: 'upload' })
   provider: 'upload' | 'youtube' | 'aparat';
 
   @Column({ name: 'source_url', length: 500 })
@@ -219,16 +216,16 @@ export class ProductVideo {
   @Column({ name: 'poster_path', length: 500, nullable: true })
   posterPath: string | null;
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('tags')
 export class Tag {
-  @PrimaryGeneratedColumn({ type: 'integer' })
+  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
   id: number;
 
   @Column({ length: 80, unique: true })
@@ -237,53 +234,53 @@ export class Tag {
   @Column({ length: 120, unique: true })
   slug: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 }
 
 @Entity('product_tags')
 export class ProductTag {
-  @PrimaryColumn({ name: 'product_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'product_id', type: 'bigint', unsigned: true })
   productId: number;
 
-  @PrimaryColumn({ name: 'tag_id', type: 'integer' })
+  @PrimaryColumn({ name: 'tag_id', type: 'int', unsigned: true })
   tagId: number;
 }
 
 @Entity('product_relations')
 export class ProductRelation {
-  @PrimaryColumn({ name: 'product_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'product_id', type: 'bigint', unsigned: true })
   productId: number;
 
-  @PrimaryColumn({ name: 'related_product_id', type: 'bigint' })
+  @PrimaryColumn({ name: 'related_product_id', type: 'bigint', unsigned: true })
   relatedProductId: number;
 
-  @PrimaryColumn({ type: 'enum', enum: ['related', 'accessory', 'similar'], default: 'related' })
+  @PrimaryColumn({ type: 'varchar', length: 30, default: 'related' })
   type: 'related' | 'accessory' | 'similar';
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 }
 
 /** مشخصات فنی محصول (مقادیر صفت‌ها) */
 @Entity('product_attributes')
 export class ProductAttributeValue {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ name: 'product_id', type: 'bigint' })
+  @Column({ name: 'product_id', type: 'bigint', unsigned: true })
   @Index()
   productId: number;
 
-  @Column({ name: 'attribute_id', type: 'integer' })
+  @Column({ name: 'attribute_id', type: 'int', unsigned: true })
   attributeId: number;
 
-  @Column({ name: 'attribute_value_id', type: 'integer', nullable: true })
+  @Column({ name: 'attribute_value_id', type: 'int', unsigned: true, nullable: true })
   attributeValueId: number | null;
 
   @Column({ name: 'custom_value', length: 500, nullable: true })
   customValue: string | null;
 
-  @Column({ name: 'sort_order', default: 0 })
+  @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
   sortOrder: number;
 }
