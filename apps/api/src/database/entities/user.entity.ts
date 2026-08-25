@@ -17,14 +17,17 @@ export const numericTransformer = {
 };
 
 const boolTransformer = {
-  to: (v?: boolean | null) => (v ? 1 : 0),
-  from: (v: number | null) => !!v,
+  to: (v?: boolean | null) => !!v,
+  from: (v: boolean | number | null) => !!v,
 };
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
+
+  @Column({ name: 'auth_user_id', type: 'uuid', nullable: true, unique: true })
+  authUserId: string | null;
 
   @Column({ name: 'full_name', length: 120 })
   fullName: string;
@@ -36,8 +39,8 @@ export class User {
   @Column({ length: 15 })
   phone: string;
 
-  @Column({ name: 'password_hash', select: false })
-  passwordHash: string;
+  @Column({ name: 'password_hash', nullable: true, select: false })
+  passwordHash: string | null;
 
   @Column({ name: 'national_code', length: 10, nullable: true })
   nationalCode: string | null;
@@ -57,13 +60,13 @@ export class User {
   @Column({ name: 'two_factor_secret', length: 64, nullable: true, select: false })
   twoFactorSecret: string | null;
 
-  @Column({ name: 'email_verified_at', type: 'datetime', nullable: true })
+  @Column({ name: 'email_verified_at', type: 'timestamptz', nullable: true })
   emailVerifiedAt: Date | null;
 
-  @Column({ name: 'phone_verified_at', type: 'datetime', nullable: true })
+  @Column({ name: 'phone_verified_at', type: 'timestamptz', nullable: true })
   phoneVerifiedAt: Date | null;
 
-  @Column({ name: 'last_login_at', type: 'datetime', nullable: true })
+  @Column({ name: 'last_login_at', type: 'timestamptz', nullable: true })
   lastLoginAt: Date | null;
 
   @ManyToMany(() => Role, (r) => r.users, { createForeignKeyConstraints: false })
@@ -74,23 +77,23 @@ export class User {
   })
   roles: Role[];
 
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime', nullable: true })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt: Date | null;
 }
 
 @Entity('user_addresses')
 export class UserAddress {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Index()
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'user_id', type: 'bigint' })
   userId: number;
 
   @Column({ length: 50, default: 'آدرس من' })
@@ -129,19 +132,19 @@ export class UserAddress {
   @Column({ name: 'is_default', default: false, transformer: boolTransformer })
   isDefault: boolean;
 
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', type: 'datetime', nullable: true })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt: Date | null;
 }
 
 @Entity('verification_codes')
 export class VerificationCode {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Column({ type: 'enum', enum: ['phone', 'email'] })
@@ -161,26 +164,26 @@ export class VerificationCode {
   })
   purpose: 'register' | 'login' | 'reset_password' | 'verify_contact';
 
-  @Column({ type: 'tinyint', default: 0 })
+  @Column({ type: 'smallint', default: 0 })
   attempts: number;
 
-  @Column({ name: 'expires_at', type: 'datetime' })
+  @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt: Date;
 
-  @Column({ name: 'consumed_at', type: 'datetime', nullable: true })
+  @Column({ name: 'consumed_at', type: 'timestamptz', nullable: true })
   consumedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }
 
 @Entity('refresh_tokens')
 export class RefreshToken {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Index()
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'user_id', type: 'bigint' })
   userId: number;
 
   @Index({ unique: true })
@@ -193,12 +196,12 @@ export class RefreshToken {
   @Column({ length: 45, nullable: true })
   ip: string | null;
 
-  @Column({ name: 'expires_at', type: 'datetime' })
+  @Column({ name: 'expires_at', type: 'timestamptz' })
   expiresAt: Date;
 
-  @Column({ name: 'revoked_at', type: 'datetime', nullable: true })
+  @Column({ name: 'revoked_at', type: 'timestamptz', nullable: true })
   revokedAt: Date | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }

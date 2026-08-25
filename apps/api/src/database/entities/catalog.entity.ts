@@ -11,7 +11,7 @@ import {
 
 @Entity('brands')
 export class Brand {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 100 })
@@ -48,10 +48,10 @@ export class Brand {
 
 @Entity('categories')
 export class Category {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
-  @Column({ name: 'parent_id', type: 'int', unsigned: true, nullable: true })
+  @Column({ name: 'parent_id', type: 'integer', nullable: true })
   @Index()
   parentId: number | null;
 
@@ -96,7 +96,7 @@ export type AttributeType = 'text' | 'number' | 'select' | 'multiselect' | 'bool
 
 @Entity('attributes')
 export class Attribute {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 100 })
@@ -130,17 +130,17 @@ export class Attribute {
 
 @Entity('attribute_values')
 export class AttributeValue {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
-  @Column({ name: 'attribute_id', type: 'int', unsigned: true })
+  @Column({ name: 'attribute_id', type: 'integer' })
   @Index()
   attributeId: number;
 
   @Column({ length: 190 })
   value: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   meta: Record<string, unknown> | null;
 
   @Column({ name: 'sort_order', default: 0 })
@@ -150,10 +150,10 @@ export class AttributeValue {
 /** اتصال صفت به دسته + نقش در ساخت تنوع */
 @Entity('category_attribute')
 export class CategoryAttribute {
-  @PrimaryColumn({ name: 'category_id', type: 'int', unsigned: true })
+  @PrimaryColumn({ name: 'category_id', type: 'integer' })
   categoryId: number;
 
-  @PrimaryColumn({ name: 'attribute_id', type: 'int', unsigned: true })
+  @PrimaryColumn({ name: 'attribute_id', type: 'integer' })
   attributeId: number;
 
   @Column({ name: 'is_variant', default: false })

@@ -26,7 +26,7 @@ flowchart LR
     end
 
     subgraph Data["لایه داده"]
-        DB[(MySQL 8<br/>داده اصلی)]
+        DB[(Supabase PostgreSQL 15<br/>داده اصلی + RLS)]
         RD[(Redis 7<br/>کش + صف + RateLimit)]
         MS[(Meilisearch<br/>موتور جستجو)]
         S3[(MinIO / AWS S3<br/>فایل‌ها)]
@@ -52,7 +52,7 @@ flowchart LR
     PAY <--> AC
 ```
 
-**جریان خلاصه:** کلاینت فقط با API اصلی صحبت می‌کند. API روی MySQL قانون داده می‌گذارد، Redis برای کش/صف/rate-limit، Meilisearch برای جستجوی فوری محصول، و MinIO (سازگار با S3) برای فایل‌ها استفاده می‌شود. کارهای سنگین و غیرهمگام (پیامک، ایمیل، سینک جستجو، اعلان‌ها) در صف BullMQ انجام می‌شوند.
+**جریان خلاصه:** کلاینت فقط با API اصلی صحبت می‌کند. API روی PostgreSQL/Supabase قانون داده می‌گذارد، Redis برای کش/صف/rate-limit، Meilisearch برای جستجوی فوری محصول، و MinIO (سازگار با S3) برای فایل‌ها استفاده می‌شود. کارهای سنگین و غیرهمگام (پیامک، ایمیل، سینک جستجو، اعلان‌ها) در صف BullMQ انجام می‌شوند.
 
 ---
 
@@ -64,7 +64,7 @@ flowchart LR
 | استایل | **Tailwind CSS ۴** + shadcn/ui | — | سرعت توسعه، RTL خوب، Design Token |
 | Backend | **NestJS ۱۱ (Node.js ۲۲ LTS)** | Laravel (آماده سوییچ) | معماری ماژولار تمیز، TypeScript مشترک با فرانت، اکوسیستم بزرگ |
 | ORM | **TypeORM + Migration** | Prisma | کنترل کامل روی SQL، بدون synchronize در production |
-| Database | **MySQL 8 (InnoDB, utf8mb4)** | MariaDB | درخواست پروژه؛ JSON، CTE، Window Functions |
+| Database | **Supabase PostgreSQL 15 + RLS** | MariaDB | دیتابیس مدیریت‌شده، تراکنش، JSONB، CTE و Row Level Security |
 | Cache/Queue | **Redis 7** + BullMQ | — | کش، صف، rate-limit، lock توزیع‌شده |
 | Search | **Meilisearch** | Elasticsearch (interface آماده) | سبک، سریع، تنظیم آسان روی محصولات؛ مهاجرت به ES فقط با تعویض adapter |
 | Storage | **MinIO (S3 API)** | AWS S3 | کد یکسان با `aws-sdk`؛ production فقط با ENV سوییچ می‌کند |
@@ -89,7 +89,7 @@ flowchart LR
 | `attributes` | `/admin/attributes` | صفت‌ها و مقادیر، اتصال به دسته | DB |
 | `inventory` | `/admin/inventory` | انبارها، موجودی، گردش انبار، رزرو | DB (transaction), Redis(lock) |
 | `search` | `/search` | ایندکس محصولات، autocomplete | Meilisearch, BullMQ(sync) |
-| `cart` | `/cart` | سبد کاربر/مهمان، merge بعد از ورود، کوپن | Redis(hot) + MySQL(persist) |
+| `cart` | `/cart` | سبد کاربر/مهمان، merge بعد از ورود، کوپن | Redis(hot) + PostgreSQL/Supabase(persist) |
 | `orders` | `/orders`, `/checkout` | ثبت سفارش، state machine وضعیت، تاریخچه | DB(transaction), Events |
 | `payments` | `/payments` (+ callback) | آداپتور درگاه‌ها، idempotency، تطبیق | DB, PAY |
 | `shipping` | داخلی | روش‌های ارسال و هزینه، کد رهگیری | DB |
@@ -173,7 +173,7 @@ users ──< role_user >── roles ──< permission_role >── permission
 - `filterableAttributes`: category_slug, brand_id, price, attributes.* , in_stock, status
 - `sortableAttributes`: price, created_at, sold_count, rating_avg
 - **سینک:** رویداد `product.*` → job در BullMQ → upsert/delete در Meili؛ لاگ شکست + retry. ابزار `reindex:all` برای بازسازی کامل.
-- API فروشگاه `GET /search` و `GET /products` (لیست با فیلتر) هر دو از Meili می‌خوانند؛ fallback به MySQL در صورت قطع Meili (تجربه قطع نشدن فروش).
+- API فروشگاه `GET /search` و `GET /products` (لیست با فیلتر) هر دو از Meili می‌خوانند؛ fallback به PostgreSQL در صورت قطع Meili (تجربه قطع نشدن فروش).
 
 ---
 
@@ -221,8 +221,8 @@ karzintell/                ← یک باکت
 
 ## ۱۱. استقرار (Deployment)
 
-- **توسعه (همین repo):** `docker compose up -d` → MySQL/Redis/Meili/MinIO/Adminer/MailHog. اپ‌ها در مرحله بعد به compose اضافه می‌شوند.
-- **پروداکشن (پیشنهاد مرحله اول):** یک VPS لینوکسی + Docker Compose (web, api, worker, nginx + certbot)، دیتابیس مدیریت‌شده یا همان VM با backup شبانه `mysqldump | gzip` به S3، Redis با AOF، MinIO→AWS S3.
+- **توسعه (همین repo):** `docker compose up -d` → Redis/Meili/MinIO/MailHog (دیتابیس در Supabase). اپ‌ها در مرحله بعد به compose اضافه می‌شوند.
+- **پروداکشن (پیشنهاد مرحله اول):** یک VPS لینوکسی + Docker Compose (web, api, worker, nginx + certbot)، Supabase PostgreSQL مدیریت‌شده با backup روزانه `pg_dump | gzip` به S3، Redis با AOF، MinIO→AWS S3.
 - **مقیاس بعدی:** api/worker افقی (stateless)، Uptime: `/health/ready`، لاگ متمرکز (بعداً Loki/ELK)، متریک Prometheus.
 
 ---

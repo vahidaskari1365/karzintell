@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Lock, Send } from 'lucide-react';
+import { Lock, Send, UserRoundCheck } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { faDateTime, faNumber } from '@/lib/format';
 import { hasPermission, toast, useAuthStore } from '@/lib/auth-store';
@@ -93,6 +93,7 @@ function TicketDialog({ ticket, onClose }: { ticket: TicketRow; onClose: () => v
   const qc = useQueryClient();
   const { user } = useAuthStore();
   const canReply = hasPermission(user, 'tickets.reply');
+  const canAssign = hasPermission(user, 'tickets.assign');
   const [reply, setReply] = useState('');
   const [internal, setInternal] = useState(false);
 
@@ -125,21 +126,37 @@ function TicketDialog({ ticket, onClose }: { ticket: TicketRow; onClose: () => v
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const assign = useMutation({
+    mutationFn: async () => api(`/admin/tickets/${ticket.id}/assign-to-me`, { method: 'POST' }),
+    onSuccess: () => {
+      toast.success('تیکت به شما تخصیص داده شد');
+      qc.invalidateQueries({ queryKey: ['admin-ticket', ticket.id] });
+      qc.invalidateQueries({ queryKey: ['admin-tickets'] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const messages: any[] = data?.messages || [];
   const t = data?.ticket || ticket;
 
   return (
     <Dialog open onClose={onClose} title={`#${t.id} — ${t.subject}`} size="lg">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <Pill status={t.status} label={STATUS_LABELS[t.status] || t.status} />
-        {t.status !== 'closed' ? (
+        <div className="flex items-center gap-1">
+          {canAssign && t.status !== 'closed' && (
+            <Button size="sm" variant="secondary" loading={assign.isPending} onClick={() => assign.mutate()}>
+              <UserRoundCheck className="h-3.5 w-3.5" /> تخصیص به من
+            </Button>
+          )}
+          {t.status !== 'closed' ? (
           <Button size="sm" variant="ghost" className="text-slate-500" onClick={() => setStatus.mutate('closed')}>
             <Lock className="h-3.5 w-3.5" /> بستن تیکت
           </Button>
         ) : (
           <Button size="sm" variant="ghost" onClick={() => setStatus.mutate('pending_customer')}>بازگشایی</Button>
         )}
+        </div>
       </div>
 
       <div className="max-h-96 space-y-3 overflow-y-auto rounded-xl bg-slate-50 p-3">

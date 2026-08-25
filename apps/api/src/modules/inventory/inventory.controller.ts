@@ -65,6 +65,13 @@ export class InventoryController {
     return { data: r.items, meta: { page: r.page, limit: r.limit, total: r.total } };
   }
 
+  @Get('inventory/alerts')
+  @RequirePermissions('inventory.view')
+  async alerts(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const r = await this.service.openAlerts(page, limit);
+    return { data: r.items, meta: { page: r.page, limit: r.limit, total: r.total } };
+  }
+
   @Get('inventory/movements')
   @RequirePermissions('inventory.view')
   async movements(

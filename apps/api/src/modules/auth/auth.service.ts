@@ -99,7 +99,7 @@ export class AuthService {
       .addSelect('u.twoFactorSecret')
       .where('LOWER(u.email) = :id OR u.phone = :id', { id })
       .getOne();
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
       await Promise.all([
         this.redis.incrWithTtl(failKey, LOGIN_WINDOW_SEC),
         this.redis.incrWithTtl(ipKey, LOGIN_WINDOW_SEC),
@@ -289,7 +289,7 @@ export class AuthService {
       .where('u.id = :id', { id: userId })
       .getOne();
     if (!user) throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'ورود لازم است' });
-    if (!(await bcrypt.compare(current, user.passwordHash)))
+    if (!user.passwordHash || !(await bcrypt.compare(current, user.passwordHash)))
       throw new BadRequestException({ code: 'BAD_CREDENTIALS', message: 'رمز فعلی اشتباه است' });
 
     await this.users.update(userId, {

@@ -75,3 +75,16 @@ export const sanitizeHtml = (html: string): string => {
 
 /** توکن تصادفی url-safe */
 export const randomToken = (bytes = 48): string => randomBytes(bytes).toString('base64url');
+
+/**
+ * اجرای SQL خام با placeholder قابل‌حمل. TypeORM در QueryBuilder پارامترها را
+ * تبدیل می‌کند، اما EntityManager.query به‌صورت مستقیم از syntax درایور استفاده
+ * می‌کند؛ این wrapper از فراموش‌شدن تبدیل ? به $1 در PostgreSQL جلوگیری می‌کند.
+ */
+export type SqlClient = { query: (text: string, parameters?: unknown[]) => Promise<any> };
+
+export const dbQuery = (client: SqlClient, text: string, parameters: unknown[] = []) => {
+  let index = 0;
+  const query = text.replace(/\?/g, () => `$${++index}`);
+  return client.query(query, parameters);
+};

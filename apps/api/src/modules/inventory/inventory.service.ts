@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { Inventory, Product, StockMovement, Warehouse } from '../../database/entities';
+import { Inventory, Product, ProductVariant, StockAlert, StockMovement, Warehouse } from '../../database/entities';
 import { DomainException } from '../../common/http-exception.filter';
-import { paginate } from '../../common/utils';
+import { paginate, dbQuery } from '../../common/utils';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export interface StockLine {
   variantId: number;
@@ -15,7 +17,9 @@ export class InventoryService {
   constructor(
     @InjectRepository(Warehouse) private readonly warehouses: Repository<Warehouse>,
     @InjectRepository(Inventory) private readonly inventory: Repository<Inventory>,
+    @InjectRepository(StockAlert) private readonly alerts: Repository<StockAlert>,
     @InjectEntityManager() private readonly em: EntityManager,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ------------------------------------------------------------ انبارها
@@ -47,9 +51,14 @@ export class InventoryService {
 
   // ----------------------------------------------------------- موجودی
   async ensureRow(variantId: number, warehouseId: number, manager?: EntityManager) {
-    const repo = (manager || this.em).getRepository(Inventory);
-    const row = await repo.findOne({ where: { variantId, warehouseId } });
-    if (!row) await repo.insert({ variantId, warehouseId, quantity: 0, reserved: 0 });
+    // ON CONFLICT closes the race where two first-time checkouts create the row together.
+    await (manager || this.em)
+      .getRepository(Inventory)
+      .createQueryBuilder()
+      .insert()
+      .values({ variantId, warehouseId, quantity: 0, reserved: 0 })
+      .orIgnore()
+      .execute();
   }
 
   /** تنظیم مستقیم مقدار (برای ورود اولیه/اصلاح) */
@@ -58,8 +67,7 @@ export class InventoryService {
     adminId: number,
     manager?: EntityManager,
   ) {
-    const m = manager || this.em;
-    return m.transaction(async (tx) => {
+    const work = async (tx: EntityManager) => {
       await this.ensureRow(input.variantId, input.warehouseId, tx);
       const row = await tx
         .getRepository(Inventory)
@@ -69,7 +77,9 @@ export class InventoryService {
         .getOneOrFail();
 
       const before = row.quantity;
-      row.quantity = Math.max(0, input.quantity);
+      row.quantity = Math.max(0, Math.floor(input.quantity));
+      if (row.quantity < row.reserved)
+        throw new DomainException('INVENTORY_RESERVED', 'موجودی نمی‌تواند کمتر از مقدار رزروشده باشد', 409);
       await tx.getRepository(Inventory).save(row);
       await this.log(tx, {
         variantId: input.variantId,
@@ -84,7 +94,10 @@ export class InventoryService {
       });
       await this.recalcVariantStock(input.variantId, tx);
       return row;
-    });
+    };
+    const row = manager ? await work(manager) : await this.em.transaction(work);
+    if (!manager) await this.dispatchAlerts(input.variantId, input.warehouseId);
+    return row;
   }
 
   /** افزایش/کاهش با نوع حرکت */
@@ -99,8 +112,9 @@ export class InventoryService {
       referenceId?: number;
     },
     adminId: number,
+    manager?: EntityManager,
   ) {
-    return this.em.transaction(async (tx) => {
+    const work = async (tx: EntityManager) => {
       await this.ensureRow(input.variantId, input.warehouseId, tx);
       const row = await tx
         .getRepository(Inventory)
@@ -109,24 +123,34 @@ export class InventoryService {
         .where('i.variant_id = :v AND i.warehouse_id = :w', { v: input.variantId, w: input.warehouseId })
         .getOneOrFail();
 
+      const quantity = Math.floor(input.quantity);
+      if (!Number.isFinite(quantity) || quantity < 0)
+        throw new DomainException('INVALID_QUANTITY', 'مقدار موجودی نامعتبر است', 400);
       const before = row.quantity;
-      if (input.type === 'in' || input.type === 'return') row.quantity += input.quantity;
+      if (input.type === 'in' || input.type === 'return') row.quantity += quantity;
       else if (input.type === 'out') {
-        if (row.quantity - row.reserved < input.quantity)
+        if (row.quantity - row.reserved < quantity)
           throw new DomainException('OUT_OF_STOCK', 'موجودی قابل‌فروش کافی نیست', 409);
-        row.quantity -= input.quantity;
-      } else row.quantity = Math.max(0, before + input.quantity);
+        row.quantity -= quantity;
+      } else {
+        row.quantity = Math.max(row.reserved, before + quantity);
+      }
+      if (row.quantity < row.reserved)
+        throw new DomainException('INVENTORY_RESERVED', 'موجودی نمی‌تواند کمتر از مقدار رزروشده باشد', 409);
       await tx.getRepository(Inventory).save(row);
-
       await this.log(tx, {
         variantId: input.variantId, warehouseId: input.warehouseId, type: input.type,
-        quantity: input.quantity, qtyBefore: before, qtyAfter: row.quantity,
+        quantity, qtyBefore: before, qtyAfter: row.quantity,
         referenceType: input.referenceType || 'manual', referenceId: input.referenceId || null,
         note: input.note || null, createdBy: adminId,
       });
       await this.recalcVariantStock(input.variantId, tx);
       return row;
-    });
+    };
+
+    const row = manager ? await work(manager) : await this.em.transaction(work);
+    if (!manager) await this.dispatchAlerts(input.variantId, input.warehouseId);
+    return row;
   }
 
   /** رزرو موجودی در تراکنش سفارش (با قفل ردیف) */
@@ -202,7 +226,7 @@ export class InventoryService {
   }
 
   private async productOf(variantId: number, tx: EntityManager): Promise<number> {
-    const row = await tx.query(`SELECT product_id AS pid FROM product_variants WHERE id = ?`, [variantId]);
+    const row = await dbQuery(tx, `SELECT product_id AS pid FROM product_variants WHERE id = ?`, [variantId]);
     return row?.[0]?.pid ?? 0;
   }
 
@@ -212,11 +236,64 @@ export class InventoryService {
 
   private async recalcVariantStock(variantId: number, tx?: EntityManager) {
     const m = tx || this.em;
-    const row = await m.query(
-      `SELECT COALESCE(SUM(quantity - reserved), 0) AS stock FROM inventory WHERE variant_id = ?`,
+    const row = await dbQuery(m,
+      `SELECT COALESCE(SUM(GREATEST(quantity - reserved, 0)), 0) AS stock FROM inventory WHERE variant_id = ?`,
       [variantId],
     );
-    await m.query(`UPDATE product_variants SET stock_total = ? WHERE id = ?`, [Number(row[0].stock), variantId]);
+    await dbQuery(m, `UPDATE product_variants SET stock_total = ? WHERE id = ?`, [Number(row[0].stock), variantId]);
+  }
+
+  /** ارسال اعلان پایدار برای اپراتورها؛ در هر تغییر موجودی حداکثر هر ۱۵ دقیقه تکرار می‌شود. */
+  private async dispatchAlerts(variantId: number, warehouseId: number) {
+    const alerts = await this.alerts.find({ where: { variantId, warehouseId, status: 'open' } });
+    for (const alert of alerts) {
+      if (alert.lastNotifiedAt && Date.now() - alert.lastNotifiedAt.getTime() < 15 * 60_000) continue;
+      const rows = await dbQuery(this.em, `
+        SELECT p.name AS product_name, v.sku, v.title AS variant_title
+        FROM product_variants v JOIN products p ON p.id = v.product_id
+        WHERE v.id = ? LIMIT 1`, [variantId]);
+      const name = rows[0]?.product_name || `تنوع ${variantId}`;
+      const variant = rows[0]?.variant_title || rows[0]?.sku || '';
+      const label = alert.alertType === 'out_of_stock' ? 'اتمام موجودی' : 'کاهش موجودی';
+      await this.notifications.notifyInventoryOperators(
+        `${label}: ${name}`,
+        `${name}${variant ? ` (${variant})` : ''} فقط ${alert.available} عدد موجودی قابل فروش دارد.`,
+        { alertId: alert.id, variantId, warehouseId, available: alert.available, alertType: alert.alertType },
+      );
+      await this.alerts.update(alert.id, { lastNotifiedAt: new Date() });
+    }
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async dispatchPendingAlerts() {
+    const cutoff = new Date(Date.now() - 15 * 60_000);
+    const pending = await this.alerts
+      .createQueryBuilder('a')
+      .where("a.status = 'open' AND (a.last_notified_at IS NULL OR a.last_notified_at < :cutoff)", { cutoff })
+      .orderBy('a.updated_at', 'ASC')
+      .take(100)
+      .getMany();
+    for (const alert of pending) await this.dispatchAlerts(alert.variantId, alert.warehouseId);
+  }
+
+  async openAlerts(page?: string, limit?: string) {
+    const p = paginate(page, limit);
+    const [items, total] = await Promise.all([
+      dbQuery(this.em, `
+        SELECT a.id, a.variant_id AS "variantId", a.warehouse_id AS "warehouseId",
+               a.available, a.threshold, a.alert_type AS "alertType", a.status,
+               a.last_notified_at AS "lastNotifiedAt", a.created_at AS "createdAt",
+               v.sku, v.title AS "variantTitle", p.id AS "productId", p.name AS "productName", w.name AS "warehouseName"
+        FROM stock_alerts a
+        JOIN product_variants v ON v.id = a.variant_id
+        JOIN products p ON p.id = v.product_id
+        JOIN warehouses w ON w.id = a.warehouse_id
+        WHERE a.status = 'open'
+        ORDER BY a.available ASC, a.updated_at DESC
+        LIMIT ? OFFSET ?`, [p.limit, p.skip]),
+      dbQuery(this.em, `SELECT COUNT(*) AS cnt FROM stock_alerts WHERE status = 'open'`),
+    ]);
+    return { items: items.map((item: any) => ({ ...item, available: Number(item.available), threshold: Number(item.threshold) })), total: Number(total[0]?.cnt || 0), page: p.page, limit: p.limit };
   }
 
   // -------------------------------------------------------- گزارش/فهرست
@@ -228,14 +305,14 @@ export class InventoryService {
       .innerJoin('products', 'p', 'p.id = v.product_id AND p.deleted_at IS NULL')
       .innerJoin('warehouses', 'w', 'w.id = i.warehouse_id')
       .select([
-        'i.variant_id AS variantId', 'i.warehouse_id AS warehouseId',
+        'i.variant_id AS "variantId"', 'i.warehouse_id AS "warehouseId"',
         'i.quantity AS quantity', 'i.reserved AS reserved',
-        'i.low_stock_threshold AS lowStockThreshold',
-        'v.sku AS sku', 'v.title AS variantTitle', 'p.name AS productName', 'p.id AS productId',
-        'w.name AS warehouseName',
+        'i.low_stock_threshold AS "lowStockThreshold"',
+        'v.sku AS sku', 'v.title AS "variantTitle"', 'p.name AS "productName"', 'p.id AS "productId"',
+        'w.name AS "warehouseName"',
       ]);
     if (query.q) base.andWhere('(p.name LIKE :q OR v.sku LIKE :q)', { q: `%${query.q}%` });
-    if (query.lowStock) base.andWhere('i.quantity <= i.low_stock_threshold');
+    if (query.lowStock) base.andWhere('(i.quantity - i.reserved) <= i.low_stock_threshold');
     const [items, total] = await Promise.all([
       base.clone().orderBy('i.quantity', 'ASC').offset(p.skip).limit(p.limit).getRawMany(),
       base.clone().select('COUNT(*)', 'cnt').getRawOne(),

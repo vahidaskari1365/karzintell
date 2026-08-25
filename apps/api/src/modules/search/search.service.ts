@@ -1,3 +1,4 @@
+import { dbQuery } from '../../common/utils';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,7 +22,7 @@ export interface ProductSearchQuery {
 }
 
 /**
- * جستجو با Meilisearch؛ در نبودن Meili → fallback به MySQL.
+ * جستجو با Meilisearch؛ در نبودن Meili → fallback به PostgreSQL.
  * سینک: در رویدادهای محصول مستقیم (بدون صف) انجام می‌شود؛ در صورت خطا لاگ + reindex دستی.
  */
 @Injectable()
@@ -42,7 +43,7 @@ export class SearchService implements OnModuleInit {
       await this.configureIndex();
       this.logger.log('Meilisearch متصل شد');
     } catch {
-      this.logger.warn('Meilisearch در دسترس نیست — جستجو با MySQL انجام می‌شود');
+      this.logger.warn('Meilisearch در دسترس نیست — جستجو با PostgreSQL انجام می‌شود');
     }
   }
 
@@ -109,11 +110,11 @@ export class SearchService implements OnModuleInit {
       });
       return { items: res.hits, categories: [] };
     }
-    // fallback MySQL: پیشنهاد محصول + دسته‌بندی
+    // fallback PostgreSQL: پیشنهاد محصول + دسته‌بندی
     const like = `%${term}%`;
-    const items = await this.products.query(
-      `SELECT p.name, p.slug, p.min_price AS minPrice, b.name AS brandName, c.name AS categoryName,
-              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image
+    const items = await dbQuery(this.products,
+      `SELECT p.name, p.slug, p.min_price AS "minPrice", b.name AS "brandName", c.name AS "categoryName",
+              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image
        FROM products p
        LEFT JOIN brands b ON b.id = p.brand_id
        LEFT JOIN categories c ON c.id = p.category_id
@@ -122,8 +123,8 @@ export class SearchService implements OnModuleInit {
        LIMIT 8`,
       [like, like, like],
     );
-    const categories = await this.products.query(
-      `SELECT name, slug FROM categories WHERE is_active = 1 AND deleted_at IS NULL AND name LIKE ? ORDER BY sort_order LIMIT 4`,
+    const categories = await dbQuery(this.products,
+      `SELECT name, slug FROM categories WHERE is_active = TRUE AND deleted_at IS NULL AND name LIKE ? ORDER BY sort_order LIMIT 4`,
       [like],
     );
     return {
@@ -172,17 +173,17 @@ export class SearchService implements OnModuleInit {
   }
 
   private async buildDocument(productId: number) {
-    const rows = await this.products.query(
-      `SELECT p.id, p.name, p.slug, p.code, p.category_id AS categoryId, c.slug AS categorySlug,
-              c.name AS categoryName, p.brand_id AS brandId, b.name AS brandName,
-              p.short_description AS shortDescription, p.min_price AS minPrice,
-              p.published_at AS publishedAt, p.sold_count AS soldCount, p.rating_avg AS ratingAvg,
+    const rows = await dbQuery(this.products,
+      `SELECT p.id, p.name, p.slug, p.code, p.category_id AS "categoryId", c.slug AS "categorySlug",
+              c.name AS "categoryName", p.brand_id AS "brandId", b.name AS "brandName",
+              p.short_description AS "shortDescription", p.min_price AS "minPrice",
+              p.published_at AS "publishedAt", p.sold_count AS "soldCount", p.rating_avg AS "ratingAvg",
               p.status, p.features,
-              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image,
-              (SELECT GROUP_CONCAT(sku SEPARATOR ' ') FROM product_variants WHERE product_id = p.id AND deleted_at IS NULL) AS skus,
-              (SELECT GROUP_CONCAT(tag_id) FROM product_tags WHERE product_id = p.id) AS tagIdCsv,
+              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image,
+              (SELECT STRING_AGG(sku, ' ') FROM product_variants WHERE product_id = p.id AND deleted_at IS NULL) AS skus,
+              (SELECT STRING_AGG(tag_id::text, ',') FROM product_tags WHERE product_id = p.id) AS "tagIdCsv",
               EXISTS(SELECT 1 FROM inventory i JOIN product_variants v ON v.id = i.variant_id
-                     WHERE v.product_id = p.id AND v.is_active = 1 AND v.deleted_at IS NULL AND (i.quantity - i.reserved) > 0) AS inStock
+                     WHERE v.product_id = p.id AND v.is_active = TRUE AND v.deleted_at IS NULL AND (i.quantity - i.reserved) > 0) AS "inStock"
        FROM products p
        LEFT JOIN categories c ON c.id = p.category_id
        LEFT JOIN brands b ON b.id = p.brand_id
@@ -191,11 +192,11 @@ export class SearchService implements OnModuleInit {
     );
     const r = rows[0];
     if (!r) return { id: productId, status: 'archived' };
-    const tags = await this.products.query(`SELECT t.name FROM product_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.product_id = ?`, [productId]);
-    const discountRows = await this.products.query(
+    const tags = await dbQuery(this.products, `SELECT t.name FROM product_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.product_id = ?`, [productId]);
+    const discountRows = await dbQuery(this.products,
       `SELECT MAX(ROUND((compare_at_price - price) * 100 / compare_at_price)) AS d
        FROM product_variants
-       WHERE product_id = ? AND is_active = 1 AND deleted_at IS NULL AND compare_at_price IS NOT NULL AND compare_at_price > price`,
+       WHERE product_id = ? AND is_active = TRUE AND deleted_at IS NULL AND compare_at_price IS NOT NULL AND compare_at_price > price`,
       [productId],
     );
     return {
@@ -226,7 +227,7 @@ export class SearchService implements OnModuleInit {
   /** شناسه‌های دسته + تمام زیرمجموعه‌ها (برای فیلتر چندسطحی: دیجیتال ← موبایل ← ...) */
   private async categorySubtreeIds(slug: string): Promise<number[]> {
     try {
-      const rows = await this.products.query(
+      const rows = await dbQuery(this.products,
         `WITH RECURSIVE sub AS (
            SELECT id FROM categories WHERE slug = ? AND deleted_at IS NULL
            UNION ALL
@@ -237,23 +238,23 @@ export class SearchService implements OnModuleInit {
       );
       return rows.map((r: any) => Number(r.id));
     } catch {
-      // MySQL قدیمی بدون CTE → فقط خود دسته
-      const rows = await this.products.query(`SELECT id FROM categories WHERE slug = ? AND deleted_at IS NULL`, [slug]);
+      // در صورت خطای CTE → فقط خود دسته
+      const rows = await dbQuery(this.products, `SELECT id FROM categories WHERE slug = ? AND deleted_at IS NULL`, [slug]);
       return rows.map((r: any) => Number(r.id));
     }
   }
 
-  // ------------------------------------------------- fallback به MySQL
+  // ------------------------------------------------- fallback به PostgreSQL
   private async searchDb(q: ProductSearchQuery) {
     const qb = this.products
       .createQueryBuilder('p')
       .leftJoin('brands', 'b', 'b.id = p.brand_id')
       .leftJoin('categories', 'c', 'c.id = p.category_id')
-      .leftJoin('product_images', 'img', 'img.product_id = p.id AND img.is_primary = 1')
+      .leftJoin('product_images', 'img', 'img.product_id = p.id AND img.is_primary = TRUE')
       .select([
         'p.id AS id', 'p.name AS name', 'p.slug AS slug', 'p.code AS code',
-        'b.id AS brandId', 'b.name AS brandName', 'c.slug AS categorySlug',
-        'p.min_price AS minPrice', 'p.rating_avg AS ratingAvg', 'p.sold_count AS soldCount',
+        'b.id AS "brandId"', 'b.name AS "brandName"', 'c.slug AS "categorySlug"',
+        'p.min_price AS "minPrice"', 'p.rating_avg AS "ratingAvg"', 'p.sold_count AS "soldCount"',
         'img.path AS image',
       ])
       .where('p.status = :st', { st: 'published' })
@@ -262,7 +263,7 @@ export class SearchService implements OnModuleInit {
     if (q.q) qb.andWhere('(p.name LIKE :q OR p.code LIKE :q OR b.name LIKE :q)', { q: `%${q.q}%` });
     if (q.categorySlug) {
       const ids = await this.categorySubtreeIds(q.categorySlug);
-      if (!ids.length) return { items: [], total: 0, page: q.page, limit: q.limit, engine: 'mysql' as const };
+      if (!ids.length) return { items: [], total: 0, page: q.page, limit: q.limit, engine: 'postgres' as const };
       qb.andWhere('p.category_id IN (:...catIds)', { catIds: ids });
     }
     if (q.brandIds?.length) qb.andWhere('b.id IN (:...bids)', { bids: q.brandIds });
@@ -271,13 +272,13 @@ export class SearchService implements OnModuleInit {
     if (q.minRating != null) qb.andWhere('p.rating_avg >= :minr', { minr: q.minRating });
     if (q.inStock)
       qb.andWhere(`EXISTS(SELECT 1 FROM inventory i JOIN product_variants v ON v.id = i.variant_id
-        WHERE v.product_id = p.id AND v.is_active = 1 AND v.deleted_at IS NULL AND (i.quantity - i.reserved) > 0)`);
+        WHERE v.product_id = p.id AND v.is_active = TRUE AND v.deleted_at IS NULL AND (i.quantity - i.reserved) > 0)`);
 
     if ((q.sort || '') === '-discount') {
       qb.addSelect(
         `(SELECT MAX(ROUND((v2.compare_at_price - v2.price) * 100 / v2.compare_at_price))
           FROM product_variants v2
-          WHERE v2.product_id = p.id AND v2.is_active = 1 AND v2.deleted_at IS NULL
+          WHERE v2.product_id = p.id AND v2.is_active = TRUE AND v2.deleted_at IS NULL
             AND v2.compare_at_price IS NOT NULL AND v2.compare_at_price > v2.price)`,
         'maxDiscountPercent',
       );
@@ -301,7 +302,7 @@ export class SearchService implements OnModuleInit {
       total,
       page: q.page,
       limit: q.limit,
-      engine: 'mysql' as const,
+      engine: 'postgres' as const,
     };
   }
 }

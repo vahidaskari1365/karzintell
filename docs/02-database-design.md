@@ -1,18 +1,18 @@
-# ۰۲ — طراحی پایگاه‌داده کارزینتل (MySQL 8)
+# ۰۲ — طراحی پایگاه‌داده کارزینتل (Supabase PostgreSQL 15)
 
-فایل DDL کامل و قابل اجرا: [`database/schema.sql`](../database/schema.sql) — ۴۱ جدول + داده اولیه.
+فایل canonical migration: [`supabase/migrations/20260825000000_initial_store.sql`](../supabase/migrations/20260825000000_initial_store.sql) — جدول‌ها، RLS، توابع رزرو اتمیک و seed پایه. فایل `database/schema.sql` برای سازگاری همین migration را نگه می‌دارد.
 
 ---
 
 ## ۱. اصول طراحی
 
-1. **InnoDB + utf8mb4** روی همه جداول (پشتیبانی کامل فارسی و emoji).
-2. **پول به ریال در `BIGINT UNSIGNED`** — نه FLOAT/DECIMAL کوچک؛ احتمال overflow در مبالغ کلان وجود ندارد.
+1. **PostgreSQL 15 + UTF-8** روی Supabase (پشتیبانی کامل فارسی و emoji و RLS).
+2. **پول به ریال در `BIGINT`** — نه FLOAT/DECIMAL کوچک؛ احتمال overflow در مبالغ کلان وجود ندارد.
 3. **Soft Delete** با ستون `deleted_at` روی موجودیت‌های اصلی (users، products، orders، categories، …).
 4. **Snapshot در سفارش:** آدرس (`address_json`)، نام محصول، SKU و قیمت در `order_items` کپی می‌شود تا تغییر بعدی محصول تاریخچه را خراب نکند.
 5. **موجودی در سطح تنوع (Variant)** و تفکیک‌شده به ازای انبار؛ قابل‌فروش = `quantity - reserved`. تمام تغییرات در `stock_movements` ثبت می‌شود (قابل حسابرسی).
 6. **ایندکس‌گذاری بر اساس کوئری‌های واقعی** فهرست‌شده در بخش ۵.
-7. **زمان‌ها UTC** (`DATETIME`)؛ نمایش به Asia/Tehran در لایه نمایش.
+7. **زمان‌ها UTC** (`TIMESTAMPTZ`)؛ نمایش به Asia/Tehran در لایه نمایش.
 8. **idempotency:** کلیدهای یکتا روی `payments(gateway, authority)`، `coupon_usages(coupon_id, order_id)`، `cart_items(cart_id, variant_id)`.
 
 ---
@@ -183,14 +183,16 @@ erDiagram
 ## ۶. اجرای اسکیما (توسعه)
 
 ```bash
-docker compose up -d mysql
-docker exec -i karzintell-mysql mysql -uroot -proot_secret < database/schema.sql
+supabase db push
+# یا اجرای migration در SQL Editor پروژه Supabase
+export DIRECT_DATABASE_URL="..."
+npm run seed
 # مشاهده در رابط وب: http://localhost:8080  (Adminer)
-#   System: MySQL | Server: mysql | User: karzintell | Pass: secret | DB: karzintell
+#   System: Supabase PostgreSQL | URL: DATABASE_URL | RLS: فعال
 ```
 
 ## ۷. سیاست نگهداشت
 
 - **Migrationها:** در مرحله ۲ با TypeORM Migration مدیریت می‌شوند؛ `schema.sql` مرجع طراحی و راه‌انداز اولیه است.
-- **Backup:** `mysqldump --single-transaction --routines` شبانه + نگهداری ۳۰ روز + کپی هفتگی روی S3.
+- **Backup:** `pg_dump --format=plain` شبانه + نگهداری ۳۰ روز + کپی هفتگی روی S3.
 - **Retention:** سفارش‌ها و پرداخت‌ها هرگز hard-delete نمی‌شوند؛ `audit_logs` پس از ۱۸ ماه به آرشیو سرد منتقل می‌شود.

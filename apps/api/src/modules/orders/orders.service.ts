@@ -7,7 +7,7 @@ import {
   OrderStatus, Payment, Shipment, UserAddress,
 } from '../../database/entities';
 import { env } from '../../config/configuration';
-import { humanCode, paginate } from '../../common/utils';
+import { humanCode, paginate, dbQuery } from '../../common/utils';
 import { DomainException } from '../../common/http-exception.filter';
 import { RedisService } from '../../common/redis.service';
 import { CartService } from '../cart/cart.service';
@@ -66,10 +66,10 @@ export class OrdersService {
 
     // قیمت‌های تازه از دیتابیس (نه کش سبد)
     const variantIds = view.items.map((i) => i.variantId);
-    const freshVariants = await this.em.query(
-      `SELECT v.id, v.price, v.sku, v.title, v.product_id AS productId, v.is_active AS isActive,
-              p.name AS productName, p.status AS productStatus, p.warranty_months AS warrantyMonths,
-              p.category_id AS categoryId
+    const freshVariants = await dbQuery(this.em,
+      `SELECT v.id, v.price, v.sku, v.title, v.product_id AS "productId", v.is_active AS "isActive",
+              p.name AS "productName", p.status AS "productStatus", p.warranty_months AS "warrantyMonths",
+              p.category_id AS "categoryId"
        FROM product_variants v JOIN products p ON p.id = v.product_id
        WHERE v.id IN (${variantIds.map(() => '?').join(',')}) AND v.deleted_at IS NULL AND p.deleted_at IS NULL`,
       variantIds,
@@ -203,7 +203,7 @@ export class OrdersService {
     const addr = order.addressJson as any;
     if (addr?.receiverPhone) tasks.push(this.notifications.sendSms(addr.receiverPhone, `کارزینتل\n${body}`));
     try {
-      const rows = await this.em.query(`SELECT email FROM users WHERE id = ? LIMIT 1`, [order.userId]);
+      const rows = await dbQuery(this.em, `SELECT email FROM users WHERE id = ? LIMIT 1`, [order.userId]);
       const email = rows?.[0]?.email as string | undefined;
       if (email) tasks.push(this.notifications.sendEmail(email, `${title} — کارزینتل`, body));
     } catch {
@@ -324,9 +324,9 @@ export class OrdersService {
     const qb = this.orders
       .createQueryBuilder('o')
       .leftJoin('users', 'u', 'u.id = o.user_id')
-      .select(['o.id AS id', 'o.code AS code', 'o.status AS status', 'o.payment_status AS paymentStatus',
-        'o.grand_total AS grandTotal', 'o.placed_at AS placedAt', 'o.created_at AS createdAt',
-        'u.full_name AS customerName', 'u.phone AS customerPhone'])
+      .select(['o.id AS id', 'o.code AS code', 'o.status AS status', 'o.payment_status AS "paymentStatus"',
+        'o.grand_total AS "grandTotal"', 'o.placed_at AS "placedAt"', 'o.created_at AS "createdAt"',
+        'u.full_name AS "customerName"', 'u.phone AS "customerPhone"'])
       .orderBy('o.id', 'DESC')
       .offset(p.skip)
       .limit(p.limit);
@@ -356,7 +356,7 @@ export class OrdersService {
 
   /** تغییر وضعیت با state machine + اثرات انبار */
   async changeStatus(id: number, to: OrderStatus, note: string | undefined, adminId: number) {
-    const result = await this.em.transaction(async (tx) => {
+    await this.em.transaction(async (tx) => {
       const order = await tx.getRepository(Order)
         .createQueryBuilder('o')
         .setLock('pessimistic_write')
@@ -375,7 +375,7 @@ export class OrdersService {
         if (order.paymentStatus === 'paid') {
           // برگشت به انبار
           for (const i of items) {
-            await this.inventory.move({ variantId: i.variantId, warehouseId: await this.inventory.defaultWarehouseId(), type: 'return', quantity: i.quantity, referenceType: 'order', referenceId: id, note: 'لغو سفارش پرداخت‌شده' }, adminId);
+            await this.inventory.move({ variantId: i.variantId, warehouseId: await this.inventory.defaultWarehouseId(), type: 'return', quantity: i.quantity, referenceType: 'order', referenceId: id, note: 'لغو سفارش پرداخت‌شده' }, adminId, tx);
           }
         } else {
           await this.inventory.release(items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })), id, tx);
@@ -390,12 +390,12 @@ export class OrdersService {
 
       await tx.getRepository(Order).update(id, patch as any);
       await this.addHistory(id, order.status, to, note ?? null, adminId, tx);
-      return this.adminDetail(id);
+      return true;
     });
 
-    // اعلان به مشتری بعد از کامیت تراکنش (غیرمسدودکننده)
+    // اعلان و خواندن جزئیات فقط بعد از commit انجام می‌شود.
     this.notifyStatusChanged(id).catch(() => {});
-    return result;
+    return this.adminDetail(id);
   }
 
   async setAdminNote(id: number, note: string) {
@@ -419,7 +419,7 @@ export class OrdersService {
       shippedAt: dto.status === 'picked_up' || dto.status === 'in_transit' ? new Date() : shipment.shippedAt,
       deliveredAt: dto.status === 'delivered' ? new Date() : shipment.deliveredAt,
     });
-    
+
     const saved = await this.shipments.save(shipment);
 
     // ارسال خودکار پیامک اطلاع‌رسانی مرسوله پستی/تیپاکس
@@ -432,7 +432,7 @@ export class OrdersService {
         await this.notifications.sendSms(phone, msg).catch(() => undefined);
       }
     }
-    
+
     return saved;
   }
 

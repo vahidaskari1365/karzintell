@@ -1,99 +1,96 @@
 <div dir="rtl">
 
-# راه‌اندازی کارزینتل روی هاست (گام‌به‌گام — بدون نیاز به دانش فنی)
+# راه‌اندازی کارزینتل روی VPS با Supabase
 
-> این راهنما برای کسی نوشته شده که می‌خواهد کل سایت (دیتابیس + بک‌اند + فرانت‌اند) را روی یک هاست/سرور اجرا کند. همه‌چیز خودکار بالا می‌آید؛ فقط چند مقدار را پر کنید.
+این راهنما API و فرانت را با Docker اجرا می‌کند؛ دیتابیس رسمی فروشگاه در Supabase مدیریت
+می‌شود و migration خودکاری در compose وجود ندارد.
 
-## پیش‌نیاز هاست
-- سرور لینوکسی (Ubuntu 22/24) با **حداقل ۲ گیگ رم**
-- **Docker** نصب‌شده (روی اکثر هاست‌ها `curl -fsSL https://get.docker.com | sh` نصبش می‌کند)
-- یک دامنه (مثل `karzintell.ir`) که به آی‌پی سرور وصل شده — اختیاری برای شروع
+## پیش‌نیاز
 
----
+- VPS لینوکسی با حداقل ۲ گیگ RAM و Docker/Compose
+- دامنه و HTTPS (برای پرداخت، cookie و callback ضروری است)
+- پروژه Supabase و اتصال pooled/direct
 
-## گام ۱ — انتقال کد به هاست
-
-کدهای ریپو را به سرور منتقل کنید (مثلاً با git clone یا آپلود ZIP از GitHub):
+## ۱) دریافت کد و تنظیم secretها
 
 ```bash
 git clone https://github.com/vahidaskari1365/karzintell.git
 cd karzintell
-```
-
-## گام ۲ — ساخت فایل تنظیمات
-
-```bash
 cp .env.example .env
 nano .env
 ```
 
-فقط این مقادیر را عوض کنید (بقیه را دست نزنید):
+مقدارهای ضروری production:
 
-| متغیر | مقدار |
+| متغیر | توضیح |
 |---|---|
-| `DB_PASSWORD` و `DB_ROOT_PASSWORD` | یک رمز قوی (مثلاً `Kz!2026#StrongPass`) |
-| `JWT_ACCESS_SECRET` و `JWT_REFRESH_SECRET` | دو رشته تصادفی بلند (مثلاً `openssl rand -base64 48`) |
-| `NEXT_PUBLIC_API_URL` | آدرس عمومی API (مثلاً `https://api.karzintell.ir/api/v1`) |
-| `NEXT_PUBLIC_SITE_URL` و `NEXT_PUBLIC_APP_URL` | آدرس سایت (مثلاً `https://karzintell.ir`) |
-| `NEXT_PUBLIC_STORAGE_URL` | آدرس فایل‌ها (در ابتدا می‌تواند همان پیش‌فرض باشد) |
-| `CORS_ORIGINS` | آدرس سایت شما (مثلاً `https://karzintell.ir`) |
+| `DATABASE_URL` | connection pooler Supabase روی 6543 برای API |
+| `DIRECT_DATABASE_URL` | اتصال مستقیم Supabase روی 5432 برای migration/seed/backup |
+| `JWT_ACCESS_SECRET` و `JWT_REFRESH_SECRET` | دو مقدار تصادفی مستقل؛ حداقل ۳۲ کاراکتر |
+| `API_PUBLIC_URL` و `WEB_URL` | URLهای HTTPS واقعی |
+| `CORS_ORIGINS` | فقط origin فرانت، بدون wildcard |
+| `NEXT_PUBLIC_SITE_URL` و `NEXT_PUBLIC_APP_URL` | URL سایت |
+| `NEXT_PUBLIC_STORAGE_URL` | URL عمومی Supabase Storage یا S3 |
+| `REDIS_PASSWORD`، `MEILI_API_KEY`، کلید S3/MinIO | secretهای سرویس‌های compose |
+| `SEED_ADMIN_*` | فقط برای اولین seed و فقط از secret manager |
 
-> `SMS_API_KEY`، `ZARINPAL_MERCHANT_ID` و `SMTP_*` را اگر هنوز ندارید خالی بگذارید — سایت بالا می‌آید و بعداً با پر کردن همین فایل و ری‌استارت، فعال می‌شوند.
+## ۲) اجرای migration و seed
 
-## گام ۳ — بالا آوردن خودکار (فقط یک دستور)
+از یک محیط دارای Supabase CLI:
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push
+```
+
+سپس در همان محیطی که `DIRECT_DATABASE_URL` و رمز seed تنظیم شده:
+
+```bash
+npm ci
+SEED_ADMIN_PASSWORD='یک رمز موقت قوی' npm run seed
+```
+
+رمز ادمین در repo، migration یا Docker image ثابت نیست. پس از اولین ورود، آن را تغییر دهید.
+
+## ۳) اجرای سرویس‌ها
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+curl https://api.example.com/api/v1/health
 ```
 
-این دستور **خودش همه‌چیز را انجام می‌دهد**:
-1. دیتابیس MySQL را می‌سازد
-2. جدول‌ها را خودکار می‌سازد (schema.sql)
-3. داده‌های اولیه را می‌ریزد (ادمین‌ها، نقش‌ها، تنظیمات — seed)
-4. بک‌اند (API) را بالا می‌آورد
-5. فرانت‌اند (سایت) را ساخته و بالا می‌آورد
-6. Redis، جستجو و فضای فایل را هم بالا می‌آورد
+Compose سرویس‌های Redis، Meilisearch، MinIO، API و Web را اجرا می‌کند. برای استفاده از
+Supabase Storage، `S3_ENDPOINT` و credentials اختصاصی Storage/S3 را تنظیم کنید و MinIO را
+از compose خارج کنید؛ هرگز از service-role key در مرورگر استفاده نکنید.
 
-**اولین بار چند دقیقه طول می‌کشد** (بیلد تصاویر). دفعات بعدی خیلی سریع‌تر است.
+`RUN_SEED` به‌صورت پیش‌فرض خاموش است. migration و seed را با job/CI کنترل‌شده اجرا کنید،
+نه در هر restart سرویس.
 
-## گام ۴ — بررسی
+## ۴) HTTPS و reverse proxy
+
+- دامنه اصلی به Web روی پورت 3000 و دامنه API به پورت 4000 proxy شود.
+- `CORS_ORIGINS` دقیقاً origin اصلی را داشته باشد.
+- `PAYMENT_CALLBACK_BASE` و `PAYMENT_FRONT_RESULT_URL` حتماً HTTPS باشند.
+- برای cookie، HSTS و callback هیچ mixed-content یا URL داخلی استفاده نکنید.
+
+## ۵) بکاپ و بازیابی
 
 ```bash
-docker compose -f docker-compose.prod.yml ps          # همه باید running باشند
-curl http://localhost:4000/api/v1/health               # وضعیت دیتابیس و سرویس‌ها
+DIRECT_DATABASE_URL='postgresql://...' BACKUP_DIR=/var/backups/karzintell bash scripts/backup.sh
 ```
 
-سایت: `http://IP-سرور:3000` — پنل ادمین: `http://IP-سرور:3000/admin`
+بکاپ با `pg_dump` تولید می‌شود؛ حداقل یک بار بازیابی را روی پروژه آزمایشی Supabase امتحان
+کنید و retention و آپلود S3 را بررسی کنید.
 
-ورود ادمین: `admin@karzintell.ir` / `Admin@123456` (در اولین ورود اجباری به تغییر است)
-ورود مدیر ارشد دوم: `vahid.askari1986@gmail.com` / `Vahid@0142`
-
-## گام ۵ — دامنه و HTTPS (بعد از اطمینان از کارکرد)
-
-وقتی دامنه به آی‌پی سرور وصل شد، Nginx را نصب و SSL بگیرید (راهنمای کامل در `docs/06-production.md`). سپس در `.env`:
-- `NEXT_PUBLIC_API_URL` را به آدرس واقعی API تغییر دهید
-- دوباره `docker compose -f docker-compose.prod.yml up -d --build` بزنید
-
-## دستورهای کاربردی
-
-```bash
-# دیدن لاگ‌ها
-docker compose -f docker-compose.prod.yml logs -f api
-docker compose -f docker-compose.prod.yml logs -f web
-
-# ری‌استارت همه
-docker compose -f docker-compose.prod.yml restart
-
-# بکاپ دستی دیتابیس
-bash scripts/backup.sh
-```
-
-## رفع خطای رایج
+## رفع خطاهای رایج
 
 | خطا | راه‌حل |
 |---|---|
-| `ERROR: MySQL did not become ready` | صبر کنید و دوباره `up -d` بزنید؛ یا پورت 3306 را چک کنید |
-| سایت باز می‌شود ولی «خطا در اتصال به سرور» | `NEXT_PUBLIC_API_URL` در `.env` درست است؟ بعد از تغییر، بیلد مجدد بزنید |
-| خطای ثبت‌نام/کپچا | بک‌اند بالا آمده؟ `curl http://localhost:4000/api/v1/health` را تست کنید |
+| `DATABASE_URL is required` | `.env` compose را با pooled URL پر کنید |
+| API به DB وصل نمی‌شود | direct/pooled URL، رمز، SSL و allowlist شبکه Supabase را بررسی کنید |
+| سایت به API وصل نمی‌شود | `INTERNAL_API_URL=http://api:4000/api/v1` برای build و `CORS_ORIGINS` را بررسی کنید |
+| seed اجرا نمی‌شود | migration را اول اعمال و `DIRECT_DATABASE_URL` + `SEED_ADMIN_PASSWORD` را تنظیم کنید |
 
 </div>

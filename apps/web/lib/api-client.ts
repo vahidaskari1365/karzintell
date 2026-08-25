@@ -19,7 +19,7 @@ export interface ApiResult<T> {
   meta?: { page: number; limit: number; total: number } & Record<string, unknown>;
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+const BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -71,7 +71,7 @@ export async function api<T = unknown>(
     return fetch(`${BASE}${path}`, {
       method,
       headers: h,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined,
       credentials: 'include',
     });
   };

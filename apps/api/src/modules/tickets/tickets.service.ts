@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Ticket, TicketMessage } from '../../database/entities';
+import { Ticket, TicketMessage, User } from '../../database/entities';
 import { paginate } from '../../common/utils';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -10,6 +10,7 @@ export class TicketsService {
   constructor(
     @InjectRepository(Ticket) private readonly tickets: Repository<Ticket>,
     @InjectRepository(TicketMessage) private readonly messages: Repository<TicketMessage>,
+    @InjectRepository(User) private readonly users: Repository<User>,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -52,6 +53,7 @@ export class TicketsService {
   async reply(userId: number, id: number, body: string) {
     const ticket = await this.tickets.findOne({ where: { id, userId } });
     if (!ticket) throw new NotFoundException('تیکت یافت نشد');
+    if (ticket.status === 'closed') throw new BadRequestException('این تیکت بسته شده است');
     await this.messages.save(this.messages.create({ ticketId: id, senderId: userId, body }));
     ticket.status = 'pending_support';
     await this.tickets.save(ticket);
@@ -64,7 +66,8 @@ export class TicketsService {
     const qb = this.tickets
       .createQueryBuilder('t')
       .leftJoin('users', 'u', 'u.id = t.user_id')
-      .select(['t.*', 'u.full_name AS userName', 'u.phone AS userPhone'])
+      .leftJoin('users', 'a', 'a.id = t.assigned_to')
+      .select(['t.*', 'u.full_name AS "userName"', 'u.phone AS "userPhone"', 'a.full_name AS "assigneeName"'])
       .orderBy('t.id', 'DESC')
       .offset(p.skip)
       .limit(p.limit);
@@ -106,7 +109,20 @@ export class TicketsService {
     return this.adminDetail(id);
   }
 
+  async assign(id: number, operatorId: number) {
+    const ticket = await this.tickets.findOne({ where: { id } });
+    if (!ticket) throw new NotFoundException('تیکت یافت نشد');
+    const operator = await this.users.findOne({ where: { id: operatorId, status: 'active' } });
+    if (!operator) throw new NotFoundException('اپراتور یافت نشد');
+    ticket.assignedTo = operatorId;
+    if (ticket.status === 'open') ticket.status = 'pending_support';
+    await this.tickets.save(ticket);
+    return this.adminDetail(id);
+  }
+
   async adminSetStatus(id: number, status: Ticket['status']) {
+    const ticket = await this.tickets.findOne({ where: { id } });
+    if (!ticket) throw new NotFoundException('تیکت یافت نشد');
     await this.tickets.update(id, { status, closedAt: status === 'closed' ? new Date() : null });
     return { updated: true };
   }

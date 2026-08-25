@@ -93,11 +93,11 @@ export class UsersService {
     const items = await this.products
       .createQueryBuilder('p')
       .leftJoin('brands', 'b', 'b.id = p.brand_id')
-      .leftJoin('product_images', 'img', 'img.product_id = p.id AND img.is_primary = 1')
+      .leftJoin('product_images', 'img', 'img.product_id = p.id AND img.is_primary = TRUE')
       .select([
         'p.id AS id', 'p.name AS name', 'p.slug AS slug',
-        'b.name AS brand', 'p.min_price AS minPrice', 'img.path AS image',
-        'p.rating_avg AS ratingAvg',
+        'b.name AS brand', 'p.min_price AS "minPrice"', 'img.path AS image',
+        'p.rating_avg AS "ratingAvg"',
       ])
       .where('p.id IN (:...ids) AND p.status = :st', { ids: rows.map((r) => r.productId), st: 'published' })
       .getRawMany();

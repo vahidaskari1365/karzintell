@@ -12,7 +12,7 @@ import { User } from './user.entity';
 
 @Entity('roles')
 export class Role {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 50, unique: true })
@@ -47,7 +47,7 @@ export class Role {
 
 @Entity('permissions')
 export class Permission {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 100, unique: true })
@@ -66,16 +66,16 @@ export class Permission {
 /** override دسترسی برای یک کاربر خاص (allow/deny) */
 @Entity('permission_user')
 export class PermissionUser {
-  @PrimaryColumn({ name: 'permission_id', type: 'int', unsigned: true })
+  @PrimaryColumn({ name: 'permission_id', type: 'integer' })
   permissionId: number;
 
-  @PrimaryColumn({ name: 'user_id', type: 'bigint', unsigned: true })
+  @PrimaryColumn({ name: 'user_id', type: 'bigint' })
   userId: number;
 
   @Column({ type: 'enum', enum: ['allow', 'deny'], default: 'allow' })
   type: 'allow' | 'deny';
 
-  @Column({ name: 'granted_by', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'granted_by', type: 'bigint', nullable: true })
   grantedBy: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -85,13 +85,13 @@ export class PermissionUser {
 /** ردیف pivot نقش-کاربر (برای خواندنی assigned_by) */
 @Entity('role_user')
 export class RoleUser {
-  @PrimaryColumn({ name: 'role_id', type: 'int', unsigned: true })
+  @PrimaryColumn({ name: 'role_id', type: 'integer' })
   roleId: number;
 
-  @PrimaryColumn({ name: 'user_id', type: 'bigint', unsigned: true })
+  @PrimaryColumn({ name: 'user_id', type: 'bigint' })
   userId: number;
 
-  @Column({ name: 'assigned_by', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'assigned_by', type: 'bigint', nullable: true })
   assignedBy: number | null;
 
   @CreateDateColumn({ name: 'created_at' })

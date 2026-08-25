@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
 import * as webpush from 'web-push';
-import { Notification, PushSubscription } from '../../database/entities';
+import { Notification, PushSubscription, User } from '../../database/entities';
 import { env } from '../../config/configuration';
 import { QueueService } from '../../common/queue.service';
 
@@ -27,6 +27,7 @@ export class NotificationsService implements OnModuleInit {
     private readonly notifications: Repository<Notification>,
     @InjectRepository(PushSubscription)
     private readonly pushSubs: Repository<PushSubscription>,
+    @InjectRepository(User) private readonly users: Repository<User>,
     private readonly queue: QueueService,
   ) {
     // مصرف‌کننده‌های صف (Background Jobs) با پشتیبانی از فالبک پیامک دوم در صورت شکست اولیه
@@ -82,6 +83,21 @@ export class NotificationsService implements OnModuleInit {
     const url = (data as any)?.orderCode ? `/account/orders/${(data as any).orderCode}` : undefined;
     this.sendPush(userId, title, body ?? '', { url }).catch(() => {});
     return saved;
+  }
+
+  /** هشدار موجودی برای تمام اپراتورهای دارای مسئولیت انبار/پشتیبانی */
+  async notifyInventoryOperators(title: string, body: string, data: Record<string, unknown>) {
+    const operators = await this.users
+      .createQueryBuilder('u')
+      .innerJoin('role_user', 'ru', 'ru.user_id = u.id')
+      .innerJoin('roles', 'r', 'r.id = ru.role_id')
+      .where('u.status = :status AND r.name IN (:...roles)', {
+        status: 'active',
+        roles: ['super_admin', 'product_manager', 'warehouse', 'support'],
+      })
+      .select('DISTINCT u.id', 'id')
+      .getRawMany<{ id: string | number }>();
+    await Promise.all(operators.map((operator) => this.notify(Number(operator.id), 'inventory.alert', title, body, data)));
   }
 
   /** ارسال Web Push به همه اشتراک‌های کاربر */

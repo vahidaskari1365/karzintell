@@ -1,3 +1,4 @@
+import { dbQuery } from './utils';
 import { Global, Injectable, Logger, Module, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { RedisService } from './redis.service';
 import { DataSource } from 'typeorm';
@@ -127,16 +128,17 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     try {
       if (!this.db) return;
       // پیدا کردن تمامی کاربران دارای نقش ادمین ارشد (۱) یا پشتیبانی (۴)
-      const operators = await this.db.query(`
+      const operators = await dbQuery(this.db, `
         SELECT DISTINCT u.id, u.full_name, u.phone, u.email
         FROM users u
         INNER JOIN role_user ru ON ru.user_id = u.id
-        WHERE ru.role_id IN (1, 4, 5) AND u.status = 'active'
+        INNER JOIN roles r ON r.id = ru.role_id
+        WHERE r.name IN ('super_admin', 'support', 'content_manager') AND u.status = 'active'
       `);
 
       for (const op of operators) {
         // ۱. درج نوتیفیکیشن درون‌برنامه برای اپراتور
-        await this.db.query(`
+        await dbQuery(this.db, `
           INSERT INTO notifications (user_id, type, title, body, data, channel)
           VALUES (?, 'system.error', ?, ?, ?, 'database')
         `, [

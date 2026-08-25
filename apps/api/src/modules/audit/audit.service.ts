@@ -54,7 +54,7 @@ export class AuditService {
     const qb = this.logs
       .createQueryBuilder('a')
       .leftJoin('users', 'u', 'u.id = a.user_id')
-      .select(['a.*', 'u.full_name AS userName'])
+      .select(['a.*', 'u.full_name AS "userName"'])
       .orderBy('a.id', 'DESC')
       .offset(p.skip)
       .limit(p.limit);

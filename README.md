@@ -11,10 +11,10 @@
 |---|---|
 | Frontend | Next.js ۱۵ · React ۱۹ · TypeScript · Tailwind CSS ۴ · (PWA) |
 | Backend | NestJS ۱۱ · Node.js ۲۲ · TypeORM |
-| Database | MySQL 8 |
+| Database | Supabase PostgreSQL 15 + RLS |
 | Cache / Queue | Redis 7 + BullMQ |
 | Search | Meilisearch (آمادهٔ مهاجرت به Elasticsearch) |
-| Storage | MinIO در توسعه — AWS S3 در production (کد بدون تغییر) |
+| Storage | Supabase Storage یا S3-compatible |
 
 ## مستندات طراحی
 
@@ -24,32 +24,31 @@
 | [docs/02-database-design.md](docs/02-database-design.md) | ERD، شرح ۴۱ جدول، ایندکس‌ها، سیاست seed/backup |
 | [docs/03-api-design.md](docs/03-api-design.md) | تمام endpointهای فروشگاه و پنل ادمین + قرارداد خطا/صفحه‌بندی |
 | [docs/04-folder-structure.md](docs/04-folder-structure.md) | ساختار Monorepo و قراردادهای نام‌گذاری |
-| [database/schema.sql](database/schema.sql) | DDL کامل + داده اولیه (قابل اجرای مستقیم) |
+| [supabase/migrations/20260825000000_initial_store.sql](supabase/migrations/20260825000000_initial_store.sql) | migration کامل PostgreSQL + RLS + seed پایه |
 
 ## راه‌اندازی زیرساخت توسعه
 
 ```bash
 cp .env.example .env
-docker compose up -d          # MySQL · Redis · Meilisearch · MinIO · Adminer · MailHog
-docker exec -i karzintell-mysql mysql -uroot -proot_secret < database/schema.sql
+docker compose up -d          # Redis · Meilisearch · MinIO · MailHog
+supabase db push              # یا migration را در SQL Editor اجرا کنید
+npm run seed                  # با DATABASE_URL و SEED_ADMIN_PASSWORD
 ```
 
 | سرویس | آدرس |
 |---|---|
 | فروشگاه (وب) | http://localhost:3000 (مرحله ۲) |
 | API + Swagger | http://localhost:4000/api/v1 · /api/docs (مرحله ۲) |
-| Adminer (DB UI) | http://localhost:8080 |
+| Supabase Studio | داشبورد پروژه Supabase |
 | کنسول MinIO | http://localhost:9001 |
 | داشبورد Meilisearch | http://localhost:7700 |
 | صندوق ایمیل (MailHog) | http://localhost:8025 |
 
-## ورود ادمین پیش‌فرض
+## ساخت ادمین اولیه
 
-| فیلد | مقدار |
-|---|---|
-| ایمیل | `admin@karzintell.ir` |
-| موبایل | `09000000000` |
-| رمز عبور | `Admin@123456` ⚠️ در اولین ورود اجباری به تغییر است |
+ادمین پیش‌فرض در ریپو یا مستندات وجود ندارد. پس از اجرای migration، مقدارهای
+`SEED_ADMIN_EMAIL`، `SEED_ADMIN_PHONE` و `SEED_ADMIN_PASSWORD` را فقط از secret manager
+تنظیم کنید و `npm run seed` را اجرا کنید؛ رمز در Git یا SQL ذخیره نمی‌شود.
 
 ادمین می‌تواند از پنل، **کاربر جدید بسازد، نقش تعریف کند و مجوزهای دانه‌ای تخصیص دهد** (مدل RBAC کامل).
 
@@ -80,7 +79,7 @@ docker exec -i karzintell-mysql mysql -uroot -proot_secret < database/schema.sql
 ### تست و CI
 
 ```bash
-npm test          # ۲۰ تست واحد (منطق کوپن، وضعیت سفارش، sanitize، slugify)
+npm test          # تست‌های واحد (منطق کوپن، وضعیت سفارش، sanitize، slugify)
 npm run typecheck # بررسی TypeScript هر دو اپ
 ```
 گردش‌کار CI (`.github/workflows/ci.yml`): نصب → بیلد shared → type-check → تست → بیلد فرانت.

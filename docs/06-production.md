@@ -10,7 +10,7 @@
 |---|---|---|
 | سرور لینوکسی (Ubuntu 22/24) | — | ۲GB RAM کافی است |
 | دامین | مثل `karzintell.ir` | به آی‌پی سرور وصل (A Record) کنید |
-| Docker + Docker Compose | آخرین | اجرای MySQL/Redis/API با یک دستور |
+| Docker + Docker Compose | آخرین | اجرای Redis/API/Web با یک دستور؛ دیتابیس در Supabase |
 | Node.js | 22 | فقط برای build فرانت (یا CI) |
 
 ## معماری اجرا
@@ -18,7 +18,7 @@
 ```
 [ کاربر ] ──HTTPS──▶ [ Nginx:443 ] ──▶ Web (Next.js) :3000
                       │              ──▶ API (NestJS) :4000
-                      └──▶ MySQL 8 · Redis 7 · Meilisearch · MinIO
+                      └──▶ Supabase PostgreSQL · Redis 7 · Meilisearch · MinIO
 ```
 
 ## گام ۱ — آماده‌سازی سرور (۵ دقیقه)
@@ -45,8 +45,8 @@ nano .env        # مقادیر جدول زیر را پر کنید
 | متغیر | مقدار نمونه | توضیح |
 |---|---|---|
 | `NODE_ENV` | `production` | حتماً |
-| `MYSQL_PASSWORD` / `MYSQL_ROOT_PASSWORD` | رمز قوی | پایگاه‌داده |
-| `JWT_SECRET` / `JWT_REFRESH_SECRET` | رشته تصادفی ۶۴ کاراکتری | امنیت توکن |
+| `DATABASE_URL` / `DIRECT_DATABASE_URL` | اتصال pooled/direct Supabase | پایگاه‌داده |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | دو رشته تصادفی مستقل ۶۴ کاراکتری | امنیت توکن |
 | `API_PUBLIC_URL` | `https://api.karzintell.ir` | آدرس عمومی API |
 | `WEB_URL` | `https://karzintell.ir` | برای لینک ایمیل‌ها |
 | `NEXT_PUBLIC_API_URL` | `https://api.karzintell.ir/api/v1` | فرانت |
@@ -54,8 +54,8 @@ nano .env        # مقادیر جدول زیر را پر کنید
 | `NEXT_PUBLIC_STORAGE_URL` | `https://cdn.karzintell.ir/karzintell` | تصاویر |
 | `CORS_ORIGINS` | `https://karzintell.ir` | دقیق |
 | `ZARINPAL_MERCHANT_ID` (و سایر درگاه‌ها) | از پنل درگاه | کلیدهای واقعی |
-| `KAVENEGAR_API_KEY` | از پنل پیامک | SMS |
-| `MAIL_HOST/MAIL_PORT/...` | SMTP واقعی | ایمیل |
+| `SMS_API_KEY` + `KAVENEGAR_OTP_TEMPLATE` | از پنل پیامک | SMS/OTP |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | SMTP واقعی | ایمیل |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | `npx web-push generate-vapid-keys` | Push |
 | `SENTRY_DSN` | (اختیاری) | رصد خطا؛ خالی = غیرفعال |
 | `SWAGGER` | `false` | در production |
@@ -64,8 +64,8 @@ nano .env        # مقادیر جدول زیر را پر کنید
 
 ```bash
 # زیرساخت + دیتابیس
-docker compose up -d
-docker exec -i karzintell-mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < database/schema.sql
+supabase db push
+docker compose -f docker-compose.prod.yml up -d --build
 
 # داده اولیه (ادمین، نقش‌ها، صفحات، روش‌های ارسال، FAQ و وبلاگ نمونه)
 docker compose exec api npm run seed     # یا: npm run seed با نود محلی
@@ -113,7 +113,7 @@ crontab -e
 ## چک‌لیست راه‌اندازی ✅
 
 - [ ] دامین + SSL فعال، `HTTPS` در همه env‌ها
-- [ ] `JWT_SECRET` تصادفی و طولانی، رمز ادمین پیش‌فرض تغییر کرده
+- [ ] `JWT_ACCESS_SECRET` و `JWT_REFRESH_SECRET` تصادفی و طولانی، رمز ادمین پیش‌فرض تغییر کرده
 - [ ] درگاه‌ها با کلید واقعی + تست خرید ۱۰۰۰ تومانی
 - [ ] پیامک به شماره واقعی رسید
 - [ ] بکاپ دستی ساخته شد: `bash scripts/backup.sh`

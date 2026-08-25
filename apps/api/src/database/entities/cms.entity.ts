@@ -12,7 +12,7 @@ export type BannerPosition = 'home_hero' | 'home_middle' | 'home_bottom' | 'cate
 
 @Entity('banners')
 export class Banner {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Column({ length: 150 })
@@ -44,10 +44,10 @@ export class Banner {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
-  @Column({ name: 'starts_at', type: 'datetime', nullable: true })
+  @Column({ name: 'starts_at', type: 'timestamptz', nullable: true })
   startsAt: Date | null;
 
-  @Column({ name: 'ends_at', type: 'datetime', nullable: true })
+  @Column({ name: 'ends_at', type: 'timestamptz', nullable: true })
   endsAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -59,7 +59,7 @@ export class Banner {
 
 @Entity('pages')
 export class Page {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Column({ length: 190 })
@@ -68,7 +68,7 @@ export class Page {
   @Column({ length: 220, unique: true })
   slug: string;
 
-  @Column({ type: 'longtext' })
+  @Column({ type: 'text' })
   body: string;
 
   @Column({ type: 'enum', enum: ['draft', 'published'], default: 'draft' })
@@ -92,15 +92,19 @@ export class Page {
 
 @Entity('tickets')
 export class Ticket {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'user_id', type: 'bigint' })
   @Index()
   userId: number;
 
-  @Column({ name: 'order_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'order_id', type: 'bigint', nullable: true })
   orderId: number | null;
+
+  @Column({ name: 'assigned_to', type: 'bigint', nullable: true })
+  @Index()
+  assignedTo: number | null;
 
   @Column({ length: 190 })
   subject: string;
@@ -123,7 +127,7 @@ export class Ticket {
   @Index()
   status: 'open' | 'pending_support' | 'pending_customer' | 'closed';
 
-  @Column({ name: 'closed_at', type: 'datetime', nullable: true })
+  @Column({ name: 'closed_at', type: 'timestamptz', nullable: true })
   closedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -135,20 +139,20 @@ export class Ticket {
 
 @Entity('ticket_messages')
 export class TicketMessage {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'ticket_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'ticket_id', type: 'bigint' })
   @Index()
   ticketId: number;
 
-  @Column({ name: 'sender_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'sender_id', type: 'bigint' })
   senderId: number;
 
   @Column({ type: 'text' })
   body: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   attachments: number[] | null;
 
   @Column({ name: 'is_internal', default: false })
@@ -162,7 +166,7 @@ export type BlogKind = 'post' | 'news';
 
 @Entity('blog_posts')
 export class BlogPost {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Column({ length: 190 })
@@ -174,7 +178,7 @@ export class BlogPost {
   @Column({ length: 500, nullable: true })
   excerpt: string | null;
 
-  @Column({ type: 'longtext' })
+  @Column({ type: 'text' })
   body: string;
 
   @Column({ name: 'cover_path', length: 500, nullable: true })
@@ -186,7 +190,7 @@ export class BlogPost {
   @Column({ type: 'enum', enum: ['draft', 'published'], default: 'draft' })
   status: 'draft' | 'published';
 
-  @Column({ name: 'author_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'author_id', type: 'bigint', nullable: true })
   authorId: number | null;
 
   @Column({ name: 'meta_title', length: 190, nullable: true })
@@ -195,7 +199,7 @@ export class BlogPost {
   @Column({ name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
-  @Column({ name: 'published_at', type: 'datetime', nullable: true })
+  @Column({ name: 'published_at', type: 'timestamptz', nullable: true })
   publishedAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -210,7 +214,7 @@ export class BlogPost {
 
 @Entity('faqs')
 export class Faq {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 300 })
@@ -219,7 +223,7 @@ export class Faq {
   @Column({ type: 'text' })
   answer: string;
 
-  @Column({ name: 'sort_order', type: 'int', default: 0 })
+  @Column({ name: 'sort_order', type: 'integer', default: 0 })
   sortOrder: number;
 
   @Column({ name: 'is_active', default: true })
