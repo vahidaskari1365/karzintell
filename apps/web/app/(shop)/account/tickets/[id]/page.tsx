@@ -27,6 +27,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     queryKey: ['ticket', id],
     queryFn: async () =>
       (await api<{ ticket: { id: number; subject: string; status: string; department: string }; messages: TicketMessage[] }>(`/me/tickets/${id}`)).data,
+    refetchInterval: 10_000,
   });
 
   const send = useMutation({

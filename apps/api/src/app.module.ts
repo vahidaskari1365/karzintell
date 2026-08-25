@@ -5,7 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import { DataSource } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
 import { env } from './config/configuration';
 import { ALL_ENTITIES } from './database/entities';
@@ -53,20 +53,20 @@ import { HealthModule } from './modules/health/health.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     JwtModule.register({ global: true }),
     TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: env.db.host,
-      port: env.db.port,
-      username: env.db.username,
-      password: env.db.password,
-      database: env.db.database,
+      type: env.db.type,
+      ...(env.db.url ? { url: env.db.url } : {
+        host: env.db.host,
+        port: env.db.port,
+        username: env.db.username,
+        password: env.db.password,
+        database: env.db.database,
+      }),
       entities: ALL_ENTITIES,
-      synchronize: false, // اسکیما با database/schema.sql و Migrationها مدیریت می‌شود
+      synchronize: false, // schema is applied by Supabase migrations
       logging: env.db.logging,
-      supportBigNumbers: true,
-      bigNumberStrings: false,
-      timezone: 'Z',
-      charset: 'utf8mb4',
-    }),
+      ssl: env.db.ssl ? { rejectUnauthorized: false } : false,
+      extra: { max: env.db.poolMax },
+    } as DataSourceOptions),
     RedisModule,
     QueueModule,
 

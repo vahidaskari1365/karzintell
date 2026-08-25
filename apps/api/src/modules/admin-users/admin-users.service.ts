@@ -35,10 +35,10 @@ export class AdminUsersService {
       .createQueryBuilder('u')
       .leftJoin('role_user', 'ru', 'ru.user_id = u.id')
       .leftJoin('roles', 'r', 'r.id = ru.role_id')
-      .select(['u.id AS id', 'u.fullName AS fullName', 'u.email AS email', 'u.phone AS phone',
-        'u.status AS status', 'u.lastLoginAt AS lastLoginAt', 'u.createdAt AS createdAt'])
-      .addSelect("GROUP_CONCAT(DISTINCT r.name) AS roleNames")
-      .addSelect("GROUP_CONCAT(DISTINCT r.id) AS roleIds")
+      .select(['u.id AS id', 'u.fullName AS "fullName"', 'u.email AS email', 'u.phone AS phone',
+        'u.status AS status', 'u.lastLoginAt AS "lastLoginAt"', 'u.createdAt AS "createdAt"'])
+      .addSelect(`STRING_AGG(DISTINCT r.name, ',') AS "roleNames"`)
+      .addSelect(`STRING_AGG(DISTINCT r.id::text, ',') AS "roleIds"`)
       .groupBy('u.id')
       .orderBy('u.id', 'DESC')
       .offset(p.skip)
@@ -197,14 +197,16 @@ export class AdminUsersService {
 
   /** override دسترسی‌های موردی (allow/deny) */
   async assignPermissions(id: number, items: Array<{ permission: string; type: 'allow' | 'deny' }>, admin: AuthUser) {
-    const target = await this.users.findOne({ where: { id } });
+    const target = await this.users.findOne({ where: { id }, relations: { roles: true } });
     if (!target) throw new NotFoundException('کاربر یافت نشد');
     // فقط super_admin می‌تواند مجوزهای قدرت را اعطا کند یا حساب super_admin را تغییر دهد
     if (target.roles?.some((r) => r.name === 'super_admin'))
       this.assertNoSuperGrant(['super_admin'], admin);
     this.assertNoPrivilegedGrant(items.map((i) => i.permission), admin);
-    const names = items.map((i) => i.permission);
+    const names = [...new Set(items.map((i) => i.permission))];
     const perms = names.length ? await this.permissions.findBy({ name: In(names) }) : [];
+    if (perms.length !== names.length)
+      throw new DomainException('INVALID_PERMISSION', 'مجوز انتخاب‌شده وجود ندارد', 400);
     await this.permUsers.delete({ userId: id });
     if (perms.length) {
       await this.permUsers.save(

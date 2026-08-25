@@ -10,14 +10,14 @@ import { bigint } from './product.entity';
 
 @Entity('wallets')
 export class Wallet {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true, unique: true })
+  @Column({ name: 'user_id', type: 'bigint', unique: true })
   @Index()
   userId: number;
 
-  @Column({ type: 'bigint', unsigned: true, default: 0, transformer: bigint })
+  @Column({ type: 'bigint', default: 0, transformer: bigint })
   balance: number;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -31,26 +31,26 @@ export type WalletTxType = 'charge' | 'debit' | 'refund' | 'withdraw';
 
 @Entity('wallet_transactions')
 export class WalletTransaction {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'wallet_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'wallet_id', type: 'bigint' })
   @Index()
   walletId: number;
 
   @Column({ type: 'enum', enum: ['charge', 'debit', 'refund', 'withdraw'] })
   type: WalletTxType;
 
-  @Column({ type: 'bigint', unsigned: true, transformer: bigint })
+  @Column({ type: 'bigint', transformer: bigint })
   amount: number;
 
-  @Column({ name: 'balance_after', type: 'bigint', unsigned: true, transformer: bigint })
+  @Column({ name: 'balance_after', type: 'bigint', transformer: bigint })
   balanceAfter: number;
 
   @Column({ name: 'reference_type', length: 30, nullable: true })
   referenceType: string | null;
 
-  @Column({ name: 'reference_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'reference_id', type: 'bigint', nullable: true })
   referenceId: number | null;
 
   @Column({ length: 300, nullable: true })

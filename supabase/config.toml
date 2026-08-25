@@ -1,0 +1,11 @@
+# Supabase CLI configuration. Link this directory to the project you create in Supabase.
+project_id = "karzintell"
+
+[db]
+major_version = 15
+
+[api]
+enabled = true
+
+[studio]
+enabled = true

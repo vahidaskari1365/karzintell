@@ -10,7 +10,7 @@ import {
 
 @Entity('warehouses')
 export class Warehouse {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 100 })
@@ -46,10 +46,10 @@ export class Warehouse {
 
 @Entity('inventory')
 export class Inventory {
-  @PrimaryColumn({ name: 'variant_id', type: 'bigint', unsigned: true })
+  @PrimaryColumn({ name: 'variant_id', type: 'bigint' })
   variantId: number;
 
-  @PrimaryColumn({ name: 'warehouse_id', type: 'int', unsigned: true })
+  @PrimaryColumn({ name: 'warehouse_id', type: 'integer' })
   warehouseId: number;
 
   @Column({ default: 0 })
@@ -69,14 +69,14 @@ export type StockMovementType = 'in' | 'out' | 'reserve' | 'release' | 'return' 
 
 @Entity('stock_movements')
 export class StockMovement {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'variant_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'variant_id', type: 'bigint' })
   @Index()
   variantId: number;
 
-  @Column({ name: 'warehouse_id', type: 'int', unsigned: true })
+  @Column({ name: 'warehouse_id', type: 'integer' })
   warehouseId: number;
 
   @Column({ type: 'enum', enum: ['in', 'out', 'reserve', 'release', 'return', 'adjust'] })
@@ -94,13 +94,13 @@ export class StockMovement {
   @Column({ name: 'reference_type', length: 30, nullable: true })
   referenceType: string | null;
 
-  @Column({ name: 'reference_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'reference_id', type: 'bigint', nullable: true })
   referenceId: number | null;
 
   @Column({ length: 500, nullable: true })
   note: string | null;
 
-  @Column({ name: 'created_by', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'created_by', type: 'bigint', nullable: true })
   createdBy: number | null;
 
   @CreateDateColumn({ name: 'created_at' })

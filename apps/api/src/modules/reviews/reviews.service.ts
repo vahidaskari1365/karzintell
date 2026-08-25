@@ -2,7 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { OrderItem, Product, ProductQuestion, Review } from '../../database/entities';
-import { paginate } from '../../common/utils';
+import { paginate, dbQuery } from '../../common/utils';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class ReviewsService {
     });
     const userIds = items.map((i) => i.userId);
     const users = userIds.length
-      ? await this.em.query(`SELECT id, full_name AS fullName FROM users WHERE id IN (${userIds.map(() => '?').join(',')})`, userIds)
+      ? await dbQuery(this.em, `SELECT id, full_name AS "fullName" FROM users WHERE id IN (${userIds.map(() => '?').join(',')})`, userIds)
       : [];
     const nameMap = new Map(users.map((u: any) => [Number(u.id), u.fullName]));
     return {
@@ -86,7 +86,7 @@ export class ReviewsService {
       .createQueryBuilder('r')
       .leftJoin('products', 'p', 'p.id = r.product_id')
       .leftJoin('users', 'u', 'u.id = r.user_id')
-      .select(['r.*', 'p.name AS productName', 'u.full_name AS userName'])
+      .select(['r.*', 'p.name AS "productName"', 'u.full_name AS "userName"'])
       .orderBy('r.id', 'DESC')
       .offset(p.skip)
       .limit(p.limit);
@@ -104,7 +104,7 @@ export class ReviewsService {
       .createQueryBuilder('q')
       .leftJoin('products', 'p', 'p.id = q.product_id')
       .leftJoin('users', 'u', 'u.id = q.user_id')
-      .select(['q.*', 'p.name AS productName', 'u.full_name AS userName'])
+      .select(['q.*', 'p.name AS "productName"', 'u.full_name AS "userName"'])
       .orderBy('q.id', 'DESC')
       .offset(p.skip)
       .limit(p.limit);
@@ -131,7 +131,7 @@ export class ReviewsService {
       await this.reviews.save(review);
 
       // ارسال پیامک پاسخ به ثبت دیدگاه
-      const user = await this.em.query(`SELECT phone, full_name AS fullName FROM users WHERE id = ? LIMIT 1`, [review.userId]);
+      const user = await dbQuery(this.em, `SELECT phone, full_name AS "fullName" FROM users WHERE id = ? LIMIT 1`, [review.userId]);
       if (user?.[0]?.phone) {
         const product = await this.products.findOne({ where: { id: review.productId } });
         const msg = `سلام ${user[0].fullName} عزیز\nپاسخ جدیدی برای دیدگاه شما در محصول «${product?.name || 'محصول منتخب'}» ثبت شد.\nکارزینتل`;
@@ -152,7 +152,7 @@ export class ReviewsService {
       await this.questions.save(q);
 
       // ارسال پیامک پاسخ به سوال محصول
-      const user = await this.em.query(`SELECT phone, full_name AS fullName FROM users WHERE id = ? LIMIT 1`, [q.userId]);
+      const user = await dbQuery(this.em, `SELECT phone, full_name AS "fullName" FROM users WHERE id = ? LIMIT 1`, [q.userId]);
       if (user?.[0]?.phone) {
         const product = await this.products.findOne({ where: { id: q.productId } });
         const msg = `سلام ${user[0].fullName} عزیز\nپاسخ سوال شما درباره محصول «${product?.name || 'محصول منتخب'}» ثبت شد.\nکارزینتل`;

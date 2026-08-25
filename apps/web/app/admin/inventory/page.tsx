@@ -22,6 +22,12 @@ interface Movement {
   note: string | null; createdAt: string; sku?: string;
 }
 
+interface StockAlert {
+  id: number; variantId: number; warehouseId: number; available: number; threshold: number;
+  alertType: 'low_stock' | 'out_of_stock'; productName: string; variantTitle: string | null;
+  sku: string; warehouseName: string;
+}
+
 const MOVE_LABELS: Record<string, string> = {
   in: 'ورود', out: 'خروج', reserve: 'رزرو', release: 'آزادسازی', return: 'عودت', adjust: 'اصلاح',
 };
@@ -41,12 +47,31 @@ export default function AdminInventoryPage() {
     queryKey: ['admin-inventory', page, search, lowOnly],
     queryFn: async () => api<StockRow[]>(`/admin/inventory${qs({ page, limit: 20, q: search || undefined, low_stock: lowOnly ? 1 : undefined })}`),
   });
+  const { data: alertData } = useQuery({
+    queryKey: ['admin-inventory-alerts'],
+    queryFn: async () => api<StockAlert[]>('/admin/inventory/alerts?limit=8'),
+    refetchInterval: 30_000,
+  });
 
   const items = data?.data || [];
+  const alerts = alertData?.data || [];
 
   return (
     <div>
       <PageHeader title="موجودی انبار" subtitle="قابل‌فروش = موجودی − رزرو" />
+      {alerts.length > 0 && (
+        <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-900">
+          <div className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> هشدارهای باز موجودی ({faNumber(alerts.length)})</div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {alerts.map((alert) => (
+              <div key={alert.id} className="flex items-center justify-between rounded-xl bg-white/70 px-3 py-2 text-xs">
+                <div><b>{alert.productName}</b><span className="ms-2 text-slate-500" dir="ltr">{alert.sku}</span></div>
+                <span className="font-bold text-rose-700">{alert.alertType === 'out_of_stock' ? 'اتمام موجودی' : `قابل‌فروش: ${faNumber(alert.available)}`}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <form onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(q); }} className="relative min-w-56 flex-1">
@@ -85,8 +110,8 @@ export default function AdminInventoryPage() {
                     </td>
                     <td className={tableCls.td}>{r.warehouseName}</td>
                     <td className={tableCls.td}>
-                      <span className={r.quantity <= r.lowStockThreshold ? 'font-black text-rose-600' : 'font-bold'}>{faNumber(r.quantity)}</span>
-                      {r.quantity <= r.lowStockThreshold && <span className="ms-1 text-2xs text-rose-500">(کم)</span>}
+                      <span className={r.available <= r.lowStockThreshold ? 'font-black text-rose-600' : 'font-bold'}>{faNumber(r.quantity)}</span>
+                      {r.available <= r.lowStockThreshold && <span className="ms-1 text-2xs text-rose-500">(کم)</span>}
                     </td>
                     <td className={tableCls.td}>{faNumber(r.reserved)}</td>
                     <td className={tableCls.td}><Pill status={r.available > 0 ? 'active' : 'rejected'} label={faNumber(r.available)} /></td>

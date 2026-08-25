@@ -1,3 +1,4 @@
+import { dbQuery } from '../../common/utils';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -42,8 +43,18 @@ export class CartService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  /** موجودی قابل فروش از منبع حقیقت inventory؛ stock_total فقط یک snapshot برای خواندن سریع است. */
+  private async availableForVariant(variantId: number, manager: EntityManager = this.em): Promise<number> {
+    const rows = await dbQuery(manager, `
+      SELECT COALESCE(SUM(GREATEST(quantity - reserved, 0)), 0) AS available
+      FROM inventory WHERE variant_id = ?`, [variantId]);
+    return Number(rows[0]?.available || 0);
+  }
+
   /** یافتن/ساخت سبد باز برای کاربر یا مهمان */
   private async getOrCreateCart(userId: number | null, sessionId: string | null): Promise<Cart> {
+    if (!userId && !sessionId)
+      throw new DomainException('CART_SESSION_REQUIRED', 'شناسه سبد خرید ارسال نشده است', 400);
     let cart: Cart | null = null;
     if (userId) cart = await this.carts.findOne({ where: { userId, status: 'open' } });
     if (!cart && sessionId) cart = await this.carts.findOne({ where: { sessionId, status: 'open' } });
@@ -58,12 +69,12 @@ export class CartService {
 
   async view(userId: number | null, sessionId: string | null): Promise<CartView> {
     const cart = await this.getOrCreateCart(userId, sessionId);
-    const rows = await this.em.query(
-      `SELECT ci.id, ci.variant_id AS variantId, ci.quantity, ci.unit_price AS unitPrice,
-              v.sku, v.title AS variantTitle, v.product_id AS productId, p.name AS productName,
-              p.category_id AS categoryId,
-              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image,
-              (SELECT COALESCE(SUM(quantity - reserved),0) FROM inventory WHERE variant_id = v.id) AS available
+    const rows = await dbQuery(this.em,
+      `SELECT ci.id, ci.variant_id AS "variantId", ci.quantity, ci.unit_price AS "unitPrice",
+              v.sku, v.title AS "variantTitle", v.product_id AS "productId", p.name AS "productName",
+              p.category_id AS "categoryId",
+              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image,
+              (SELECT COALESCE(SUM(GREATEST(quantity - reserved, 0)), 0) FROM inventory WHERE variant_id = v.id) AS available
        FROM cart_items ci
        JOIN product_variants v ON v.id = ci.variant_id AND v.deleted_at IS NULL
        JOIN products p ON p.id = v.product_id
@@ -128,21 +139,29 @@ export class CartService {
   }
 
   async addItem(userId: number | null, sessionId: string | null, variantId: number, quantity: number) {
+    const requested = Math.floor(quantity);
+    if (!Number.isFinite(requested) || requested < 1)
+      throw new DomainException('INVALID_QUANTITY', 'تعداد انتخاب‌شده معتبر نیست', 400);
     const variant = await this.variants.findOne({ where: { id: variantId, isActive: true } });
     if (!variant) throw new NotFoundException('تنوع محصول یافت نشد');
     const product = await this.products.findOne({ where: { id: variant.productId, status: 'published' } });
     if (!product) throw new DomainException('NOT_FOUND', 'محصول در دسترس نیست', 404);
 
+    const available = await this.availableForVariant(variantId);
+    if (available <= 0)
+      throw new DomainException('OUT_OF_STOCK', 'اتمام موجودی', 409, [{ field: 'available', message: '0' }]);
+
     const cart = await this.getOrCreateCart(userId, sessionId);
     const existing = await this.items.findOne({ where: { cartId: cart.id, variantId } });
+    const nextQuantity = Math.min(99, (existing?.quantity || 0) + requested);
+    if (nextQuantity > available)
+      throw new DomainException('OUT_OF_STOCK', `فقط ${available} عدد از این کالا موجود است`, 409, [{ field: 'available', message: String(available) }]);
     if (existing) {
-      existing.quantity = Math.min(99, existing.quantity + quantity);
+      existing.quantity = nextQuantity;
       existing.unitPrice = variant.price;
       await this.items.save(existing);
     } else {
-      await this.items.save(
-        this.items.create({ cartId: cart.id, variantId, quantity: Math.max(1, Math.min(99, quantity)), unitPrice: variant.price }),
-      );
+      await this.items.save(this.items.create({ cartId: cart.id, variantId, quantity: nextQuantity, unitPrice: variant.price }));
     }
     return this.view(userId, sessionId);
   }
@@ -153,7 +172,15 @@ export class CartService {
     if (!item) throw new NotFoundException('آیتم سبد یافت نشد');
     if (quantity <= 0) await this.items.remove(item);
     else {
-      item.quantity = Math.min(99, quantity);
+      const requested = Math.min(99, Math.floor(quantity));
+      if (!Number.isFinite(requested) || requested < 1)
+        throw new DomainException('INVALID_QUANTITY', 'تعداد انتخاب‌شده معتبر نیست', 400);
+      const available = await this.availableForVariant(item.variantId);
+      if (available <= 0)
+        throw new DomainException('OUT_OF_STOCK', 'اتمام موجودی', 409, [{ field: 'available', message: '0' }]);
+      if (requested > available)
+        throw new DomainException('OUT_OF_STOCK', `فقط ${available} عدد از این کالا موجود است`, 409, [{ field: 'available', message: String(available) }]);
+      item.quantity = requested;
       await this.items.save(item);
     }
     return this.view(userId, sessionId);
@@ -192,12 +219,15 @@ export class CartService {
     if (guest.id !== userCart.id) {
       const guestItems = await this.items.find({ where: { cartId: guest.id } });
       for (const gi of guestItems) {
+        const available = await this.availableForVariant(gi.variantId);
         const existing = await this.items.findOne({ where: { cartId: userCart.id, variantId: gi.variantId } });
+        if (available <= 0) continue;
+        const nextQuantity = Math.min(99, available, (existing?.quantity || 0) + gi.quantity);
         if (existing) {
-          existing.quantity = Math.min(99, existing.quantity + gi.quantity);
+          existing.quantity = nextQuantity;
           await this.items.save(existing);
         } else {
-          await this.items.save(this.items.create({ cartId: userCart.id, variantId: gi.variantId, quantity: gi.quantity, unitPrice: gi.unitPrice }));
+          await this.items.save(this.items.create({ cartId: userCart.id, variantId: gi.variantId, quantity: nextQuantity, unitPrice: gi.unitPrice }));
         }
       }
       guest.status = 'merged';
@@ -229,7 +259,7 @@ export class CartService {
     const carts = await this.carts.createQueryBuilder('c')
       .innerJoin('users', 'u', 'u.id = c.user_id')
       .where("c.status = 'open' AND c.updated_at BETWEEN :twelveHoursAgo AND :fourHoursAgo", { twelveHoursAgo, fourHoursAgo })
-      .select(['c.id AS id', 'u.phone AS phone', 'u.fullName AS fullName'])
+      .select(['c.id AS id', 'u.phone AS phone', 'u.fullName AS "fullName"'])
       .getRawMany();
 
     for (const c of carts) {

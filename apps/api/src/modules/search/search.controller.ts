@@ -12,7 +12,7 @@ export class SearchController {
   @Get('status')
   @RequirePermissions('settings.manage')
   status() {
-    return { data: { engine: this.search.isAvailable() ? 'meilisearch' : 'mysql-fallback' } };
+    return { data: { engine: this.search.isAvailable() ? 'meilisearch' : 'database-fallback' } };
   }
 
   /** بازنمایه‌سازی کامل محصولات */

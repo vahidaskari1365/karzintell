@@ -34,12 +34,22 @@ export const env = {
   bcryptRounds: int(process.env.BCRYPT_ROUNDS, 10),
 
   db: {
+    // Supabase PostgreSQL is the only supported runtime database.
+    type: "postgres" as const,
+    url: process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || "",
     host: process.env.DB_HOST || "localhost",
     port: int(process.env.DB_PORT, 5432),
     username: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD || "change-me-secure-password",
+    password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "postgres",
+    ssl: bool(process.env.DB_SSL, !!(process.env.DATABASE_URL || process.env.SUPABASE_DB_URL)),
+    poolMax: int(process.env.DB_POOL_MAX, 10),
     logging: bool(process.env.DB_LOGGING, false),
+  },
+
+  supabase: {
+    url: process.env.SUPABASE_URL || "",
+    anonKey: process.env.SUPABASE_ANON_KEY || "",
   },
 
   redis: {
@@ -150,14 +160,16 @@ export function assertSecureConfiguration() {
 
   check('JWT_ACCESS_SECRET', process.env.JWT_ACCESS_SECRET, 32);
   check('JWT_REFRESH_SECRET', process.env.JWT_REFRESH_SECRET, 32);
-  check('DB_PASSWORD', process.env.DB_PASSWORD);
-  check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
+  if (env.db.url) check('DATABASE_URL', env.db.url, 20);
+  else check('DB_PASSWORD', process.env.DB_PASSWORD);
+  if (!env.db.url && !process.env.DB_HOST) problems.push('DATABASE_URL یا DB_HOST تنظیم نشده است');
+  if (env.redis.enabled) check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
 
   if (problems.length) {
     throw new Error(
       `[امنیت] تنظیمات Production ناامن است؛ برای راه‌اندازی امن، مقادیر زیر را اصلاح کنید:\n` +
         problems.map((p) => `  - ${p}`).join('\n') +
-        `\n  (مثلاً: openssl rand -base64 48 برای تولید JWT_SECRET)`,
+        `\n  (مثلاً: openssl rand -base64 48 برای تولید JWT_ACCESS_SECRET و JWT_REFRESH_SECRET)`,
     );
   }
 }

@@ -11,7 +11,7 @@ import { bigint } from './product.entity';
 
 @Entity('coupons')
 export class Coupon {
-  @PrimaryGeneratedColumn({ type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'integer' })
   id: number;
 
   @Column({ length: 50, unique: true })
@@ -26,19 +26,19 @@ export class Coupon {
   @Column({ type: 'decimal', precision: 10, scale: 2, transformer: bigint })
   value: number;
 
-  @Column({ name: 'max_discount', type: 'bigint', unsigned: true, nullable: true, transformer: bigint })
+  @Column({ name: 'max_discount', type: 'bigint', nullable: true, transformer: bigint })
   maxDiscount: number | null;
 
-  @Column({ name: 'min_cart_amount', type: 'bigint', unsigned: true, default: 0, transformer: bigint })
+  @Column({ name: 'min_cart_amount', type: 'bigint', default: 0, transformer: bigint })
   minCartAmount: number;
 
-  @Column({ name: 'usage_limit', type: 'int', unsigned: true, nullable: true })
+  @Column({ name: 'usage_limit', type: 'integer', nullable: true })
   usageLimit: number | null;
 
-  @Column({ name: 'per_user_limit', type: 'int', unsigned: true, default: 1 })
+  @Column({ name: 'per_user_limit', type: 'integer', default: 1 })
   perUserLimit: number;
 
-  @Column({ name: 'used_count', type: 'int', unsigned: true, default: 0 })
+  @Column({ name: 'used_count', type: 'integer', default: 0 })
   usedCount: number;
 
   /** نام کمپین (گروه‌بندی کوپن‌ها) */
@@ -46,17 +46,17 @@ export class Coupon {
   campaign: string | null;
 
   /** فقط روی این محصول‌ها؛ NULL = همه */
-  @Column({ name: 'product_ids', type: 'json', nullable: true })
+  @Column({ name: 'product_ids', type: 'jsonb', nullable: true })
   productIds: number[] | null;
 
   /** فقط روی این دسته‌ها؛ NULL = همه */
-  @Column({ name: 'category_ids', type: 'json', nullable: true })
+  @Column({ name: 'category_ids', type: 'jsonb', nullable: true })
   categoryIds: number[] | null;
 
-  @Column({ name: 'starts_at', type: 'datetime', nullable: true })
+  @Column({ name: 'starts_at', type: 'timestamptz', nullable: true })
   startsAt: Date | null;
 
-  @Column({ name: 'expires_at', type: 'datetime', nullable: true })
+  @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
   expiresAt: Date | null;
 
   @Column({ name: 'is_active', default: true })
@@ -76,10 +76,10 @@ export type CartStatus = 'open' | 'merged' | 'converted' | 'abandoned';
 
 @Entity('carts')
 export class Cart {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'user_id', type: 'bigint', nullable: true })
   @Index()
   userId: number | null;
 
@@ -90,7 +90,7 @@ export class Cart {
   @Column({ type: 'enum', enum: ['open', 'merged', 'converted', 'abandoned'], default: 'open' })
   status: CartStatus;
 
-  @Column({ name: 'coupon_id', type: 'int', unsigned: true, nullable: true })
+  @Column({ name: 'coupon_id', type: 'integer', nullable: true })
   couponId: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -102,20 +102,20 @@ export class Cart {
 
 @Entity('cart_items')
 export class CartItem {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'cart_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'cart_id', type: 'bigint' })
   @Index()
   cartId: number;
 
-  @Column({ name: 'variant_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'variant_id', type: 'bigint' })
   variantId: number;
 
-  @Column({ type: 'int', unsigned: true, default: 1 })
+  @Column({ type: 'integer', default: 1 })
   quantity: number;
 
-  @Column({ name: 'unit_price', type: 'bigint', unsigned: true, transformer: bigint })
+  @Column({ name: 'unit_price', type: 'bigint', transformer: bigint })
   unitPrice: number;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -127,20 +127,20 @@ export class CartItem {
 
 @Entity('coupon_usages')
 export class CouponUsage {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'coupon_id', type: 'int', unsigned: true })
+  @Column({ name: 'coupon_id', type: 'integer' })
   couponId: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'user_id', type: 'bigint' })
   @Index()
   userId: number;
 
-  @Column({ name: 'order_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'order_id', type: 'bigint' })
   orderId: number;
 
-  @Column({ name: 'discount_amount', type: 'bigint', unsigned: true, transformer: bigint })
+  @Column({ name: 'discount_amount', type: 'bigint', transformer: bigint })
   discountAmount: number;
 
   @CreateDateColumn({ name: 'created_at' })

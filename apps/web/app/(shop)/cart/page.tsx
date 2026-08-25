@@ -54,9 +54,16 @@ export default function CartPage() {
       </div>
     );
 
+  const hasUnavailable = cart.items.some((item) => item.available <= 0 || item.quantity > item.available);
+
   return (
     <div className="py-8">
       <h1 className="mb-6 text-2xl font-black">سبد خرید</h1>
+      {hasUnavailable && (
+        <div className="mb-5 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4 text-sm font-medium text-rose-300">
+          یکی از کالاهای سبد خرید موجود نیست یا تعداد انتخاب‌شده بیشتر از موجودی است. برای ادامه، تعداد آن را اصلاح یا کالا را حذف کنید.
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-3 lg:col-span-2">
           {cart.items.map((item) => (
@@ -89,8 +96,10 @@ export default function CartPage() {
                     </button>
                   </div>
                 </div>
-                {item.quantity > item.available && (
-                  <span className="mt-1 text-xs font-medium text-rose-400">موجودی این کالا فقط {faNumber(item.available)} عدد است</span>
+                {(item.available <= 0 || item.quantity > item.available) && (
+                  <span className="mt-1 text-xs font-medium text-rose-400">
+                    {item.available <= 0 ? 'اتمام موجودی' : `موجودی این کالا فقط ${faNumber(item.available)} عدد است`}
+                  </span>
                 )}
               </div>
             </Card>
@@ -105,6 +114,7 @@ export default function CartPage() {
 
 function CartSummary({ cart, user, invalidate }: { cart: CartType; user: unknown; invalidate: () => void }) {
   const [code, setCode] = useState('');
+  const hasUnavailable = cart.items.some((item) => item.available <= 0 || item.quantity > item.available);
   const applyCoupon = useMutation({
     mutationFn: async () =>
       api('/cart/coupon', { method: 'POST', body: { code }, headers: { 'X-Cart-Session': getCartSession() } }),
@@ -165,12 +175,18 @@ function CartSummary({ cart, user, invalidate }: { cart: CartType; user: unknown
         </div>
       </div>
 
-      <Link href="/checkout" className="block">
-        <Button size="lg" className="w-full">
-          ادامه ثبت سفارش
-          <ArrowLeft className="h-4 w-4" />
+      {hasUnavailable ? (
+        <Button size="lg" className="w-full" disabled>
+          ابتدا موجودی سبد را اصلاح کنید
         </Button>
-      </Link>
+      ) : (
+        <Link href="/checkout" className="block">
+          <Button size="lg" className="w-full">
+            ادامه ثبت سفارش
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+      )}
     </Card>
   );
 }

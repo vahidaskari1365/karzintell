@@ -1,3 +1,4 @@
+import { dbQuery } from '../../common/utils';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -47,28 +48,28 @@ export class CompareService {
     if (!ids.length) return { items: [], attributeNames: [] as string[] };
     const ph = ids.map(() => '?').join(',');
 
-    const products = await this.em.query(
-      `SELECT p.id, p.name, p.slug, p.short_description AS shortDescription,
-              p.rating_avg AS ratingAvg, p.rating_count AS ratingCount,
-              b.name AS brandName, c.name AS categoryName, c.id AS categoryId,
-              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image,
-              (SELECT MIN(price) FROM product_variants WHERE product_id = p.id AND is_active = 1 AND deleted_at IS NULL) AS minPrice,
-              (SELECT MAX(price) FROM product_variants WHERE product_id = p.id AND is_active = 1 AND deleted_at IS NULL) AS maxPrice,
+    const products = await dbQuery(this.em,
+      `SELECT p.id, p.name, p.slug, p.short_description AS "shortDescription",
+              p.rating_avg AS "ratingAvg", p.rating_count AS "ratingCount",
+              b.name AS "brandName", c.name AS "categoryName", c.id AS "categoryId",
+              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image,
+              (SELECT MIN(price) FROM product_variants WHERE product_id = p.id AND is_active = TRUE AND deleted_at IS NULL) AS "minPrice",
+              (SELECT MAX(price) FROM product_variants WHERE product_id = p.id AND is_active = TRUE AND deleted_at IS NULL) AS "maxPrice",
               (SELECT COALESCE(SUM(i.quantity - i.reserved),0) FROM inventory i
                 JOIN product_variants v2 ON v2.id = i.variant_id
-                WHERE v2.product_id = p.id AND v2.is_active = 1) AS available
+                WHERE v2.product_id = p.id AND v2.is_active = TRUE) AS available
        FROM products p
        LEFT JOIN brands b ON b.id = p.brand_id
        LEFT JOIN categories c ON c.id = p.category_id
        WHERE p.id IN (${ph}) AND p.status = 'published' AND p.deleted_at IS NULL
-       ORDER BY FIELD(p.id, ${ph})`,
+       ORDER BY array_position(ARRAY[${ph}]::bigint[], p.id)`,
       [...ids, ...ids],
     );
 
     // مشخصات فنی (product_attributes + نام ویژگی + مقدار)
-    const specs = await this.em.query(
-      `SELECT pa.product_id AS productId, a.name AS attributeName,
-              COALESCE(av.value, pa.custom_value) AS value, pa.sort_order AS attrSort
+    const specs = await dbQuery(this.em,
+      `SELECT pa.product_id AS "productId", a.name AS "attributeName",
+              COALESCE(av.value, pa.custom_value) AS value, pa.sort_order AS "attrSort"
        FROM product_attributes pa
        JOIN attributes a ON a.id = pa.attribute_id
        LEFT JOIN attribute_values av ON av.id = pa.attribute_value_id

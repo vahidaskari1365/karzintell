@@ -52,7 +52,7 @@ export default function TicketsPage() {
     mutationFn: async () =>
       api('/me/tickets', {
         method: 'POST',
-        body: JSON.stringify({ subject, department, priority, message }),
+        body: { subject, department, priority, body: message },
       }),
     onSuccess: () => {
       toast.success('تیکت ایجاد شد');

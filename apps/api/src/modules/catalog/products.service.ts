@@ -6,7 +6,7 @@ import {
   ProductImage, ProductRelation, ProductTag, ProductVariant, ProductVariantValue,
   ProductVideo, Review, Tag,
 } from '../../database/entities';
-import { paginate, sanitizeHtml, slugify } from '../../common/utils';
+import { paginate, sanitizeHtml, slugify, dbQuery } from '../../common/utils';
 import { DomainException } from '../../common/http-exception.filter';
 import { FilesService } from '../files/files.service';
 import { SearchService, ProductSearchQuery } from '../search/search.service';
@@ -95,7 +95,7 @@ export class ProductsService {
 
     // موجودی هر تنوع
     const stockRows = variantIds.length
-      ? await this.em.query(
+      ? await dbQuery(this.em,
           `SELECT variant_id, COALESCE(SUM(quantity - reserved),0) AS stock FROM inventory WHERE variant_id IN (${variantIds.map(() => '?').join(',')}) GROUP BY variant_id`,
           variantIds,
         )
@@ -198,9 +198,9 @@ export class ProductsService {
   }
 
   private async cardsByIds(ids: number[]) {
-    const rows = await this.em.query(
-      `SELECT p.id, p.name, p.slug, p.min_price AS minPrice, p.rating_avg AS ratingAvg,
-              b.name AS brand, (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image
+    const rows = await dbQuery(this.em,
+      `SELECT p.id, p.name, p.slug, p.min_price AS "minPrice", p.rating_avg AS "ratingAvg",
+              b.name AS brand, (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image
        FROM products p LEFT JOIN brands b ON b.id = p.brand_id
        WHERE p.id IN (${ids.map(() => '?').join(',')}) AND p.status = 'published' AND p.deleted_at IS NULL`,
       ids,
@@ -224,10 +224,10 @@ export class ProductsService {
       .leftJoin('categories', 'c', 'c.id = p.category_id')
       .select([
         'p.id AS id', 'p.code AS code', 'p.name AS name', 'p.slug AS slug', 'p.status AS status',
-        'p.min_price AS minPrice', 'p.sold_count AS soldCount', 'p.rating_avg AS ratingAvg',
-        'b.name AS brand', 'c.name AS category', 'p.created_at AS createdAt',
+        'p.min_price AS "minPrice"', 'p.sold_count AS "soldCount"', 'p.rating_avg AS "ratingAvg"',
+        'b.name AS brand', 'c.name AS category', 'p.created_at AS "createdAt"',
       ])
-      .addSelect(`(SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image`)
+      .addSelect(`(SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image`)
       .addSelect(`(SELECT COALESCE(SUM(i.quantity - i.reserved),0) FROM product_variants v JOIN inventory i ON i.variant_id = v.id WHERE v.product_id = p.id AND v.deleted_at IS NULL) AS stock`)
       .orderBy('p.id', 'DESC')
       .offset(p.skip)
@@ -359,7 +359,7 @@ export class ProductsService {
     // حذف تنوع‌های حذف‌شده (اگر در سفارشی نیستند)
     for (const old of existing) {
       if (keepIds.includes(old.id)) continue;
-      const usedInOrders = await tx.query(`SELECT COUNT(*) AS cnt FROM order_items WHERE variant_id = ?`, [old.id]);
+      const usedInOrders = await dbQuery(tx, `SELECT COUNT(*) AS cnt FROM order_items WHERE variant_id = ?`, [old.id]);
       if (Number(usedInOrders[0].cnt) > 0) {
         await tx.getRepository(ProductVariant).update(old.id, { isActive: false });
       } else {
@@ -478,10 +478,10 @@ export class ProductsService {
 
   private async recomputePriceRange(productId: number, tx?: EntityManager) {
     const m = tx || this.em;
-    await m.query(
+    await dbQuery(m,
       `UPDATE products p SET
-         min_price = (SELECT MIN(price) FROM product_variants WHERE product_id = p.id AND is_active = 1 AND deleted_at IS NULL),
-         max_price = (SELECT MAX(price) FROM product_variants WHERE product_id = p.id AND is_active = 1 AND deleted_at IS NULL)
+         min_price = (SELECT MIN(price) FROM product_variants WHERE product_id = p.id AND is_active = TRUE AND deleted_at IS NULL),
+         max_price = (SELECT MAX(price) FROM product_variants WHERE product_id = p.id AND is_active = TRUE AND deleted_at IS NULL)
        WHERE p.id = ?`,
       [productId],
     );

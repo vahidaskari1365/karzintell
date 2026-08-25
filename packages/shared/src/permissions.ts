@@ -29,6 +29,7 @@ export const PERMISSIONS = [
   // انبار
   { key: "inventory.view", title: "مشاهده موجودی", group: "inventory" },
   { key: "inventory.manage", title: "اصلاح موجودی انبار", group: "inventory" },
+  { key: "inventory.alerts", title: "دریافت هشدار موجودی", group: "inventory" },
   // سفارش‌ها
   { key: "orders.view", title: "مشاهده سفارش‌ها", group: "orders" },
   { key: "orders.update_status", title: "تغییر وضعیت سفارش", group: "orders" },
@@ -49,12 +50,14 @@ export const PERMISSIONS = [
   // تیکت‌ها
   { key: "tickets.view", title: "مشاهده تیکت‌ها", group: "tickets" },
   { key: "tickets.reply", title: "پاسخ به تیکت‌ها", group: "tickets" },
+  { key: "tickets.assign", title: "تخصیص تیکت‌ها", group: "tickets" },
   // تنظیمات
   { key: "settings.manage", title: "مدیریت تنظیمات", group: "settings" },
   { key: "audit.view", title: "مشاهده لاگ عملیات", group: "settings" },
   { key: "files.manage", title: "مدیریت فایل‌ها", group: "settings" },
   // گزارش‌ها
   { key: "reports.view", title: "مشاهده گزارش‌ها", group: "reports" },
+  { key: "reports.export", title: "خروجی گزارش‌ها", group: "reports" },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];

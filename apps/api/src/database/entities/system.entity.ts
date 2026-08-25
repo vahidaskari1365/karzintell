@@ -10,10 +10,10 @@ import {
 
 @Entity('notifications')
 export class Notification {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'user_id', type: 'bigint' })
   @Index()
   userId: number;
 
@@ -26,13 +26,13 @@ export class Notification {
   @Column({ length: 500, nullable: true })
   body: string | null;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   data: Record<string, unknown> | null;
 
   @Column({ type: 'enum', enum: ['database', 'sms', 'email', 'push'], default: 'database' })
   channel: 'database' | 'sms' | 'email' | 'push';
 
-  @Column({ name: 'read_at', type: 'datetime', nullable: true })
+  @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
   readAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -44,7 +44,7 @@ export class Setting {
   @PrimaryColumn({ length: 100 })
   key: string;
 
-  @Column({ type: 'mediumtext', nullable: true })
+  @Column({ type: 'text', nullable: true })
   value: string | null;
 
   @Column({ length: 50, default: 'general' })
@@ -56,7 +56,7 @@ export class Setting {
   @Column({ name: 'is_public', default: false })
   isPublic: boolean;
 
-  @Column({ name: 'updated_by', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'updated_by', type: 'bigint', nullable: true })
   updatedBy: number | null;
 
   @UpdateDateColumn({ name: 'updated_at' })
@@ -65,10 +65,10 @@ export class Setting {
 
 @Entity('audit_logs')
 export class AuditLog {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'user_id', type: 'bigint', nullable: true })
   @Index()
   userId: number | null;
 
@@ -78,14 +78,14 @@ export class AuditLog {
   @Column({ name: 'subject_type', length: 50, nullable: true })
   subjectType: string | null;
 
-  @Column({ name: 'subject_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'subject_id', type: 'bigint', nullable: true })
   @Index()
   subjectId: number | null;
 
-  @Column({ name: 'old_values', type: 'json', nullable: true })
+  @Column({ name: 'old_values', type: 'jsonb', nullable: true })
   oldValues: Record<string, unknown> | null;
 
-  @Column({ name: 'new_values', type: 'json', nullable: true })
+  @Column({ name: 'new_values', type: 'jsonb', nullable: true })
   newValues: Record<string, unknown> | null;
 
   @Column({ length: 45, nullable: true })
@@ -100,7 +100,7 @@ export class AuditLog {
 
 @Entity('files')
 export class FileRecord {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
   @Column({ length: 20, default: 's3' })
@@ -115,13 +115,13 @@ export class FileRecord {
   @Column({ name: 'mime_type', length: 100, nullable: true })
   mimeType: string | null;
 
-  @Column({ name: 'size_bytes', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'size_bytes', type: 'bigint', nullable: true })
   sizeBytes: number | null;
 
   @Column({ length: 50, nullable: true })
   purpose: string | null;
 
-  @Column({ name: 'owner_id', type: 'bigint', unsigned: true, nullable: true })
+  @Column({ name: 'owner_id', type: 'bigint', nullable: true })
   ownerId: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -130,10 +130,10 @@ export class FileRecord {
 
 @Entity('push_subscriptions')
 export class PushSubscription {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint', unsigned: true })
+  @Column({ name: 'user_id', type: 'bigint' })
   @Index()
   userId: number;
 

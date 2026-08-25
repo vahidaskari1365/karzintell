@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order, User } from '../../database/entities';
 import { RequirePermissions } from '../../common/decorators';
-import { paginate } from '../../common/utils';
+import { paginate, dbQuery } from '../../common/utils';
 
 @ApiTags('admin/customers')
 @Controller('admin/customers')
@@ -23,17 +23,17 @@ export class CustomersController {
       .createQueryBuilder('u')
       .innerJoin('role_user', 'ru', 'ru.user_id = u.id')
       .innerJoin('roles', 'r', 'r.id = ru.role_id AND r.name = :rn', { rn: 'customer' })
-      .select(['u.id AS id', 'u.fullName AS fullName', 'u.phone AS phone', 'u.email AS email',
-        'u.status AS status', 'u.createdAt AS createdAt', 'u.lastLoginAt AS lastLoginAt'])
-      .addSelect(`(SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id AND o.deleted_at IS NULL) AS ordersCount`)
-      .addSelect(`(SELECT COALESCE(SUM(o.grand_total),0) FROM orders o WHERE o.user_id = u.id AND o.payment_status = 'paid') AS totalSpent`)
+      .select(['u.id AS id', 'u.fullName AS "fullName"', 'u.phone AS phone', 'u.email AS email',
+        'u.status AS status', 'u.createdAt AS "createdAt"', 'u.lastLoginAt AS "lastLoginAt"'])
+      .addSelect(`(SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id AND o.deleted_at IS NULL) AS "ordersCount"`)
+      .addSelect(`(SELECT COALESCE(SUM(o.grand_total),0) FROM orders o WHERE o.user_id = u.id AND o.payment_status = 'paid') AS "totalSpent"`)
       .orderBy('u.id', 'DESC')
       .offset(p.skip)
       .limit(p.limit);
     if (q) qb.andWhere('(u.full_name LIKE :q OR u.phone LIKE :q OR u.email LIKE :q)', { q: `%${q}%` });
     const [items, total] = await Promise.all([
       qb.getRawMany(),
-      this.users.query(
+      dbQuery(this.users,
         `SELECT COUNT(DISTINCT u.id) AS cnt FROM users u
          JOIN role_user ru ON ru.user_id = u.id JOIN roles r ON r.id = ru.role_id AND r.name = 'customer'
          ${q ? 'WHERE u.full_name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?' : ''}`,
@@ -53,14 +53,14 @@ export class CustomersController {
     const user = await this.users.findOne({ where: { id }, relations: { roles: true } });
     if (!user) throw new NotFoundException('مشتری یافت نشد');
     const recentOrders = await this.orders.find({ where: { userId: id }, order: { id: 'DESC' }, take: 10 });
-    const stats = await this.orders.query(
-      `SELECT COUNT(*) AS ordersCount,
-              COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END),0) AS totalSpent
+    const stats = await dbQuery(this.orders,
+      `SELECT COUNT(*) AS "ordersCount",
+              COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN grand_total ELSE 0 END),0) AS "totalSpent"
        FROM orders WHERE user_id = ? AND deleted_at IS NULL`,
       [id],
     );
-    const addresses = await this.users.manager.query(`SELECT * FROM user_addresses WHERE user_id = ? AND deleted_at IS NULL`, [id]);
-    const wallet = await this.users.manager.query(`SELECT balance FROM wallets WHERE user_id = ?`, [id]);
+    const addresses = await dbQuery(this.users.manager, `SELECT * FROM user_addresses WHERE user_id = ? AND deleted_at IS NULL`, [id]);
+    const wallet = await dbQuery(this.users.manager, `SELECT balance FROM wallets WHERE user_id = ?`, [id]);
     return {
       data: {
         id: user.id, fullName: user.fullName, phone: user.phone, email: user.email,

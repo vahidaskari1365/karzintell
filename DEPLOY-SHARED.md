@@ -1,72 +1,69 @@
 <div dir="rtl">
 
-# راه‌اندازی کارزینتل روی هاست اشتراکی (بدون داکر)
+# استقرار کارزینتل روی هاست اشتراکی + Supabase
 
-> این راهنما برای **هاست اشتراکی** (cPanel / DirectAdmin — مثل هاست‌های ایرانی) نوشته شده است.
-> هیچ نیازی به داکر نیست. فقط نیاز دارید هاست شما **Node.js** و **MySQL** داشته باشد (بیشتر هاست‌های ایرانی دارند).
+> این راهنما برای محیطی است که Docker ندارد. دیتابیس رسمی فروشگاه Supabase/PostgreSQL است؛
+> این اسکریپت هرگز دیتابیس را حذف یا خودکار بازسازی نمی‌کند.
 
-## ✅ چه چیزهایی لازم است (از هاست)
-- **Node.js نسخه ۲۰ یا ۲۲** (در cPanel: بخش «Node.js Selector» یا «Setup Node.js App»)
-- **MySQL** (معمولاً با phpMyAdmin)
-- دسترسی **SSH** (ترجیحاً) — اگر ندارید، برخی مراحل را از cPanel انجام می‌دهید
+## پیش‌نیاز
 
----
+- Node.js 20 یا بالاتر و npm
+- یک پروژه Supabase و دسترسی به SQL Editor یا Supabase CLI
+- `DATABASE_URL` برای API (ترجیحاً pooled روی پورت 6543)
+- `DIRECT_DATABASE_URL` برای migration/seed/backup (اتصال مستقیم روی پورت 5432)
 
-## گام ۱ — انتقال کد به هاست
-
-کدها را در پوشه‌ای مثل `public_html` یا `karzintell` (خارج از public_html بهتر است) آپلود کنید
-(ZIP از GitHub بگیرید و در File Manager آپلود و Extract کنید، یا با git clone).
-
-## گام ۲ — ساخت دیتابیس (یک بار)
-
-از **phpMyAdmin** یک دیتابیس جدید بسازید (مثلاً `karzintell`).
-
-سپس فایل `database/schema.sql` را در phpMyAdmin **Import** کنید تا همه جدول‌ها ساخته شوند.
-(فقط سه خط اول فایل — `DROP DATABASE` و `CREATE DATABASE` و `USE` — را پاک کنید چون دیتابیس را خودتان ساخته‌اید؛ یا اگر mysql client دارید، اسکریپت خودکار این کار را می‌کند.)
-
-## گام ۳ — ساخت فایل تنظیمات
-
-در پوشه اصلی کد:
+## ۱) دریافت پروژه و تنظیم env
 
 ```bash
+git clone https://github.com/vahidaskari1365/karzintell.git
+cd karzintell
 cp .env.example .env
-nano .env    # یا از File Manager ویرایش کنید
+nano .env
 ```
 
-این مقادیر را حتماً عوض کنید (بقیه دست نزنید):
+حداقل مقدارهای لازم:
 
-| متغیر | مقدار |
-|---|---|
-| `DB_HOST` | آدرس دیتابیس هاست (معمولاً `localhost`) |
-| `DB_NAME` | نام دیتابیسی که ساختید |
-| `DB_USER` / `DB_PASSWORD` | یوزر و پسورد دیتابیس از cPanel |
-| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | دو رشته تصادفی بلند |
-| `NEXT_PUBLIC_API_URL` | آدرس عمومی API شما |
-| `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_APP_URL` | آدرس سایت شما |
-| `CORS_ORIGINS` | آدرس سایت شما |
-| `REDIS_HOST` | خالی بگذارید ← خودکار از حافظه داخلی استفاده می‌کند |
-| `MEILI_HOST` | خالی بگذارید ← جستجو با MySQL انجام می‌شود |
-| `S3_ENDPOINT` و بقیه S3 | اگر فضای فایل ندارید، خالی بگذارید (آپلود فایل غیرفعال می‌شود، بقیه سایت کار می‌کند) |
+```dotenv
+NODE_ENV=production
+DATABASE_URL=postgresql://postgres.[project-ref]:[password]@[pooler-host]:6543/postgres?pgbouncer=true
+DIRECT_DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+JWT_ACCESS_SECRET=<openssl rand -base64 48>
+JWT_REFRESH_SECRET=<openssl rand -base64 48>
+CORS_ORIGINS=https://shop.example.com
+NEXT_PUBLIC_API_URL=/api/v1
+NEXT_PUBLIC_SITE_URL=https://shop.example.com
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PHONE=09xxxxxxxxx
+SEED_ADMIN_PASSWORD=<رمز قوی و موقت>
+```
 
-## گام ۴ — نصب و راه‌اندازی خودکار (یک دستور)
+## ۲) اجرای migration Supabase
 
-با SSH وارد پوشه کد شوید و اجرا کنید:
+در سیستم توسعه‌ای که Supabase CLI نصب دارد:
 
 ```bash
-bash scripts/shared-host-setup.sh
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push
 ```
 
-این اسکریپت خودش:
-1. وابستگی‌ها را نصب می‌کند
-2. جدول‌ها را می‌سازد (اگر هنوز ساخته نشده باشند — فقط در صورت دسترسی به mysql client؛ در غیر این صورت راهنمای phpMyAdmin را چاپ می‌کند)
-3. داده‌های اولیه را می‌ریزد (ادمین‌ها، نقش‌ها، تنظیمات)
-4. بک‌اند و فرانت را بیلد می‌کند
-5. دستور اجرای سرویس‌ها را نشان می‌دهد
+یا فایل `supabase/migrations/20260825000000_initial_store.sql` را در SQL Editor اجرا کنید.
+این migration شامل جداول کاتالوگ، سفارش، پرداخت، انبار، RBAC، اعلان، پشتیبانی، RLS و
+توابع رزرو اتمیک است.
 
-> اگر SSH ندارید: از cPanel بخش **Node.js App** استفاده کنید —
-> Application Root را روی پوشه پروژه بگذارید و Start/Restart را بزنید (اسکریپت‌های `npm run start -w apps/api` و `npm run start -w apps/web`).
+## ۳) نصب، seed و build
 
-## گام ۵ — اجرای همیشگی (PM2)
+```bash
+npm ci
+npm run seed                 # فقط در همان محیطی که SEED_ADMIN_PASSWORD تنظیم شده
+npm run build
+```
+
+seed idempotent است و رمز ادمین را در کد/SQL ذخیره نمی‌کند. اگر `SEED_ADMIN_PASSWORD` خالی
+باشد، می‌توانید seed را دستی در محیط امن اجرا کنید تا رمز یک‌بارمصرف تولیدشده در خروجی را
+بگیرید؛ برای production بهتر است رمز را صریحاً از secret manager بدهید.
+
+## ۴) اجرای همیشگی
 
 ```bash
 npm i -g pm2
@@ -75,35 +72,30 @@ pm2 start "npm run start -w apps/web" --name krz-web
 pm2 save && pm2 startup
 ```
 
-- API روی پورت `4000` و وب روی پورت `3000` بالا می‌آید.
-- در cPanel می‌توانید این پورت‌ها را به دامنه وصل کنید (Proxy / Node.js App).
+- API روی پورت `4000` و وب روی پورت `3000` اجرا می‌شود.
+- reverse proxy هاست را روی HTTPS تنظیم کنید و `CORS_ORIGINS` را دقیقاً برابر origin سایت بگذارید.
+- سلامت API: `GET /api/v1/health`.
 
-## گام ۶ — بررسی
+## قابلیت‌هایی که به سرویس بیرونی نیاز دارند
+
+| قابلیت | تنظیم |
+|---|---|
+| پرداخت | کلید درگاه و callback HTTPS |
+| پیامک OTP/هشدار | `SMS_DRIVER` و کلید پنل پیامک |
+| ایمیل | `SMTP_HOST`، کاربر و رمز SMTP |
+| فایل محصول | Supabase Storage/S3 با `S3_ENDPOINT` و کلیدهای اختصاصی |
+| جستجوی سریع | `MEILI_HOST` و `MEILI_API_KEY`؛ در نبود آن fallback دیتابیس فعال است |
+| اعلان مرورگر | `VAPID_PUBLIC_KEY` و `VAPID_PRIVATE_KEY` |
+
+## بکاپ
+
+اتصال مستقیم را فقط در secret manager/محیط job قرار دهید:
 
 ```bash
-curl http://localhost:4000/api/v1/health
+DIRECT_DATABASE_URL='postgresql://...' BACKUP_DIR=/var/backups/karzintell bash scripts/backup.sh
 ```
 
-سایت: `http://دامنه-یا-IP:3000` — پنل ادمین: `/admin`
-ورود ادمین: `admin@karzintell.ir` / `Admin@123456` (در اولین ورود اجباری به تغییر است)
-ورود مدیر ارشد دوم: `vahid.askari1986@gmail.com` / `Vahid@0142`
-
----
-
-## چه چیزهایی روی هاست اشتراکی غیرفعال می‌ماند (فعلاً)
-| قابلیت | وضعیت | راه‌حل بعدی |
-|---|---|---|
-| پیامک | نیاز به `SMS_API_KEY` کاوه‌نگار | کلید را در `.env` بگذارید و ری‌استارت |
-| درگاه پرداخت | نیاز به مرچنت‌آیدی | در `.env` بگذارید و ری‌استارت |
-| ایمیل | `SMTP_HOST` و... | از SMTP هاست استفاده کنید |
-| آپلود فایل | نیاز به S3/MinIO | MinIO روی هاست اشتراکی نیست؛ می‌توانید بعداً از یک S3 ابری استفاده کنید |
-| جستجوی پیشرفته | با MySQL کار می‌کند (کندتر) | نیاز به Meilisearch ندارد |
-
-## رفع خطای رایج
-| خطا | راه‌حل |
-|---|---|
-| `Access denied for user` | `DB_USER`/`DB_PASSWORD` در `.env` را چک کنید |
-| سایت باز می‌شود ولی «خطا در اتصال به سرور» | `NEXT_PUBLIC_API_URL` درست است؟ بعد از تغییر، دوباره `bash scripts/shared-host-setup.sh` یا حداقل `npm run build -w apps/web` |
-| پورت باز نمی‌شود | از cPanel پورت را به دامنه Proxy کنید یا از هاست بپرسید پورت‌های Node را فعال کرده است |
+`pg_dump` به‌صورت فشرده ذخیره می‌شود و فایل‌های قدیمی طبق `BACKUP_KEEP_DAYS` حذف می‌شوند.
+برای بازیابی، ابتدا روی یک پروژه آزمایشی Supabase restore و smoke test انجام دهید.
 
 </div>

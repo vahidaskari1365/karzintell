@@ -1,3 +1,4 @@
+import { dbQuery } from '../../common/utils';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -41,15 +42,15 @@ export class WishlistService {
     const ids = await this.ids(userId);
     if (!ids.length) return { items: [], ids: [] };
     const ph = ids.map(() => '?').join(',');
-    const rows = await this.em.query(
-      `SELECT p.id, p.name, p.slug, p.rating_avg AS ratingAvg, p.rating_count AS ratingCount,
-              b.name AS brandName,
-              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) AS image,
-              (SELECT MIN(price) FROM product_variants WHERE product_id = p.id AND is_active = 1 AND deleted_at IS NULL) AS minPrice,
-              (SELECT MAX(compare_at_price) FROM product_variants WHERE product_id = p.id AND is_active = 1 AND deleted_at IS NULL) AS maxCompareAt,
+    const rows = await dbQuery(this.em,
+      `SELECT p.id, p.name, p.slug, p.rating_avg AS "ratingAvg", p.rating_count AS "ratingCount",
+              b.name AS "brandName",
+              (SELECT path FROM product_images WHERE product_id = p.id AND is_primary = TRUE LIMIT 1) AS image,
+              (SELECT MIN(price) FROM product_variants WHERE product_id = p.id AND is_active = TRUE AND deleted_at IS NULL) AS "minPrice",
+              (SELECT MAX(compare_at_price) FROM product_variants WHERE product_id = p.id AND is_active = TRUE AND deleted_at IS NULL) AS "maxCompareAt",
               (SELECT COALESCE(SUM(i.quantity - i.reserved),0) FROM inventory i
                 JOIN product_variants v2 ON v2.id = i.variant_id
-                WHERE v2.product_id = p.id AND v2.is_active = 1) AS available
+                WHERE v2.product_id = p.id AND v2.is_active = TRUE) AS available
        FROM products p
        LEFT JOIN brands b ON b.id = p.brand_id
        WHERE p.id IN (${ph}) AND p.status = 'published' AND p.deleted_at IS NULL`,

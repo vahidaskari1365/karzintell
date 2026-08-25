@@ -81,6 +81,12 @@ export class AdminTicketsController {
     return { data: await this.service.adminReply(id, admin.id, dto.body, !!dto.isInternal) };
   }
 
+  @Post(':id/assign-to-me')
+  @RequirePermissions('tickets.assign')
+  async assignToMe(@Param('id', ParseIntPipe) id: number, @CurrentUser() admin: AuthUser) {
+    return { data: await this.service.assign(id, admin.id) };
+  }
+
   @Post(':id/status')
   @RequirePermissions('tickets.reply')
   async status(@Param('id', ParseIntPipe) id: number, @Body() dto: StatusDto) {

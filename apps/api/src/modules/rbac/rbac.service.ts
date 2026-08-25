@@ -1,3 +1,4 @@
+import { dbQuery } from '../../common/utils';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -59,7 +60,7 @@ export class RbacService {
       .innerJoin('roles', 'r', 'r.id = ru.role_id')
       .innerJoin('permission_role', 'pr', 'pr.role_id = r.id')
       .innerJoin('permissions', 'p', 'p.id = pr.permission_id')
-      .select(['r.name AS roleName', 'p.name AS permName'])
+      .select(['r.name AS "roleName"', 'p.name AS "permName"'])
       .where('ru.user_id = :userId', { userId })
       .getRawMany<{ roleName: string; permName: string }>();
 
@@ -84,7 +85,7 @@ export class RbacService {
 
   private async resolvePermissionNames(ids: number[]): Promise<Map<number, string>> {
     if (!ids.length) return new Map();
-    const rows = await this.permUsers.manager.query(
+    const rows = await dbQuery(this.permUsers.manager,
       `SELECT id, name FROM permissions WHERE id IN (${ids.map(() => '?').join(',')})`,
       ids,
     );
@@ -215,10 +216,10 @@ export class RbacService {
   private async setRolePermissions(roleId: number, keys: string[]) {
     const ids = await this.perms.find({ where: { name: In(keys) }, select: { id: true } });
     const manager = this.roles.manager;
-    await manager.query('DELETE FROM permission_role WHERE role_id = ?', [roleId]);
+    await dbQuery(manager, 'DELETE FROM permission_role WHERE role_id = ?', [roleId]);
     if (ids.length) {
       const values = ids.map((p) => `(${p.id}, ${roleId})`).join(',');
-      await manager.query(`INSERT INTO permission_role (permission_id, role_id) VALUES ${values}`);
+      await dbQuery(manager, `INSERT INTO permission_role (permission_id, role_id) VALUES ${values}`);
     }
   }
 
