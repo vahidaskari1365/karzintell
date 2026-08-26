@@ -1,7 +1,7 @@
 # ============================================================================
 # کارزینتل — استقرار Production
-# دیتابیس این stack یک Supabase/PostgreSQL مدیریت‌شده است و داخل Docker اجرا نمی‌شود.
-# قبل از اجرا: migration را با `supabase db push` اعمال کنید و DATABASE_URL را تنظیم کنید.
+# دیتابیس این stack یک MySQL/MariaDB مدیریت‌شده است و داخل Docker اجرا نمی‌شود.
+# قبل از اجرا: DB_* را تنظیم کنید، سپس migration را با `npm run db:migrate` اعمال کنید.
 # ============================================================================
 name: karzintell
 
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------- ذخیره‌سازی فایل محلی
-  # برای استفاده از Supabase Storage یا S3 خارجی، S3_ENDPOINT و کلیدها را عوض کنید
+  # برای استفاده از S3 خارجی، S3_ENDPOINT و کلیدها را عوض کنید
   # و این دو سرویس MinIO/minio-init را از compose حذف یا با profile جدا اجرا کنید.
   minio:
     image: minio/minio:latest
@@ -76,14 +76,17 @@ services:
       API_PUBLIC_URL: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
       WEB_URL: ${WEB_URL:?WEB_URL is required}
       SWAGGER: "false"
-      # Supabase/PostgreSQL — pooled URL برای API، direct URL فقط برای migration/seed
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      DB_SSL: "true"
-      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      # MySQL/MariaDB — همان متغیرهای پروژه؛ دیتابیس توسط سرور/ cPanel ساخته می‌شود
+      DB_HOST: ${DB_HOST:?DB_HOST is required}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_NAME: ${DB_NAME:?DB_NAME is required}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       DB_LOGGING: "false"
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
-      # Seed اختیاری و کنترل‌شده؛ migration هرگز از entrypoint اجرا نمی‌شود
+      DB_CHARSET: "utf8mb4"
+      DB_TIMEZONE: "+03:30"
+      # Seed اختیاری و کنترل‌شده؛ migration با npm run db:migrate اجرا می‌شود
       RUN_SEED: ${RUN_SEED:-false}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
       SEED_ADMIN_PHONE: ${SEED_ADMIN_PHONE:-09000000000}

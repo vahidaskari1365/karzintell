@@ -1,7 +1,8 @@
 -- ============================================================================
 -- کارزینتل — MySQL/MariaDB Schema
 -- ============================================================================
--- این فایل را در phpMyAdmin یا خط فرمان MySQL اجرا کنید.
+-- Schema مرجع این پروژه است؛ در Production با TypeORM Migration اعمال می‌شود:
+--   npm install && npm run build && npm run db:migrate
 -- طراحی شده برای MySQL 8 / MariaDB 10.5+
 -- Charset: utf8mb4 برای پشتیبانی از UTF-8 فارسی
 -- واحد پول همه مبالغ: ریال.
@@ -16,7 +17,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS `users` (
   `id` BIGINT UNSIGNED AUTO_INCREMENT NOT NULL,
-  `auth_user_id` CHAR(36) NULL COMMENT 'UUID for Supabase Auth bridge',
+  `auth_user_id` CHAR(36) NULL COMMENT 'UUID for external auth bridge',
   `full_name` VARCHAR(120) NOT NULL,
   `email` VARCHAR(190) NULL,
   `phone` VARCHAR(15) NOT NULL,

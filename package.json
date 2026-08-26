@@ -11,6 +11,12 @@
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
     "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
     "seed": "npm run seed -w apps/api",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:migrate:prod": "npm run db:migrate:prod -w apps/api",
+    "migration:generate": "npm run migration:generate -w apps/api",
+    "migration:run": "npm run migration:run -w apps/api",
+    "migration:revert": "npm run migration:revert -w apps/api",
+    "migration:show": "npm run migration:show -w apps/api",
     "test": "npm run test -w apps/api",
     "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web"
   },

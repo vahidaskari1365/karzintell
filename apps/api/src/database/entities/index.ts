@@ -13,7 +13,7 @@ export * from './system.entity';
 export * from './wallet.entity';
 
 import { User, UserAddress, VerificationCode, RefreshToken } from './user.entity';
-import { Role, Permission, PermissionUser, RoleUser } from './rbac.entity';
+import { Role, Permission, PermissionRole, PermissionUser, RoleUser } from './rbac.entity';
 import { Brand, Category, Attribute, AttributeValue, CategoryAttribute } from './catalog.entity';
 import {
   Product,
@@ -38,7 +38,7 @@ import { Wallet, WalletTransaction } from './wallet.entity';
 
 export const ALL_ENTITIES = [
   User, UserAddress, VerificationCode, RefreshToken,
-  Role, Permission, PermissionUser, RoleUser,
+  Role, Permission, PermissionRole, PermissionUser, RoleUser,
   Brand, Category, Attribute, AttributeValue, CategoryAttribute,
   Product, ProductVariant, ProductVariantValue, ProductImage, ProductVideo,
   Tag, ProductTag, ProductRelation, ProductAttributeValue,

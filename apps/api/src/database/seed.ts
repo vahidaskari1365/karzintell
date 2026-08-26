@@ -6,11 +6,17 @@
  */
 import 'dotenv/config';
 import 'reflect-metadata';
+import { randomBytes } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { ALL_ENTITIES } from './entities';
 import { env } from '../config/configuration';
 import { dbQuery } from '../common/utils';
+
+function tempPassword(): string {
+  // Only used when SEED_ADMIN_PASSWORD/SEED_EXTRA_SUPER_ADMIN_PASSWORD is not set.
+  return randomBytes(12).toString('base64url');
+}
 
 const PERMISSIONS: Array<[string, string, string]> = [
   ['dashboard.view', 'مشاهده داشبورد', 'dashboard'], ['users.view', 'مشاهده کاربران', 'users'],

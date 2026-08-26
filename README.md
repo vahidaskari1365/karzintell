@@ -11,35 +11,35 @@
 |---|---|
 | Frontend | Next.js ۱۵ · React ۱۹ · TypeScript · Tailwind CSS ۴ · (PWA) |
 | Backend | NestJS ۱۱ · Node.js ۲۲ · TypeORM |
-| Database | Supabase PostgreSQL 15 + RLS |
+| Database | MySQL 8 / MariaDB 10.5+ (TypeORM Migration, cPanel-ready) |
 | Cache / Queue | Redis 7 + BullMQ |
 | Search | Meilisearch (آمادهٔ مهاجرت به Elasticsearch) |
-| Storage | Supabase Storage یا S3-compatible |
+| Storage | S3-compatible (MinIO/S3) |
 
 ## مستندات طراحی
 
 | سند | محتوا |
 |---|---|
 | [docs/01-architecture.md](docs/01-architecture.md) | معماری کلی، ماژول‌ها، امنیت، احراز هویت RBAC، استقرار |
-| [docs/02-database-design.md](docs/02-database-design.md) | ERD، شرح ۴۱ جدول، ایندکس‌ها، سیاست seed/backup |
+| [docs/02-database-design.md](docs/02-database-design.md) | ERD، شرح جداول، ایندکس‌ها، سیاست seed/backup |
 | [docs/03-api-design.md](docs/03-api-design.md) | تمام endpointهای فروشگاه و پنل ادمین + قرارداد خطا/صفحه‌بندی |
 | [docs/04-folder-structure.md](docs/04-folder-structure.md) | ساختار Monorepo و قراردادهای نام‌گذاری |
-| [supabase/migrations/20260825000000_initial_store.sql](supabase/migrations/20260825000000_initial_store.sql) | migration کامل PostgreSQL + RLS + seed پایه |
+| [DEPLOY-MYSQL.md](DEPLOY-MYSQL.md) | راهنمای استقرار Production روی cPanel با MySQL |
 
 ## راه‌اندازی زیرساخت توسعه
 
 ```bash
 cp .env.example .env
 docker compose up -d          # Redis · Meilisearch · MinIO · MailHog
-supabase db push              # یا migration را در SQL Editor اجرا کنید
-npm run seed                  # با DATABASE_URL و SEED_ADMIN_PASSWORD
+npm run db:migrate            # اجرای تمام Migration های TypeORM
+npm run seed                  # با DB_* و SEED_ADMIN_PASSWORD
 ```
 
 | سرویس | آدرس |
 |---|---|
 | فروشگاه (وب) | http://localhost:3000 (مرحله ۲) |
 | API + Swagger | http://localhost:4000/api/v1 · /api/docs (مرحله ۲) |
-| Supabase Studio | داشبورد پروژه Supabase |
+| MySQL/MariaDB | روی cPanel یا سرور MySQL مدیریت‌شده |
 | کنسول MinIO | http://localhost:9001 |
 | داشبورد Meilisearch | http://localhost:7700 |
 | صندوق ایمیل (MailHog) | http://localhost:8025 |
@@ -54,7 +54,7 @@ npm run seed                  # با DATABASE_URL و SEED_ADMIN_PASSWORD
 
 ## وضعیت مراحل (ثبت سفارش از برنامه ۳۰ مرحله‌ای)
 
-- [x] **۱.** معماری، طراحی دیتابیس (۵۴ جدول)، طراحی API، ساختار پوشه‌ها
+- [x] **۱.** معماری، طراحی دیتابیس (۵۷ جدول)، طراحی API، ساختار پوشه‌ها
 - [x] **۲–۵.** Monorepo (Next.js 15 + NestJS 11)، احراز هویت (رمز/OTP)، RBAC، کاتالوگ، سبد، سفارش، پنل ادمین و حساب کاربری
 - [x] **۶–۱۰.** دسته‌بندی چندسطحی، جستجو + autocomplete + غلط‌یاب، فیلترها، صفحه محصول (زوم/اشتراک/مرتبط/نظرات)
 - [x] **۱۱–۱۹.** درگاه‌ها (زرین‌پال/آیدی‌پی/نکست‌پی/ملت/سامان)، حمل‌ونقل (پست/تیپاکس/پیک + ارسال رایگان)، کوپن روی محصول/دسته/کمپین، علاقه‌مندی، مقایسه، فاکتور و چاپ، پیامک/ایمیل/Push اعلان، سئو (Meta/OG/Schema/Sitemap/Robots/Canonical)

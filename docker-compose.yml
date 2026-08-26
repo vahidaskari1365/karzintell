@@ -1,9 +1,8 @@
 # ============================================================================
 # کارزینتل — سرویس‌های کمکی توسعه
-# دیتابیس رسمی پروژه Supabase/PostgreSQL است؛ migration را با Supabase CLI اجرا کنید:
-#   supabase start   (اختیاری، برای Supabase محلی)
-#   supabase db reset
-# سپس API را با DATABASE_URL اجرا کنید. این compose فقط Redis، جستجو، فایل و ایمیل را می‌آورد.
+# دیتابیس پروژه MySQL/MariaDB است (روی cPanel یا سرور MySQL مدیریت‌شده).
+# schema را با `npm run db:migrate` ایجاد/به‌روزرسانی کنید.
+# این compose فقط Redis، جستجو، فایل و ایمیل را می‌آورد.
 # ============================================================================
 name: karzintell
 
@@ -39,7 +38,7 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------- ذخیره‌سازی فایل محلی
-  # در production از Supabase Storage یا یک S3 سازگار استفاده کنید.
+  # در production از S3 سازگار یا فضای ذخیره‌سازی هاست استفاده کنید.
   minio:
     image: minio/minio:latest
     container_name: karzintell-minio

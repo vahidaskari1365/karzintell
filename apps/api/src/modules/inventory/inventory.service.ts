@@ -51,7 +51,7 @@ export class InventoryService {
 
   // ----------------------------------------------------------- موجودی
   async ensureRow(variantId: number, warehouseId: number, manager?: EntityManager) {
-    // ON CONFLICT closes the race where two first-time checkouts create the row together.
+    // Ignoring duplicate inserts closes the race where two first-time checkouts create the row together.
     await (manager || this.em)
       .getRepository(Inventory)
       .createQueryBuilder()

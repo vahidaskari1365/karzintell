@@ -10,7 +10,7 @@
 |---|---|---|
 | سرور لینوکسی (Ubuntu 22/24) | — | ۲GB RAM کافی است |
 | دامین | مثل `karzintell.ir` | به آی‌پی سرور وصل (A Record) کنید |
-| Docker + Docker Compose | آخرین | اجرای Redis/API/Web با یک دستور؛ دیتابیس در Supabase |
+| Docker + Docker Compose | آخرین | اجرای Redis/API/Web با یک دستور؛ دیتابیس MySQL/MariaDB مدیریت‌شده |
 | Node.js | 22 | فقط برای build فرانت (یا CI) |
 
 ## معماری اجرا
@@ -18,7 +18,7 @@
 ```
 [ کاربر ] ──HTTPS──▶ [ Nginx:443 ] ──▶ Web (Next.js) :3000
                       │              ──▶ API (NestJS) :4000
-                      └──▶ Supabase PostgreSQL · Redis 7 · Meilisearch · MinIO
+                      └──▶ MySQL/MariaDB · Redis 7 · Meilisearch · MinIO
 ```
 
 ## گام ۱ — آماده‌سازی سرور (۵ دقیقه)
@@ -45,7 +45,7 @@ nano .env        # مقادیر جدول زیر را پر کنید
 | متغیر | مقدار نمونه | توضیح |
 |---|---|---|
 | `NODE_ENV` | `production` | حتماً |
-| `DATABASE_URL` / `DIRECT_DATABASE_URL` | اتصال pooled/direct Supabase | پایگاه‌داده |
+| `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | اتصال MySQL/MariaDB | پایگاه‌داده |
 | `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | دو رشته تصادفی مستقل ۶۴ کاراکتری | امنیت توکن |
 | `API_PUBLIC_URL` | `https://api.karzintell.ir` | آدرس عمومی API |
 | `WEB_URL` | `https://karzintell.ir` | برای لینک ایمیل‌ها |
@@ -63,16 +63,16 @@ nano .env        # مقادیر جدول زیر را پر کنید
 ## گام ۳ — اجرا
 
 ```bash
-# زیرساخت + دیتابیس
-supabase db push
+# زیرساخت
 docker compose -f docker-compose.prod.yml up -d --build
 
-# داده اولیه (ادمین، نقش‌ها، صفحات، روش‌های ارسال، FAQ و وبلاگ نمونه)
-docker compose exec api npm run seed     # یا: npm run seed با نود محلی
-
-# بیلد و اجرای اپ‌ها
+# migration + داده اولیه (ادمین، نقش‌ها، صفحات، روش‌های ارسال، FAQ و وبلاگ نمونه)
 npm ci
 npm run build
+npm run db:migrate
+docker compose exec api npm run seed     # یا: npm run seed با نود محلی
+
+# اجرای اپ‌ها
 NODE_ENV=production npm run start -w apps/api &   # یا PM2
 npm run start -w apps/web &
 ```
