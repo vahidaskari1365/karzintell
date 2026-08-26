@@ -34,8 +34,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: payload.icon || '/icon.svg',
-      badge: '/icon.svg',
+      icon: payload.icon || '/karzin-logo-mark.png',
+      badge: '/karzin-logo-mark.png',
       dir: 'rtl',
       lang: 'fa',
       data: { url: payload.url || '/' },

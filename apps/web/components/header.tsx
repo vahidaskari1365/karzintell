@@ -11,7 +11,7 @@ import { CategoryNode } from '@/lib/types';
 import { faNumber } from '@/lib/format';
 import { NotificationsBell } from './notifications-bell';
 import { SearchBox } from './search-box';
-import { BrandMark, BrandName } from './brand-logo';
+import { BrandLogo } from './brand-logo';
 
 
 function useCartCount() {
@@ -94,10 +94,10 @@ export function Header() {
 
         <Link
           href="/"
-          className="group flex items-center gap-3 rounded-2xl bg-[#10181a]/90 px-4 py-2 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-400/30 backdrop-blur transition-transform hover:scale-[1.03]"
+          className="logo-sheen group flex items-center rounded-2xl bg-[#10181a]/95 px-4 py-2 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-400/30 backdrop-blur transition-transform hover:scale-[1.03]"
         >
-          <BrandMark className="h-11 w-11" />
-          <BrandName dark className="text-[1.35rem]" />
+          {/* لوگوی رسمی کارزینتل (نشان + نوشته) با هاله سبز نفس‌کش */}
+          <BrandLogo className="h-11 sm:h-12" motion="logo-glow" />
         </Link>
 
         {/* منوی اصلی - دسکتاپ */}

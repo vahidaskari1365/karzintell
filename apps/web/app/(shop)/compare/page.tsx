@@ -86,7 +86,7 @@ export default function ComparePage() {
                     <div className="flex flex-col items-center gap-3 text-center">
                       <Link href={`/products/${p.slug}`}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={p.image || '/icon.svg'} alt={p.name} className="h-28 w-28 rounded-2xl object-cover" />
+                        <img src={p.image || '/karzin-logo-mark.png'} alt={p.name} className="h-28 w-28 rounded-2xl object-cover" />
                       </Link>
                       <Link href={`/products/${p.slug}`} className="line-clamp-2 text-sm font-bold leading-6 hover:text-blue-400">{p.name}</Link>
                       <RatingStars value={p.ratingAvg} count={p.ratingCount} />
