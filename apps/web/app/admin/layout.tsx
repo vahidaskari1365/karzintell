@@ -9,6 +9,7 @@ import {
   Store, Ticket, TicketPercent, Truck, UserCog, Users, X,
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth-guard';
+import { BrandMark } from '@/components/brand-logo';
 import { useAuthStore, hasPermission } from '@/lib/auth-store';
 import clsx from 'clsx';
 
@@ -49,8 +50,7 @@ function Shell({ children }: { children: ReactNode }) {
   const nav = (
     <nav className="flex h-full flex-col gap-0.5 overflow-y-auto p-3">
       <Link href="/admin" className="mb-4 flex items-center gap-2.5 px-2 py-3" onClick={() => setOpen(false)}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-mark.svg" alt="کارزینتل" className="h-8 w-8" />
+        <BrandMark className="h-9 w-9 ring-1 ring-emerald-400/30" motion="logo-tilt" />
         <span className="font-black text-slate-900">پنل مدیریت کارزینتل</span>
       </Link>
       {visible.map((m) => {

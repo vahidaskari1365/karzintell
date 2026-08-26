@@ -253,3 +253,54 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
   box-shadow: 0 0 0 3px rgba(16, 185, 129, .25) !important;
 }
 .neon-search svg { color: #059669 !important; }
+
+/* ───── موشن‌گرافیک لوگوی کارزینتل — شناورسازی، هاله سبز، برق نور روی لوگو ───── */
+/* شناور شدن آرام لوگو */
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+.logo-float { animation: logo-float 6s ease-in-out infinite; will-change: transform; }
+
+/* هاله سبز نئونی که نفس می‌کشد */
+@keyframes logo-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(16, 185, 129, .30)); }
+  50%      { filter: drop-shadow(0 0 16px rgba(16, 185, 129, .58)); }
+}
+.logo-glow { animation: logo-glow 3.6s ease-in-out infinite; }
+
+/* برق نور (شین) که هرچند ثانیه از روی لوگو رد می‌شود */
+@keyframes logo-sheen {
+  0%        { transform: translateX(-180%) skewX(-18deg); }
+  55%, 100% { transform: translateX(340%) skewX(-18deg); }
+}
+.logo-sheen { position: relative; overflow: hidden; border-radius: inherit; }
+.logo-sheen::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 34%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .55), transparent);
+  animation: logo-sheen 5.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* وریدن لوگو با پاپ ملایم (صفحات احراز هویت) */
+@keyframes logo-pop {
+  0%   { transform: scale(.55); opacity: 0; }
+  60%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.logo-pop { animation: logo-pop .75s cubic-bezier(.2, .8, .3, 1.15) both; }
+
+/* چرخش خفیف سه‌بعدی با هاور */
+.logo-tilt { transition: transform .45s cubic-bezier(.22, 1, .36, 1); transform-style: preserve-3d; }
+.logo-tilt:hover { transform: perspective(500px) rotateY(-10deg) rotateX(6deg) scale(1.06); }
+
+/* احترام به حساسیت به حرکت */
+@media (prefers-reduced-motion: reduce) {
+  .logo-float, .logo-glow, .logo-pop, .logo-tilt { animation: none !important; transition: none !important; }
+  .logo-sheen::after { animation: none !important; display: none; }
+}

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   keywords: ['خرید موبایل', 'گوشی هوشمند', 'ساعت هوشمند', 'هدفون', 'لوازم جانبی', 'قطعات الکترونیک', 'کارزینتل'],
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
-  icons: { icon: '/icon.svg' },
+  // آیکون تب مرورگر از فایل‌کانوینشن app/icon.png (نشان رسمی کارزینتل) خوانده می‌شود
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
@@ -41,7 +41,7 @@ const orgJsonLd = {
   '@type': 'Organization',
   name: SITE_NAME,
   url: SITE_URL,
-  logo: `${SITE_URL}/icon.svg`,
+  logo: `${SITE_URL}/karzin-logo.png`,
 };
 const websiteJsonLd = {
   '@context': 'https://schema.org',

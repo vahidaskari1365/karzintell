@@ -70,7 +70,7 @@ export function BlogDetail({ slug }: { slug: string }) {
             publisher: {
               '@type': 'Organization',
               name: 'کارزینتل',
-              logo: { '@type': 'ImageObject', url: `${typeof window !== 'undefined' ? window.location.origin : ''}/icon.svg` },
+              logo: { '@type': 'ImageObject', url: `${typeof window !== 'undefined' ? window.location.origin : ''}/karzin-logo.png` },
             },
             mainEntityOfPage: {
               '@type': 'WebPage',
