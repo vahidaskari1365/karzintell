@@ -21,7 +21,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="mb-4">
-            <BrandLockup subtitle={false} />
+            <BrandLockup dark subtitle={false} />
           </div>
           <p className="text-sm leading-7 text-slate-400">
             فروشگاه اینترنتی قطعات و گجت‌های الکترونیک؛ موبایل، ساعت هوشمند، هدفون و لوازم جانبی با ضمانت اصالت کالا.

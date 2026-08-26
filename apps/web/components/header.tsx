@@ -11,7 +11,7 @@ import { CategoryNode } from '@/lib/types';
 import { faNumber } from '@/lib/format';
 import { NotificationsBell } from './notifications-bell';
 import { SearchBox } from './search-box';
-import { BrandLogo } from './brand-logo';
+import { BrandSignature } from './brand-logo';
 
 
 function useCartCount() {
@@ -92,12 +92,8 @@ export function Header() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link
-          href="/"
-          className="logo-sheen group flex items-center rounded-2xl bg-[#10181a]/95 px-4 py-2 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-400/30 backdrop-blur transition-transform hover:scale-[1.03]"
-        >
-          {/* لوگوی رسمی کارزینتل (نشان + نوشته) با هاله سبز نفس‌کش */}
-          <BrandLogo className="h-11 sm:h-12" motion="logo-glow" />
+        <Link href="/" aria-label="کارزینتل" className="group shrink-0">
+          <BrandSignature size="md" tone="light" />
         </Link>
 
         {/* منوی اصلی - دسکتاپ */}
