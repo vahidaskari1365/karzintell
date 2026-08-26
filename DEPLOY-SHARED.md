@@ -1,16 +1,17 @@
 <div dir="rtl">
 
-# استقرار کارزینتل روی هاست اشتراکی + Supabase
+# استقرار کارزینتل روی هاست اشتراکی + MySQL
 
-> این راهنما برای محیطی است که Docker ندارد. دیتابیس رسمی فروشگاه Supabase/PostgreSQL است؛
-> این اسکریپت هرگز دیتابیس را حذف یا خودکار بازسازی نمی‌کند.
+> این راهنما برای محیطی است که Docker ندارد و از MySQL/MariaDB روی cPanel (یا هاست
+> اشتراکی دیگر) استفاده می‌کند. دیتابیس فروشگاه MySQL/MariaDB است، Schema توسط
+> TypeORM Migration ساخته می‌شود و این اسکریپت هرگز Database یا User را نمی‌سازد.
 
 ## پیش‌نیاز
 
 - Node.js 20 یا بالاتر و npm
-- یک پروژه Supabase و دسترسی به SQL Editor یا Supabase CLI
-- `DATABASE_URL` برای API (ترجیحاً pooled روی پورت 6543)
-- `DIRECT_DATABASE_URL` برای migration/seed/backup (اتصال مستقیم روی پورت 5432)
+- دسترسی cPanel: **MySQL Databases** و **Setup Node.js App**
+- Database و User ساخته‌شده در cPanel
+- متغیرهای `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 
 ## ۱) دریافت پروژه و تنظیم env
 
@@ -25,8 +26,11 @@ nano .env
 
 ```dotenv
 NODE_ENV=production
-DATABASE_URL=postgresql://postgres.[project-ref]:[password]@[pooler-host]:6543/postgres?pgbouncer=true
-DIRECT_DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=user_dbuser
+DB_PASSWORD=<رمز قوی>
+DB_NAME=user_dbname
 JWT_ACCESS_SECRET=<openssl rand -base64 48>
 JWT_REFRESH_SECRET=<openssl rand -base64 48>
 CORS_ORIGINS=https://shop.example.com
@@ -37,44 +41,37 @@ SEED_ADMIN_PHONE=09xxxxxxxxx
 SEED_ADMIN_PASSWORD=<رمز قوی و موقت>
 ```
 
-## ۲) اجرای migration Supabase
-
-در سیستم توسعه‌ای که Supabase CLI نصب دارد:
+## ۲) اجرای migration (TypeORM)
 
 ```bash
-supabase login
-supabase link --project-ref <project-ref>
-supabase db push
-```
-
-یا فایل `supabase/migrations/20260825000000_initial_store.sql` را در SQL Editor اجرا کنید.
-این migration شامل جداول کاتالوگ، سفارش، پرداخت، انبار، RBAC، اعلان، پشتیبانی، RLS و
-توابع رزرو اتمیک است.
-
-## ۳) نصب، seed و build
-
-```bash
-npm ci
-npm run seed                 # فقط در همان محیطی که SEED_ADMIN_PASSWORD تنظیم شده
+npm install
 npm run build
+npm run db:migrate
 ```
 
-seed idempotent است و رمز ادمین را در کد/SQL ذخیره نمی‌کند. اگر `SEED_ADMIN_PASSWORD` خالی
-باشد، می‌توانید seed را دستی در محیط امن اجرا کنید تا رمز یک‌بارمصرف تولیدشده در خروجی را
-بگیرید؛ برای production بهتر است رمز را صریحاً از secret manager بدهید.
+Migration همه جداول، Primary Keyها، Foreign Keyها، Uniqueها، Indexها و Constraintها را
+روی MySQL/MariaDB می‌سازد. جدول `migrations` باعث می‌شود اجرای مجدد امن و idempotent باشد.
+
+## ۳) Seed
+
+```bash
+SEED_ADMIN_PASSWORD='رمز قوی' npm run seed
+```
+
+seed فقط داده‌های اولیه را وارد می‌کند و جدول نمی‌سازد.
 
 ## ۴) اجرای همیشگی
 
 ```bash
-npm i -g pm2
+cd apps/api
+npm run start
+# یا با PM2
 pm2 start "npm run start -w apps/api" --name krz-api
 pm2 start "npm run start -w apps/web" --name krz-web
 pm2 save && pm2 startup
 ```
 
-- API روی پورت `4000` و وب روی پورت `3000` اجرا می‌شود.
-- reverse proxy هاست را روی HTTPS تنظیم کنید و `CORS_ORIGINS` را دقیقاً برابر origin سایت بگذارید.
-- سلامت API: `GET /api/v1/health`.
+برای راهنمای کامل cPanel به [DEPLOY-MYSQL.md](DEPLOY-MYSQL.md) مراجعه کنید.
 
 ## قابلیت‌هایی که به سرویس بیرونی نیاز دارند
 
@@ -83,19 +80,17 @@ pm2 save && pm2 startup
 | پرداخت | کلید درگاه و callback HTTPS |
 | پیامک OTP/هشدار | `SMS_DRIVER` و کلید پنل پیامک |
 | ایمیل | `SMTP_HOST`، کاربر و رمز SMTP |
-| فایل محصول | Supabase Storage/S3 با `S3_ENDPOINT` و کلیدهای اختصاصی |
+| فایل محصول | S3 با `S3_ENDPOINT` و کلیدهای اختصاصی |
 | جستجوی سریع | `MEILI_HOST` و `MEILI_API_KEY`؛ در نبود آن fallback دیتابیس فعال است |
 | اعلان مرورگر | `VAPID_PUBLIC_KEY` و `VAPID_PRIVATE_KEY` |
 
 ## بکاپ
 
-اتصال مستقیم را فقط در secret manager/محیط job قرار دهید:
-
 ```bash
-DIRECT_DATABASE_URL='postgresql://...' BACKUP_DIR=/var/backups/karzintell bash scripts/backup.sh
+DB_HOST=... DB_PORT=... DB_USER=... DB_PASSWORD=... DB_NAME=... \
+  BACKUP_DIR=/var/backups/karzintell bash scripts/backup.sh
 ```
 
-`pg_dump` به‌صورت فشرده ذخیره می‌شود و فایل‌های قدیمی طبق `BACKUP_KEEP_DAYS` حذف می‌شوند.
-برای بازیابی، ابتدا روی یک پروژه آزمایشی Supabase restore و smoke test انجام دهید.
+بکاپ با `mysqldump` تولید می‌شود و فایل‌های قدیمی طبق `BACKUP_KEEP_DAYS` حذف می‌شوند.
 
 </div>

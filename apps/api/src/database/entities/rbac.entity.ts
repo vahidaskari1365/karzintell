@@ -59,6 +59,12 @@ export class Permission {
   @Column({ name: 'group_name', length: 50 })
   groupName: string;
 
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
+  updatedAt: Date;
+
   @ManyToMany(() => Role, (r) => r.permissions, { createForeignKeyConstraints: false })
   roles: Role[];
 }
@@ -80,6 +86,16 @@ export class PermissionUser {
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
+}
+
+/** اتصال مجوز به نقش */
+@Entity('permission_role')
+export class PermissionRole {
+  @PrimaryColumn({ name: 'permission_id', type: 'int', unsigned: true })
+  permissionId: number;
+
+  @PrimaryColumn({ name: 'role_id', type: 'int', unsigned: true })
+  roleId: number;
 }
 
 /** ردیف pivot نقش-کاربر (برای خواندن assigned_by) */

@@ -91,7 +91,7 @@ karzintell/
 │       │       ├── attributes/
 │       │       ├── inventory/      # warehouses, stock, movements (+ تراکنش)
 │       │       ├── search/         # meilisearch adapter + admin reindex
-│       │       ├── cart/           # redis hot + PostgreSQL/Supabase persist, merge
+│       │       ├── cart/           # redis hot + MySQL/MariaDB persist, merge
 │       │       ├── coupons/
 │       │       ├── orders/         # state machine + histories + invoice pdf
 │       │       ├── payments/       # gateway interface + zarinpal adapter + callback

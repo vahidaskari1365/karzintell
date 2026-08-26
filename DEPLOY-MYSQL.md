@@ -1,153 +1,173 @@
-# راهنمای Deploy کارزینتل روی cPanel با MySQL
+# راهنمای Deploy کارزینتل روی cPanel با MySQL / MariaDB
 
-## تغییرات از PostgreSQL به MySQL
-
-پروژه کارزینتل از PostgreSQL/Supabase به MySQL/MariaDB منتقل شده است.
-
-### تغییرات اصلی:
-- **Database Driver**: از `pg` به `mysql2` تغییر کرد
-- **TypeORM Type**: از `postgres` به `mysql` تغییر کرد
-- **SQL Syntax**: تمام syntaxهای PostgreSQL به MySQL تبدیل شدند
-- **Column Types**: `TIMESTAMPTZ` → `DATETIME`, `JSONB` → `JSON`
+> این راهنما برای استقرار Production روی cPanel با دیتابیس **MySQL 8 / MariaDB 10.5+** است.
+> Schema تمام جداول توسط **TypeORM Migration** و با دستور `npm run db:migrate` ایجاد و به‌روزرسانی می‌شود.
+> **نیازی به Import دستی فایل SQL در phpMyAdmin نیست.**
 
 ---
 
 ## پیش‌نیازها
 
-### سرور:
-- PHP 8.x (برای phpMyAdmin)
-- Node.js 18+ (برای اجرای API)
-- MySQL 8 یا MariaDB 10.5+
-
-### دیتابیس:
-- دسترسی به MySQL Database در cPanel
-- ایجاد دیتابیس و کاربر دیتابیس
+- Node.js 20 یا بالاتر
+- npm
+- cPanel با دسترسی **MySQL Databases** و **Setup Node.js App**
+- MySQL 8 یا MariaDB 10.5+ (روی خود cPanel یا سرور MySQL مدیریت‌شده)
 
 ---
 
-## مراحل Deploy
+## مراحل راه‌اندازی در cPanel
 
-### 1. ایجاد دیتابیس در cPanel
+### ۱) MySQL Database بسازید
 
-1. وارد cPanel شوید
-2. به بخش **Databases** بروید
-3. روی **MySQL Database Wizard** کلیک کنید
-4. یک دیتابیس جدید ایجاد کنید (مثلاً `karzinte_db`)
-5. یک کاربر دیتابیس ایجاد کنید و دسترسی بدهید
-
-### 2. آپلود کدها
-
-#### روش اول: Git Version Control در cPanel
-
-1. در cPanel به **Git Version Control** بروید
-2. روی **Create** کلیک کنید
-3. Repository URL را وارد کنید:
+1. وارد cPanel شوید.
+2. به بخش **MySQL Databases** بروید.
+3. یک Database بسازید، مثلاً:
    ```
-   https://github.com/YOUR_USERNAME/karzintell.git
+   karzinte_db
    ```
-4. مسیر را تنظیم کنید:
-   ```
-   /home/username/karzintell
-   ```
-5. Branch را `main` انتخاب کنید
 
-#### روش دوم: FTP/SFTP
+> نکته: در cPanel معمولاً پیشوند کاربر به نام دیتابیس اضافه می‌شود (مثلاً `user_karzinte_db`).
+> مقدار دقیق را در `DB_NAME` قرار دهید.
 
-فایل‌ها را در مسیر مناسب آپلود کنید.
+### ۲) MySQL User بسازید
 
-### 3. تنظیم Environment Variables
+1. در همین بخش **MySQL Databases** یک **MySQL User** بسازید.
+2. نام کاربر و رمز عبور قوی را ذخیره کنید (مثلاً `karzinte_user`).
 
-یک فایل `.env` در ریشه پروژه ایجاد کنید:
+### ۳) User را به Database اضافه کنید
+
+1. در بخش **Add User To Database** کاربر ساخته‌شده را انتخاب کنید.
+2. دیتابیس موردنظر را انتخاب کنید.
+3. دسترسی **ALL PRIVILEGES** را اعطا کنید.
+
+> پروژه هرگز Database یا User نمی‌سازد و permission ساخت Database ندارد؛
+> این کار فقط توسط cPanel انجام می‌شود.
+
+### ۴) Repository را Clone کنید
+
+در cPanel یا در محیطی که Node.js App روی آن اجرا می‌شود:
 
 ```bash
+git clone https://github.com/vahidaskari1365/karzintell.git
+cd karzintell
+```
+
+### ۵) Environment Variables را تنظیم کنید
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+حداقل مقادیر لازم:
+
+```dotenv
 NODE_ENV=production
 
-# API URLs
-NEXT_PUBLIC_API_URL=/api/v1
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com
-NEXT_PUBLIC_APP_URL=https://yourdomain.com
-API_PORT=4000
-API_PUBLIC_URL=https://yourdomain.com
-WEB_URL=https://yourdomain.com
-
-# Database - MySQL
+# Database - MySQL/MariaDB (cPanel)
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=your_db_name
-DB_CHARSET=utf8mb4
+DB_USER=karzinte_user
+DB_PASSWORD=your-database-password
+DB_NAME=karzinte_db
 
-# JWT - حتماً تغییر دهید!
-JWT_ACCESS_SECRET=generate-with-openssl-rand-base64-48
-JWT_REFRESH_SECRET=generate-with-openssl-rand-base64-48
-JWT_ACCESS_TTL_SEC=900
-JWT_REFRESH_TTL_SEC=2592000
-BCRYPT_ROUNDS=12
+# JWT - حتماً با مقدار تصادفی قوی تنظیم کنید
+JWT_ACCESS_SECRET=<openssl rand -base64 48>
+JWT_REFRESH_SECRET=<openssl rand -base64 48>
 
 # CORS
 CORS_ORIGINS=https://yourdomain.com
 
-# Admin - حتماً تغییر دهید!
-SEED_ADMIN_PHONE=09xxxxxxxxx
+# Admin اولیه
 SEED_ADMIN_EMAIL=admin@yourdomain.com
+SEED_ADMIN_PHONE=09xxxxxxxxx
 SEED_ADMIN_PASSWORD=your-secure-password
 ```
 
-### 4. اجرای Migration
+در **Setup Node.js App** نیز همین متغیرها را در Environment Variables اضافه کنید.
 
-ابتدا دیتابیس را در phpMyAdmin ایجاد کنید:
-
-1. وارد phpMyAdmin شوید
-2. دیتابیس خود را انتخاب کنید
-3. روی تب **Import** کلیک کنید
-4. فایل `database/20260825000000_initial_store_mysql.sql` را آپلود کنید
-5. روی **Go** کلیک کنید
-
-### 5. نصب Dependencies و Build
+### ۶) نصب Dependencies
 
 ```bash
-cd ~/karzintell/apps/api
 npm install
+```
+
+### ۷) Build
+
+```bash
 npm run build
 ```
 
-### 6. اجرای Seed (اختیاری)
+### ۸) اجرای Migration
 
 ```bash
-cd ~/karzintell/apps/api
+npm run db:migrate
+```
+
+این دستور تمام Migration‌های اجرانشده‌ی TypeORM را اجرا می‌کند و همه جداول،
+Primary Keyها، Foreign Keyها، Uniqueها، Indexها و Constraintهای فعلی کارزینتل را روی
+MySQL/MariaDB می‌سازد. TypeORM از جدول `migrations` استفاده می‌کند تا دستور هر بار ابتدا
+فقط migration‌های جدید را اجرا کند؛ بنابراین اجرای مجدد آن امن و idempotent است.
+
+> اگر `npm run db:migrate` را دوباره اجرا کنید، پیام "database schema is already up to date"
+> دریافت می‌کنید و چیزی دوباره ساخته نمی‌شود.
+
+### ۹) اجرای Seed
+
+```bash
 npm run seed
 ```
 
-### 7. تنظیم Node.js Application در cPanel
+seed فقط داده‌های اولیه (نقش‌ها، مجوزها، ادمین، انبار و داده‌های نمونه اختیاری) را وارد می‌کند
+و **هرگز Table نمی‌سازد**.
 
-1. در cPanel به **Setup Node.js App** بروید
-2. روی **Create Application** کلیک کنید
-3. تنظیمات:
-   - **Node.js version**: 18 یا بالاتر
+### ۱۰) Node.js Application را Start کنید
+
+در cPanel:
+
+1. به **Setup Node.js App** بروید.
+2. روی **Create Application** کلیک کنید.
+3. تنظیمات پیشنهادی:
+   - **Node.js version**: 20 یا بالاتر
    - **Application mode**: Production
    - **Application root**: `/home/username/karzintell/apps/api`
    - **Application startup file**: `dist/main.js`
    - **Application URL**: `yourdomain.com` یا subdomain
-   - **Log file**: `/home/username/karzintell/apps/api/logs/app.log`
+4. روی **Create** کلیک کنید.
+5. Environment Variables را اضافه کنید (همان مقادیر `.env`).
+6. Restart را بزنید.
 
-4. روی **Create** کلیک کنید
+برای اجرای دستی:
 
-### 8. Environment Variables در Node.js App
-
-در صفحه Node.js App، روی **Edit** کلیک کنید و Environment Variables را اضافه کنید:
-
+```bash
+npm start
 ```
-NODE_ENV=production
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=your_db_name
-JWT_ACCESS_SECRET=your-32-char-secret
-JWT_REFRESH_SECRET=your-32-char-secret
-CORS_ORIGINS=https://yourdomain.com
+
+---
+
+## ترتیب صحیح Production
+
+```bash
+npm install
+npm run build
+npm run db:migrate
+npm run seed
+npm start
 ```
+
+---
+
+## دستورات Migration
+
+| دستور | توضیح |
+|---|---|
+| `npm run db:migrate` | اجرای همه Migration‌های اجرانشده (Production) |
+| `npm run migration:run` | معادل `db:migrate` برای اجرای Migration‌ها |
+| `npm run migration:revert` | برگرداندن آخرین Migration اجراشده |
+| `npm run migration:generate` | تولید Migration از Entityها (نیاز به build) |
+| `npm run migration:show` | مشاهده Migration‌های در انتظار |
+
+در Production مقدار `synchronize` همیشه `false` است؛ هیچ تغییری در Schema خارج از Migration اعمال نمی‌شود.
 
 ---
 
@@ -156,136 +176,60 @@ CORS_ORIGINS=https://yourdomain.com
 ```
 karzintell/
 ├── apps/
-│   ├── api/              # NestJS Backend
-│   │   ├── dist/        # فایل‌های Build
-│   │   ├── src/
-│   │   │   ├── database/
-│   │   │   │   ├── entities/    # Entityهای TypeORM
-│   │   │   │   └── seed.ts       # Seed برای MySQL
-│   │   │   └── config/
-│   │   │       └── configuration.ts
-│   │   └── package.json
-│   └── web/              # Next.js Frontend
+│   └── api/
+│       └── src/
+│           ├── database/
+│           │   ├── entities/                  # Entityهای TypeORM
+│           │   ├── migrations/                # Migrationهای TypeORM
+│           │   ├── data-source.ts             # DataSource برای CLI/Migration
+│           │   ├── run-migrations.ts          # Runner برنامه‌ای `db:migrate`
+│           │   └── seed.ts                    # Seed داده‌های اولیه
+│           └── main.ts
 ├── database/
-│   └── 20260825000000_initial_store_mysql.sql  # Schema برای MySQL
-├── packages/
-│   └── shared/
+│   └── 20260825000000_initial_store_mysql.sql # Schema مرجع MySQL
+├── package.json
 └── .env.example
 ```
 
 ---
 
-## دستورات مهم
+## دیتابیس و Schema
 
-### Development (محلی با MySQL محلی)
-
-```bash
-# اگر MySQL محلی دارید:
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=karzintell
-
-npm install
-npm run build
-npm run seed
-npm start
-```
-
-### Production (cPanel)
-
-```bash
-# نصب dependencies
-npm install
-
-# Build
-npm run build
-
-# Seed (یکبار)
-npm run seed
-
-# اجرا
-npm start
-```
-
----
-
-## متغیرهای محیطی
-
-### متغیرهای الزامی
-
-| متغیر | توضیحات |
-|-------|---------|
-| `DB_HOST` | آدرس دیتابیس (معمولاً `localhost`) |
-| `DB_PORT` | پورت دیتابیس (پیش‌فرض: `3306`) |
-| `DB_USER` | نام کاربری دیتابیس |
-| `DB_PASSWORD` | رمز عبور دیتابیس |
-| `DB_NAME` | نام دیتابیس |
-| `JWT_ACCESS_SECRET` | کلید Secret برای Access Token (حداقل 32 کاراکتر) |
-| `JWT_REFRESH_SECRET` | کلید Secret برای Refresh Token (حداقل 32 کاراکتر) |
-| `SEED_ADMIN_PASSWORD` | رمز عبور اولیه ادمین |
-
-### متغیرهای اختیاری
-
-| متغیر | توضیحات | پیش‌فرض |
-|-------|---------|---------|
-| `CORS_ORIGINS` | دامنه‌های مجاز CORS | `http://localhost:3000` |
-| `REDIS_HOST` | آدرس Redis | - |
-| `S3_*` | تنظیمات S3 Storage | - |
-| `MEILI_*` | تنظیمات MeiliSearch | - |
+- Engine: `InnoDB`
+- Charset: `utf8mb4`
+- Collation: `utf8mb4_unicode_ci`
+- وابستگی DB: `mysql2`
+- Migrationها روی **MySQL 8** و **MariaDB 10.5+** تست/سازگار هستند.
 
 ---
 
 ## عیب‌یابی
 
-### خطای Connection Refused
+### `Error: ER_BAD_DB_ERROR: Unknown database`
+- دیتابیس در cPanel ساخته نشده است یا `DB_NAME` اشتباه است.
+- cPanel ممکن است پیشوند کاربر را به نام اضافه کرده باشد.
 
-```
-Error: connect ECONNREFUSED 127.0.0.1:3306
-```
+### `Error: ER_ACCESS_DENIED_ERROR`
+- `DB_USER` / `DB_PASSWORD` را بررسی کنید.
+- در cPanel کاربر را به همان دیتابیس با **ALL PRIVILEGES** اضافه کنید.
 
-- مطمئن شوید MySQL در حال اجراست
-- مطمئن شوید `DB_HOST` درست است (`localhost` یا `127.0.0.1`)
+### `Error: connect ECONNREFUSED`
+- `DB_HOST` را بررسی کنید (روی cPanel معمولاً `localhost`).
+- در Setup Node.js App از همان `DB_HOST` استفاده کنید.
 
-### خطای Access Denied
+### `Error: ER_NO_SUCH_TABLE`
+- Migration اجرا نشده است:
+  ```bash
+  npm run db:migrate
+  ```
 
-```
-Error: ER_ACCESS_DENIED_ERROR: Access denied for user 'xxx'@'localhost'
-```
-
-- نام کاربری و رمز عبور دیتابیس را بررسی کنید
-- مطمئن شوید کاربر به دیتابیس دسترسی دارد
-
-### خطای Unknown Database
-
-```
-Error: ER_BAD_DB_ERROR: Unknown database 'xxx'
-```
-
-- نام دیتابیس را بررسی کنید
-- مطمئن شوید دیتابیس در phpMyAdmin ایجاد شده است
-
-### خطای Table doesn't exist
-
-```
-Error: ER_NO_SUCH_TABLE: Table 'xxx' doesn't exist
-```
-
-- مطمئن شوید migration را اجرا کرده‌اید
-- فایل SQL را در phpMyAdmin Import کنید
+### Migration‌ها اجرا نمی‌شوند اما جدول‌ها ساخته نشده‌اند
+- `DB_NAME` باید به Database ساخته‌شده در cPanel اشاره کند.
+- از `npm run migration:show` برای مشاهده Migration‌های در انتظار استفاده کنید.
 
 ---
 
-## پشتیبانی از Emoji و کاراکترهای فارسی
-
-تمام جداول با `utf8mb4` ایجاد شده‌اند که از emoji و کاراکترهای فارسی پشتیبانی می‌کند.
-
-Collation استفاده شده: `utf8mb4_unicode_ci`
-
----
-
-## منابع بیشتر
+## منابع
 
 - [مستندات MySQL](https://dev.mysql.com/doc/)
 - [مستندات TypeORM](https://typeorm.io/)
