@@ -1,33 +1,47 @@
 'use client';
 
-/**
- * لوگوی رسمی کارزینتل — دقیقاً مطابق فایل برند (karzin-logo.png):
- * نشان K (ساقه سبز + شورون نقره‌ای + نقطه سبز) و نوشته «کارزین تل»
- * (کارزین نقره‌ای، تل سبز) روی زمینه مشکی.
- *
- * فایل‌ها:
- *  - /karzin-logo-full.png → لوگوی کامل (نشان + نوشته) بدون حاشیه اضافه
- *  - /karzin-logo-mark.png → فقط نشان K (تقریباً مربع)
- *  - /app/icon.png         → فاوآیکون (همان نشان)
- *
- * موشن‌گرافیک (کلاس‌ها در globals.css): logo-glow (هاله سبز)، logo-float (شناوری)،
- * logo-sheen (برق نور)، logo-pop (ورود پاپ)، logo-tilt (چرخش هاور).
- */
-import { useBranding } from '@/lib/branding';
+import clsx from 'clsx';
+import { DEFAULT_BRANDING, useBranding } from '@/lib/branding';
 
-/** فقط نشان K — مربعی؛ برای پنل ادمین و جای‌های ریز (برشِ رسمیِ همان لوگو) */
-export function BrandMark({ className = 'h-9 w-9', motion = '' }: { className?: string; motion?: string }) {
+const DEFAULT_FULL_LOGO = DEFAULT_BRANDING.logo || '/karzin-logo-full.png';
+const DEFAULT_MARK_LOGO = '/karzin-logo-mark.png';
+
+function isCustomBrandLogo(path?: string | null) {
+  if (!path) return false;
+  return !path.endsWith(DEFAULT_FULL_LOGO) && !path.endsWith('/karzin-logo.png');
+}
+
+/** نشان سه‌بعدی K با شیشه، عمق و هاله‌ی نئونی */
+export function BrandMark({
+  className = 'h-10 w-10',
+  motion = '',
+  tone = 'light',
+}: {
+  className?: string;
+  motion?: string;
+  tone?: 'light' | 'dark';
+}) {
   const brand = useBranding();
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src="/karzin-logo-mark.png" alt={brand.name} className={`${className} rounded-lg object-contain ${motion}`} />
+    <span
+      className={clsx(
+        'brand-mark-frame',
+        tone === 'dark' ? 'brand-mark-frame-dark' : 'brand-mark-frame-light',
+        motion,
+        className,
+      )}
+    >
+      <span aria-hidden className="brand-mark-aurora" />
+      <span aria-hidden className="brand-mark-grid" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={DEFAULT_MARK_LOGO} alt={brand.name} className="brand-mark-image" />
+      <span aria-hidden className="brand-mark-reflection" />
+    </span>
   );
 }
 
-/**
- * لوگوی کامل (نشان + نوشته «کارزین تل») — نسبت ۴۲۰×۲۹۴؛
- * ارتفاع را با h-* بدهید، عرض خودکار می‌ماند.
- */
+/** لوگوی خام آپلودشده/پیش‌فرض؛ برای جاهایی که خودِ تصویر لازم است */
 export function BrandLogo({
   className = 'h-14',
   motion = '',
@@ -38,42 +52,112 @@ export function BrandLogo({
   src?: string;
 }) {
   const brand = useBranding();
+  const resolved = src || brand.logo || DEFAULT_FULL_LOGO;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src || brand.logo || '/karzin-logo-full.png'}
-      alt={brand.name}
-      className={`${className} w-auto object-contain ${motion}`}
-    />
+    <img src={resolved} alt={brand.name} className={clsx(className, 'w-auto object-contain', motion)} />
   );
 }
 
-/** نوشته «کارزین» نقره‌ای + «تل» سبز — فقط جایی که متنِ جدا لازم باشد (روی زمینه تیره روشن‌تر) */
+/** نوشته‌ی برند با حس فلزی/نئونی و عمق بیشتر */
 export function BrandName({ dark = false, className = 'text-xl' }: { dark?: boolean; className?: string }) {
   const brand = useBranding();
+
   if (brand.name === 'کارزینتل') {
     return (
-      <span className={`${className} font-black tracking-tight`} dir="rtl">
-        <span
-          className={
-            dark
-              ? 'bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent'
-              : 'bg-gradient-to-b from-slate-500 to-slate-800 bg-clip-text text-transparent'
-          }
-        >
-          کارزین
-        </span>{' '}
-        <span className="bg-gradient-to-b from-emerald-400 to-emerald-600 bg-clip-text text-transparent">تل</span>
+      <span className={clsx('brand-wordmark', dark ? 'brand-wordmark-dark' : 'brand-wordmark-light', className)} dir="rtl">
+        <span className="brand-wordmark-metal">کارزین</span>
+        <span className="brand-wordmark-accent">تل</span>
       </span>
     );
   }
-  return <span className={`${className} font-black tracking-tight ${dark ? 'text-slate-100' : 'text-slate-900'}`}>{brand.name}</span>;
+
+  return <span className={clsx(className, 'font-black tracking-tight', dark ? 'text-slate-100' : 'text-slate-900')}>{brand.name}</span>;
 }
 
 /**
- * نسخه کامل استک‌شده لوگو روی پلاک تیره با هاله سبز — برای فوتر و صفحات احراز هویت.
- * موشن: ورود پاپ + هاله نفس‌کش + برق نور گذرا.
+ * امضای اصلی برند برای هدر/فوتر: نشان سه‌بعدی + وردمارک یکپارچه با شیشه و نور.
+ * اگر لوگوی سفارشی از تنظیمات پنل آمده باشد، همان تصویر داخل شِل سه‌بعدی نمایش داده می‌شود.
  */
+export function BrandSignature({
+  tone = 'light',
+  size = 'md',
+  className,
+  tagline = false,
+  subtitle = false,
+  pop = false,
+}: {
+  tone?: 'light' | 'dark';
+  size?: 'md' | 'lg';
+  className?: string;
+  tagline?: boolean;
+  subtitle?: boolean;
+  pop?: boolean;
+}) {
+  const brand = useBranding();
+  const customLogo = isCustomBrandLogo(brand.logo) ? brand.logo : null;
+
+  const sizes = {
+    md: {
+      shell: 'gap-3 rounded-[1.55rem] px-3.5 py-2.5',
+      mark: 'h-12 w-12',
+      word: 'text-[2rem] sm:text-[2.2rem]',
+      custom: 'h-11 sm:h-12',
+      sub: 'text-[10px]',
+    },
+    lg: {
+      shell: 'gap-4 rounded-[1.9rem] px-4.5 py-3.5',
+      mark: 'h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]',
+      word: 'text-[2.65rem] sm:text-[3rem]',
+      custom: 'h-16 sm:h-[4.5rem]',
+      sub: 'text-[11px] sm:text-xs',
+    },
+  } as const;
+
+  const scale = sizes[size];
+
+  return (
+    <div className="inline-flex flex-col items-start gap-2">
+      <div
+        className={clsx(
+          'brand-shell brand-shell-3d',
+          tone === 'dark' ? 'brand-shell-dark' : 'brand-shell-light',
+          scale.shell,
+          pop && 'logo-pop',
+          className,
+        )}
+      >
+        <span aria-hidden className="brand-shell-ambient" />
+        <span aria-hidden className="brand-shell-grid" />
+
+        {customLogo ? (
+          <span className="relative z-[2] block" style={{ transform: 'translateZ(8px)' }}>
+            <BrandLogo className={clsx(scale.custom, 'logo-glow')} src={customLogo} />
+          </span>
+        ) : (
+          <BrandMark className={scale.mark} tone={tone} motion="brand-mark-float" />
+        )}
+
+        <div className="relative z-[2] flex min-w-0 flex-col items-start justify-center">
+          <BrandName dark={tone === 'dark'} className={clsx(scale.word, 'leading-none')} />
+          {tagline && (
+            <span className={clsx('brand-shell-tagline mt-1.5', scale.sub)}>
+              واردات و فروش قطعات الکترونیکی
+            </span>
+          )}
+        </div>
+      </div>
+
+      {subtitle && (
+        <span className={clsx('brand-caption ps-2', scale.sub, tone === 'dark' ? 'text-slate-400' : 'text-slate-500')}>
+          تجربه‌ی خرید سریع، مطمئن و مدرن
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** نسخه‌ی جمع‌وجور برای صفحات احراز هویت و فوتر */
 export function BrandLockup({
   dark = false,
   subtitle = true,
@@ -85,20 +169,5 @@ export function BrandLockup({
   size?: 'md' | 'lg';
   pop?: boolean;
 }) {
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div
-        className={`logo-sheen logo-glow relative rounded-2xl bg-[#05080f]/95 px-5 py-3 ring-1 ring-emerald-400/25 shadow-2xl shadow-emerald-950/40 ${
-          pop ? 'logo-pop' : ''
-        }`}
-      >
-        <BrandLogo className={size === 'lg' ? 'h-24 sm:h-28' : 'h-16 sm:h-20'} />
-      </div>
-      {subtitle && (
-        <span className={`text-2xs tracking-wide ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
-          واردات و فروش قطعات الکترونیکی
-        </span>
-      )}
-    </div>
-  );
+  return <BrandSignature tone={dark ? 'dark' : 'light'} size={size} tagline subtitle={subtitle} pop={pop} />;
 }
