@@ -1,4 +1,7 @@
 import 'reflect-metadata';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import * as express from 'express';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -36,6 +39,28 @@ async function bootstrap() {
 
   app.setGlobalPrefix(env.globalPrefix);
 
+  // سرو فایل‌های آپلودشده (درایور local) از مسیر /uploads — روی همان هاست
+  if (env.storage.driver === 'local') {
+    const uploadsDir = resolve(process.cwd(), env.storage.dir);
+    try {
+      mkdirSync(uploadsDir, { recursive: true });
+    } catch {
+      // اگر ساخت نشود فقط warning بدهد؛ آپلود بعداً خطای مناسب می‌دهد
+      console.warn(`[uploads] could not create dir: ${uploadsDir}`);
+    }
+    app.use(
+      '/uploads',
+      express.static(uploadsDir, {
+        maxAge: '7d',
+        immutable: false,
+        fallthrough: false,
+        setHeaders: (res) => {
+          res.setHeader('X-Content-Type-Options', 'nosniff');
+        },
+      }),
+    );
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -58,7 +83,9 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(env.port, '0.0.0.0');
+  // cPanel/CloudLinux متغیر PORT را تعیین می‌کند؛ در غیر اینصورت env.port (API_PORT)
+  const listenPort = process.env.PORT || env.port;
+  await app.listen(listenPort, '0.0.0.0');
   const url = await app.getUrl();
   console.log(`\n🚀 Karzintell API ready: ${url}/${env.globalPrefix}`);
   if (env.swagger && !env.isProd) console.log(`📚 Swagger: ${url}/api/docs\n`);

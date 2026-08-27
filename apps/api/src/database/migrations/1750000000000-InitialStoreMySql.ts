@@ -1033,7 +1033,7 @@ export class InitialStoreMySql1750000000000 implements MigrationInterface {
       "roles",
       "users",
     ];
-    const drops = tables.map((t) => 'DROP TABLE IF EXISTS `' + t + '`');
+    const drops = tables.map((t) => 'DROP TABLE IF EXISTS `' + t + '`;');
     const downSql = [
       'SET FOREIGN_KEY_CHECKS = 0;',
       ...drops,

@@ -14,7 +14,7 @@ import { RbacService } from '../rbac/rbac.service';
 import { AdminCreateUserDto, AdminUpdateUserDto } from './admin-users.dto';
 import { DomainException } from '../../common/http-exception.filter';
 import { AuthUser, isSuper } from '../../common/types';
-import { isPrivilegedPermission } from '@karzintell/shared';
+import { isPrivilegedPermission } from '../../shared';
 
 @Injectable()
 export class AdminUsersService {

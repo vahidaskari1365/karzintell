@@ -88,10 +88,21 @@ const num = (s: string): number | undefined => {
   return s === '' || !Number.isFinite(n) ? undefined : n;
 };
 
-const S3_PUBLIC = process.env.NEXT_PUBLIC_S3_PUBLIC_URL || 'http://localhost:9000/karzintell';
+/** تبدیل URL کامل (محلی /uploads یا S3) به مسیر نسبی برای ویرایش در فرم */
 export const pathFromUrl = (url?: string | null): string => {
   if (!url) return '';
-  return url.startsWith(S3_PUBLIC) ? url.slice(S3_PUBLIC.length + 1) : url;
+  const bases: string[] = [];
+  if (process.env.NEXT_PUBLIC_STORAGE_URL) bases.push(process.env.NEXT_PUBLIC_STORAGE_URL);
+  if (typeof window !== 'undefined') bases.push(`${window.location.origin}/uploads`);
+  bases.push('/uploads');
+  for (const raw of bases) {
+    const base = String(raw).replace(/\/+$/, '');
+    if (url.startsWith(base + '/')) return url.slice(base.length + 1);
+  }
+  // حالت توسعه: Backend روی پورت/Origin دیگر است (مثلاً http://localhost:4000/uploads/...)
+  const m = url.match(/^https?:\/\/[^/]+\/uploads\/(.+)$/);
+  if (m) return m[1];
+  return url;
 };
 
 /* ------------------------------------------------------------------ */

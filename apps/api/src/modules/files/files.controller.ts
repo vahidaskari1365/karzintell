@@ -1,8 +1,9 @@
-import { Body, Controller, Post, UseInterceptors, UploadedFile, Query, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, Put, UseInterceptors, UploadedFile, Query, BadRequestException, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
-import { CurrentUser, RequirePermissions } from '../../common/decorators';
+import { CurrentUser, Public, RequirePermissions } from '../../common/decorators';
 import { AuthUser } from '../../common/types';
 import { FilesService, ALLOWED_UPLOAD_MIME_TYPES, MAX_UPLOAD_BYTES } from './files.service';
 
@@ -73,5 +74,35 @@ export class FilesController {
   @RequirePermissions('files.manage')
   async adminPresign(@Body() dto: PresignDto, @CurrentUser() user: AuthUser) {
     return { data: await this.files.presign(dto, user.id) };
+  }
+
+  /**
+   * دریافت فایل از کلاینت برای ذخیره‌سازی محلی (درایور local) — روت عمومی است و
+   * تنها با توکن تک‌باری HMAC که در presign صادر شده قابل استفاده است.
+   */
+  @Public()
+  @Put('files/presigned')
+  async presignedUpload(@Req() req: Request, @Query('token') token: string) {
+    if (!token) throw new BadRequestException({ code: 'PRESIGN_INVALID', message: 'لینک آپلود نامعتبر است' });
+    const buffer = await this.readRawBody(req, MAX_UPLOAD_BYTES);
+    return { data: await this.files.storePresigned(token, buffer, req.headers['content-type']) };
+  }
+
+  private readRawBody(req: Request, limit: number): Promise<Buffer> {
+    return new Promise((resolveP, rejectP) => {
+      const chunks: Buffer[] = [];
+      let size = 0;
+      req.on('data', (chunk: Buffer) => {
+        size += chunk.length;
+        if (size > limit) {
+          req.destroy();
+          rejectP(new BadRequestException({ code: 'FILE_TOO_LARGE', message: 'حجم فایل بیش از حد مجاز است' }));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      req.on('end', () => resolveP(Buffer.concat(chunks)));
+      req.on('error', rejectP);
+    });
   }
 }

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { ImagePlus, Trash2, UploadCloud, Video } from 'lucide-react';
 import { api } from '@/lib/api-client';
+import { mediaUrl } from '@/lib/branding';
 import { Button, Input } from './ui';
 import { toast } from '@/lib/auth-store';
 
@@ -65,7 +66,7 @@ export function ImageUpload({
             <Video className="h-6 w-6 text-slate-400" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value.startsWith('http') ? value : `${process.env.NEXT_PUBLIC_S3_PUBLIC_URL || 'http://localhost:9000/karzintell'}/${value}`} alt="" className="h-full w-full object-cover" />
+            <img src={mediaUrl(value) || undefined} alt="" className="h-full w-full object-cover" />
           )
         ) : (
           <ImagePlus className="h-6 w-6 text-slate-300" />

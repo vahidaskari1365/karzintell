@@ -12,7 +12,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { RbacService } from "./rbac.service";
 import { RequirePermissions, CurrentUser } from "../../common/decorators";
 import { AuthUser } from "../../common/types";
-import { PERMISSION_GROUPS } from "@karzintell/shared";
+import { PERMISSION_GROUPS } from "../../shared";
 
 /** مدیریت نقش‌ها و مجوزها (پنل اپراتور) */
 @ApiTags("admin/rbac")

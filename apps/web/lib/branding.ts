@@ -26,12 +26,18 @@ export const DEFAULT_BRANDING: Branding = {
   socials: {},
 };
 
-/** تبدیل مسیر فایل به URL کامل (MinIO/S3 یا لینک مستقیم) */
+/**
+ * تبدیل مسیر فایل به URL کامل:
+ * - لینک کامل (http/https) → همان‌طور که هست
+ * - مسیر مطلق (/uploads/...) → فایل public خود سایت
+ * - مسیر نسبی (products/xx.webp) → روی هاست خود سایت از /uploads سرو می‌شود
+ *   (درایور local)؛ با NEXT_PUBLIC_STORAGE_URL قابل override برای S3
+ */
 export function mediaUrl(path?: string | null): string | null {
   if (!path) return null;
   if (/^https?:\/\//.test(path)) return path;
   if (path.startsWith('/')) return path; // فایل‌های public خود سایت
-  const base = process.env.NEXT_PUBLIC_STORAGE_URL || 'http://localhost:9000/karzintell';
+  const base = (process.env.NEXT_PUBLIC_STORAGE_URL || '/uploads').replace(/\/+$/, '');
   return `${base}/${path.replace(/^\/+/, '')}`;
 }
 

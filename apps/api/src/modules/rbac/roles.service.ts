@@ -5,7 +5,7 @@ import { Permission, Role } from '../../database/entities';
 import { RbacService } from './rbac.service';
 import { slugify } from '../../common/utils';
 import { AuthUser, isSuper } from '../../common/types';
-import { isPrivilegedPermission } from '@karzintell/shared';
+import { isPrivilegedPermission } from '../../shared';
 
 @Injectable()
 export class RolesService {

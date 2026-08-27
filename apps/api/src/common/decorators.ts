@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
-import type { PermissionKey } from '@karzintell/shared';
+import type { PermissionKey } from '../shared';
 import { AuthUser, RequestWithUser } from './types';
 
 export const IS_PUBLIC_KEY = 'isPublic';

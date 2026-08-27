@@ -25,9 +25,17 @@ export const env = {
   swagger: bool(process.env.SWAGGER, true),
   /** اگر خالی باشد رصد خطا (Sentry) کاملاً غیرفعال است و وابستگی‌ای لود نمی‌شود */
   sentryDsn: process.env.SENTRY_DSN || "",
+  /**
+   * CORS:
+   * - development: فقط localhost
+   * - production: فقط دامنه واقعی سایت (با www)
+   * همیشه با CORS_ORIGINS قابل override است.
+   */
   corsOrigins: (
     process.env.CORS_ORIGINS ||
-    "http://localhost:3000,http://127.0.0.1:3000,https://karzintell.ir"
+    ((process.env.NODE_ENV || "development") === "production"
+      ? "https://karzintell.com,https://www.karzintell.com"
+      : "http://localhost:3000,http://127.0.0.1:3000")
   )
     .split(",")
     .map((s) => s.trim())
@@ -87,6 +95,24 @@ export const env = {
     provider: process.env.SMS_DRIVER || "log", // log | kavenegar
     apiKey: process.env.SMS_API_KEY || "",
     sender: process.env.SMS_SENDER || "",
+  },
+
+  /**
+   * ذخیره‌سازی فایل‌ها:
+   * - local (پیش‌فرض): روی دیسک خود هاست (cPanel/Shared Hosting) — /uploads سرو می‌شود
+   * - s3: هر سروس سازگار با S3 (MinIO/آمازون) — برای مقیاس بیشتر، اختیاری
+   */
+  storage: {
+    driver: (process.env.STORAGE_DRIVER || "local") as "local" | "s3",
+    /** پوشه ذخیره فایل‌ها روی دیسک (پیش‌فرض: ./uploads نسبت به cwd یعنی ریشه apps/api) */
+    dir: process.env.STORAGE_DIR || "uploads",
+    /**
+     * URL عمومی فایل‌ها. پیش‌فرض: از API_PUBLIC_URL + /uploads ساخته می‌شود
+     * (یعنی فایل‌ها از دامنه خود سایت سرو می‌شوند).
+     */
+    publicUrl:
+      process.env.STORAGE_PUBLIC_URL ||
+      `${(process.env.API_PUBLIC_URL || "http://localhost:4000").replace(/\/+$/, "")}/uploads`,
   },
 
   s3: {

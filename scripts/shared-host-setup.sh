@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
 # ============================================================================
-# کارزینتل — راه‌اندازی بدون Docker با MySQL/MariaDB (cPanel)
+# کارزینتل — راه‌اندازی بدون Docker با MySQL/MariaDB (cPanel / سرور اختصاصی)
+#
 # دیتابیس و کاربر آن را در cPanel بسازید؛ این اسکریپت دیتابیس را drop/create
-# نمی‌کند و فقط migration، seed کنترل‌شده، build و راهنمای اجرای سرویس‌ها را انجام می‌دهد.
+# نمی‌کند و فقط install، build، migration و seed را انجام می‌دهد.
+#
+# نحوه اجرا (از Terminal/SSH هاست):
+#   cd /home/USERNAME/karzintell
+#   bash scripts/shared-host-setup.sh
+#
+# برای اجرای همیشگی روی cPanel به DEPLOY-CPANEL.md مراجعه کنید
+# (دو Node.js Application: Backend در apps/api و Frontend در apps/web).
 # ============================================================================
 set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+API_DIR="$ROOT/apps/api"
+WEB_DIR="$ROOT/apps/web"
 
 : "${DB_HOST:?DB_HOST تنظیم نشده است}"
 : "${DB_USER:?DB_USER تنظیم نشده است}"
@@ -16,25 +28,37 @@ if [[ "${NODE_ENV:-development}" == "production" ]]; then
   : "${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET لازم است}"
 fi
 
-echo "==> [1/5] نصب وابستگی‌ها ..."
-npm ci --no-audit --no-fund
+echo "==> [1/6] نصب وابستگی‌های Backend (apps/api — مستقل) ..."
+(cd "$API_DIR" && npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund)
 
-echo "==> [2/5] اجرای migration (TypeORM) ..."
-npm run db:migrate
+echo "==> [2/6] بیلد Backend ..."
+(cd "$API_DIR" && npm run build)
+
+echo "==> [3/6] اجرای migration (TypeORM → MySQL) ..."
+(cd "$API_DIR" && npm run db:migrate)
 
 if [[ -n "${SEED_ADMIN_PASSWORD:-}" ]]; then
-  echo "==> [3/5] اجرای seed idempotent ..."
-  npm run seed
+  echo "==> [4/6] اجرای seed idempotent ..."
+  (cd "$API_DIR" && npm run seed)
 else
-  echo "==> [3/5] seed رد شد؛ برای seed امن SEED_ADMIN_PASSWORD را فقط در محیط اجرا تنظیم کنید."
+  echo "==> [4/6] seed رد شد؛ برای seed امن SEED_ADMIN_PASSWORD را فقط در محیط اجرا تنظیم کنید."
 fi
 
-echo "==> [4/5] بیلد مشترک، API و فرانت‌اند ..."
-npm run build
+echo "==> [5/6] نصب وابستگی‌های Frontend (apps/web — مستقل) ..."
+(cd "$WEB_DIR" && npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund)
 
-echo "==> [5/5] اجرای همیشگی ..."
+echo "==> [6/6] بیلد Frontend ..."
+(cd "$WEB_DIR" && npm run build)
+
 echo ""
-echo "✅ آماده شد. برای اجرای همیشگی:"
-echo "  pm2 start 'npm run start -w apps/api' --name krz-api"
-echo "  pm2 start 'npm run start -w apps/web' --name krz-web"
-echo "  pm2 save && pm2 startup"
+echo "✅ آماده شد."
+echo ""
+if [[ "${NODE_ENV:-}" == "production" ]]; then
+  echo "برای اجرای همیشگی روی cPanel (دو Node.js Application):"
+  echo "  1) Backend  : Application Root = $API_DIR | Startup = dist/main.js"
+  echo "  2) Frontend : Application Root = $WEB_DIR | Startup = server.js"
+  echo "  راهنمای کامل: DEPLOY-CPANEL.md"
+else
+  echo "برای اجرای توسعه:"
+  echo "  npm run dev    # از ریشه ریپو (API روی :4000 + وب روی :3000)"
+fi

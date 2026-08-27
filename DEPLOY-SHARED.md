@@ -63,15 +63,23 @@ seed فقط داده‌های اولیه را وارد می‌کند و جدول
 ## ۴) اجرای همیشگی
 
 ```bash
-cd apps/api
-npm run start
-# یا با PM2
-pm2 start "npm run start -w apps/api" --name krz-api
-pm2 start "npm run start -w apps/web" --name krz-web
+# روی cPanel: به‌جای این بخش، دو Node.js Application بسازید
+# (Backend: apps/api → dist/main.js | Frontend: apps/web → server.js)
+# راهنمای کامل و قدم‌به‌قدم: DEPLOY-CPANEL.md
+
+# روی سرور اختصاصی با PM2:
+cd apps/api && npm install && npm run build && cd ..
+cd apps/web && npm install && npm run build && cd ..
+
+pm2 start apps/api/dist/main.js --name krz-api --cwd apps/api
+pm2 start apps/web/server.js --name krz-web --cwd apps/web
 pm2 save && pm2 startup
 ```
 
-برای راهنمای کامل cPanel به [DEPLOY-MYSQL.md](DEPLOY-MYSQL.md) مراجعه کنید.
+> توجه: هر اپ الان **مستقل** است (بدون npm workspaces)؛ `npm install` را داخل
+> `apps/api` و `apps/web` جداگانه اجرا کنید.
+
+برای راهنمای کامل cPanel به [DEPLOY-CPANEL.md](DEPLOY-CPANEL.md) مراجعه کنید.
 
 ## قابلیت‌هایی که به سرویس بیرونی نیاز دارند
 

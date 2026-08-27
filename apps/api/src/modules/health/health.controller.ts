@@ -4,6 +4,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Public } from '../../common/decorators';
 import { RedisService } from '../../common/redis.service';
+import { env } from '../../config/configuration';
 
 @ApiTags('health')
 @Controller('health')
@@ -29,8 +30,8 @@ export class HealthController {
         services: {
           database: db,
           redis: this.redis.isOnline ? 'up' : 'memory-fallback',
-          search: 'configured',
-          storage: 'configured',
+          search: 'optional',
+          storage: env.storage.driver,
         },
         time: new Date().toISOString(),
       },
