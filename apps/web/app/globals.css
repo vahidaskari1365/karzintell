@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
+/*
+  فونت وزیرمتن — خود میزبانی (Self-hosted) روی هاست ایران.
+  وابستگی به CDN خارجی (jsdelivr/googleapis) نداریم؛ فایل‌ها در public/fonts
+  سرو می‌شوند تا در هر شبکه‌ای (از جمله داخل ایران) لود شوند.
+*/
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("/fonts/Vazirmatn-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-weight: 600 950;
+  font-display: swap;
+  src: url("/fonts/Vazirmatn-Bold.ttf") format("truetype");
+}
+
 :root {
   --font-sans: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif;
 }

@@ -5,7 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Permission, PermissionUser, Role, RoleUser, User } from '../../database/entities';
 import { RedisService } from '../../common/redis.service';
 import { AuthUser, isSuper } from '../../common/types';
-import { PERMISSIONS, isPrivilegedPermission } from '@karzintell/shared';
+import { PERMISSIONS, isPrivilegedPermission } from '../../shared';
 
 /**
  * محاسبه دسترسی مؤثر کاربر:

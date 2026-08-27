@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api-client';
+import { mediaUrl } from '@/lib/branding';
 import { faNumber } from '@/lib/format';
 import { toast } from '@/lib/auth-store';
 import { Button, Field, Input, PageLoading, Select, Switch, Empty } from '@/components/ui';
@@ -85,7 +86,6 @@ export default function AdminBannersPage() {
   });
 
   if (isLoading) return <PageLoading />;
-  const S3_PUBLIC = process.env.NEXT_PUBLIC_S3_PUBLIC_URL || 'http://localhost:9000/karzintell';
 
   return (
     <div>
@@ -99,7 +99,7 @@ export default function AdminBannersPage() {
             <div key={b.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <div className="relative h-32 bg-slate-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={b.imagePath.startsWith('http') ? b.imagePath : `${S3_PUBLIC}/${b.imagePath}`} alt="" className="h-full w-full object-cover" />
+                <img src={mediaUrl(b.imagePath) || undefined} alt="" className="h-full w-full object-cover" />
                 <span className="absolute end-2 top-2"><Pill status={b.isActive ? 'active' : 'archived'} label={b.isActive ? 'فعال' : 'غیرفعال'} /></span>
               </div>
               <div className="p-3.5">

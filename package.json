@@ -3,22 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "description": "کارزینتل — پلتفرم فروشگاه اینترنتی قطعات الکترونیکی (موبایل، ساعت هوشمند، هدفون و لوازم جانبی)",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
-    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
-    "seed": "npm run seed -w apps/api",
-    "db:migrate": "npm run db:migrate -w apps/api",
-    "db:migrate:prod": "npm run db:migrate:prod -w apps/api",
-    "migration:generate": "npm run migration:generate -w apps/api",
-    "migration:run": "npm run migration:run -w apps/api",
-    "migration:revert": "npm run migration:revert -w apps/api",
-    "migration:show": "npm run migration:show -w apps/api",
-    "test": "npm run test -w apps/api",
-    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web"
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev --prefix apps/api\" \"npm run dev --prefix apps/web\"",
+    "build": "npm run build --prefix apps/api && npm run build --prefix apps/web",
+    "start": "npm run start --prefix apps/api",
+    "seed": "npm run seed --prefix apps/api",
+    "db:migrate": "npm run db:migrate --prefix apps/api",
+    "db:migrate:prod": "npm run db:migrate:prod --prefix apps/api",
+    "migration:generate": "npm run migration:generate --prefix apps/api",
+    "migration:run": "npm run migration:run --prefix apps/api",
+    "migration:revert": "npm run migration:revert --prefix apps/api",
+    "migration:show": "npm run migration:show --prefix apps/api",
+    "test": "npm run test --prefix apps/api",
+    "typecheck": "npm run typecheck --prefix apps/api && npm run typecheck --prefix apps/web"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

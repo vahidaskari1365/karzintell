@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { SERVER_API_BASE as API_URL } from '@/lib/server-api';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export const revalidate = 3600; // بازسازی ساعتی
 

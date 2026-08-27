@@ -1,10 +1,38 @@
 import type { NextConfig } from 'next';
 
+/**
+ * تنظیمات Next.js — Production روی cPanel/Shared Hosting:
+ *
+ * مرورگر فقط با دامنه خود سایت (https://karzintell.com) صحبت می‌کند.
+ * درخواست‌های /api/v1 و /uploads توسط همین سرور (rewrites) به Backend
+ * Node.js فوروارد می‌شوند؛ Backend با BACKEND_URL مشخص می‌شود
+ * (پیش‌فرض: http://127.0.0.1:4000 — همان هاست).
+ *
+ * هیچ وابستگی به Vercel، Supabase یا سرویس خارجی برای اجرا وجود ندارد.
+ */
+
+// Backend روی همان هاست: در cPanel معمولاً http://127.0.0.1:<port-backend>
+// یا ساب‌دامن اختصاصی Backend (مثلاً http://api.karzintell.com)
+const apiOrigin = (process.env.BACKEND_URL || process.env.INTERNAL_API_URL || 'http://127.0.0.1:4000').replace(/\/+$/, '');
+
 const nextConfig: NextConfig = {
-  transpilePackages: ['@karzintell/shared'],
   images: {
-    // تصاویر از MinIO/S3 یا هر منبع دیگری — بدون بهینه‌سازی Next کار می‌کنیم
+    // تصاویر از هاست خود سایت (یا لینک خارجی) — بدون بهینه‌سازی Next کار می‌کنیم
     unoptimized: true,
+  },
+  async rewrites() {
+    return [
+      {
+        // API Backend از همان Origin — بدون وابستگی به localhost در Browser
+        source: '/api/v1/:path*',
+        destination: `${apiOrigin}/api/v1/:path*`,
+      },
+      {
+        // فایل‌های آپلودشده (درایور local) از Backend سرو می‌شوند
+        source: '/uploads/:path*',
+        destination: `${apiOrigin}/uploads/:path*`,
+      },
+    ];
   },
   async headers() {
     return [

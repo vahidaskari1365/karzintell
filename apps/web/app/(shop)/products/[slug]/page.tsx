@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ProductDetail } from './product-detail';
 import { mediaUrl } from '@/lib/branding';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+import { SERVER_API_BASE as API_URL } from '@/lib/server-api';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

@@ -10,11 +10,16 @@
 | بخش | فناوری |
 |---|---|
 | Frontend | Next.js ۱۵ · React ۱۹ · TypeScript · Tailwind CSS ۴ · (PWA) |
-| Backend | NestJS ۱۱ · Node.js ۲۲ · TypeORM |
+| Backend | NestJS ۱۱ · Node.js ≥۲۰ · TypeORM |
 | Database | MySQL 8 / MariaDB 10.5+ (TypeORM Migration, cPanel-ready) |
-| Cache / Queue | Redis 7 + BullMQ |
-| Search | Meilisearch (آمادهٔ مهاجرت به Elasticsearch) |
-| Storage | S3-compatible (MinIO/S3) |
+| Storage | دیسک خود هاست (`/uploads`) — پیش‌فرض؛ S3/MinIO اختیاری |
+| Cache / Queue | Redis — اختیاری (بدون آن حافظه داخلی + اجرای inline) |
+| Search | Meilisearch — اختیاری (بدون آن جستجوی MySQL) |
+
+> **Production روی هاست ایران:** هر دو اپ (API و وب) با CloudLinux Node.js روی
+> همان هاست اجرا می‌شوند و به MySQL همان هاست متصل‌اند — بدون وابستگی به
+> Vercel، Supabase، PostgreSQL یا هر سرویس خارجی.
+> 👉 راهنمای کامل: [DEPLOY-CPANEL.md](DEPLOY-CPANEL.md)
 
 ## مستندات طراحی
 
@@ -23,26 +28,31 @@
 | [docs/01-architecture.md](docs/01-architecture.md) | معماری کلی، ماژول‌ها، امنیت، احراز هویت RBAC، استقرار |
 | [docs/02-database-design.md](docs/02-database-design.md) | ERD، شرح جداول، ایندکس‌ها، سیاست seed/backup |
 | [docs/03-api-design.md](docs/03-api-design.md) | تمام endpointهای فروشگاه و پنل ادمین + قرارداد خطا/صفحه‌بندی |
-| [docs/04-folder-structure.md](docs/04-folder-structure.md) | ساختار Monorepo و قراردادهای نام‌گذاری |
-| [DEPLOY-MYSQL.md](DEPLOY-MYSQL.md) | راهنمای استقرار Production روی cPanel با MySQL |
+| [docs/04-folder-structure.md](docs/04-folder-structure.md) | ساختار پروژه و قراردادهای نام‌گذاری |
+| [DEPLOY-CPANEL.md](DEPLOY-CPANEL.md) | ✅ **راهنمای اصلی:** استقرار کامل Production روی cPanel/هاست ایران با MySQL |
+| [DEPLOY-MYSQL.md](DEPLOY-MYSQL.md) | راهنمای جایگزین: استقرار با MySQL (سرور اختصاصی/PM2) |
 
 ## راه‌اندازی زیرساخت توسعه
 
 ```bash
 cp .env.example .env
-docker compose up -d          # Redis · Meilisearch · MinIO · MailHog
-npm run db:migrate            # اجرای تمام Migration های TypeORM
+# هر اپ مستقل است — نصب جداگانه:
+cd apps/api && npm install && cd ../web && npm install && cd ..
+
+docker compose up -d          # اختیاری: Redis · Meilisearch · MailHog (بدون آن‌ها هم کار می‌کند)
+npm run db:migrate            # اجرای تمام Migration های TypeORM (MySQL خالی → Schema کامل)
 npm run seed                  # با DB_* و SEED_ADMIN_PASSWORD
+npm run dev                   # API روی :4000 + وب روی :3000 (فوروارد /api/v1 خودکار)
 ```
 
 | سرویس | آدرس |
 |---|---|
-| فروشگاه (وب) | http://localhost:3000 (مرحله ۲) |
-| API + Swagger | http://localhost:4000/api/v1 · /api/docs (مرحله ۲) |
+| فروشگاه (وب) | http://localhost:3000 |
+| API + Swagger | http://localhost:4000/api/v1 · /api/docs |
+| فایل‌های آپلودی | http://localhost:4000/uploads (دیسک محلی — بدون MinIO) |
 | MySQL/MariaDB | روی cPanel یا سرور MySQL مدیریت‌شده |
-| کنسول MinIO | http://localhost:9001 |
-| داشبورد Meilisearch | http://localhost:7700 |
-| صندوق ایمیل (MailHog) | http://localhost:8025 |
+| داشبورد Meilisearch (اختیاری) | http://localhost:7700 |
+| صندوق ایمیل (اختیاری) | http://localhost:8025 |
 
 ## ساخت ادمین اولیه
 
