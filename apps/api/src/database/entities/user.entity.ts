@@ -33,20 +33,20 @@ export class User {
   @Column({ name: 'full_name', length: 120 })
   fullName: string;
 
-  @Column({ length: 190, nullable: true, unique: true })
+  @Column({ type: 'varchar', length: 190, nullable: true, unique: true })
   email: string | null;
 
   @Index({ unique: true })
   @Column({ length: 15 })
   phone: string;
 
-  @Column({ name: 'password_hash', nullable: true, select: false })
+  @Column({ type: 'varchar', name: 'password_hash', nullable: true, select: false })
   passwordHash: string | null;
 
-  @Column({ name: 'national_code', length: 10, nullable: true })
+  @Column({ type: 'varchar', name: 'national_code', length: 10, nullable: true })
   nationalCode: string | null;
 
-  @Column({ name: 'avatar_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'avatar_path', length: 500, nullable: true })
   avatarPath: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'pending' })
@@ -58,7 +58,7 @@ export class User {
   @Column({ name: 'two_factor_enabled', default: false, transformer: boolTransformer })
   twoFactorEnabled: boolean;
 
-  @Column({ name: 'two_factor_secret', length: 64, nullable: true, select: false })
+  @Column({ type: 'varchar', name: 'two_factor_secret', length: 64, nullable: true, select: false })
   twoFactorSecret: string | null;
 
   // MySQL uses datetime instead of timestamptz
@@ -113,16 +113,16 @@ export class UserAddress {
   @Column({ length: 50 })
   city: string;
 
-  @Column({ name: 'postal_code', length: 10, nullable: true })
+  @Column({ type: 'varchar', name: 'postal_code', length: 10, nullable: true })
   postalCode: string | null;
 
   @Column({ type: 'text' })
   address: string;
 
-  @Column({ length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   plaque: string | null;
 
-  @Column({ length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   unit: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true, transformer: numericTransformer })
@@ -188,10 +188,10 @@ export class RefreshToken {
   @Column({ name: 'token_hash', length: 64 })
   tokenHash: string;
 
-  @Column({ name: 'user_agent', length: 255, nullable: true })
+  @Column({ type: 'varchar', name: 'user_agent', length: 255, nullable: true })
   userAgent: string | null;
 
-  @Column({ length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip: string | null;
 
   @Column({ name: 'expires_at', type: 'datetime' })

@@ -18,16 +18,16 @@ export class Banner {
   @Column({ length: 150 })
   title: string;
 
-  @Column({ length: 300, nullable: true })
+  @Column({ type: 'varchar', length: 300, nullable: true })
   subtitle: string | null;
 
   @Column({ name: 'image_path', length: 500 })
   imagePath: string;
 
-  @Column({ name: 'mobile_image_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'mobile_image_path', length: 500, nullable: true })
   mobileImagePath: string | null;
 
-  @Column({ name: 'link_url', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'link_url', length: 500, nullable: true })
   linkUrl: string | null;
 
   @Column({ type: 'varchar', length: 30, default: 'home_hero' })
@@ -71,10 +71,10 @@ export class Page {
   @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: 'draft' | 'published';
 
-  @Column({ name: 'meta_title', length: 190, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_title', length: 190, nullable: true })
   metaTitle: string | null;
 
-  @Column({ name: 'meta_description', length: 300, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
@@ -165,13 +165,13 @@ export class BlogPost {
   @Column({ length: 220, unique: true })
   slug: string;
 
-  @Column({ length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   excerpt: string | null;
 
   @Column({ type: 'text' })
   body: string;
 
-  @Column({ name: 'cover_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'cover_path', length: 500, nullable: true })
   coverPath: string | null;
 
   @Column({ type: 'varchar', length: 10, default: 'post' })
@@ -183,10 +183,10 @@ export class BlogPost {
   @Column({ name: 'author_id', type: 'bigint', unsigned: true, nullable: true })
   authorId: number | null;
 
-  @Column({ name: 'meta_title', length: 190, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_title', length: 190, nullable: true })
   metaTitle: string | null;
 
-  @Column({ name: 'meta_description', length: 300, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
   // MySQL uses datetime instead of timestamptz

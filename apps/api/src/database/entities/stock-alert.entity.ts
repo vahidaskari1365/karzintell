@@ -20,7 +20,7 @@ export class StockAlert {
   @Column({ type: 'int', unsigned: true, default: 5 })
   threshold: number;
 
-  @Column({ type: 'varchar', length: 30 })
+  @Column({type: 'varchar', length: 30, name: 'alert_type'})
   alertType: StockAlertType;
 
   @Column({ type: 'varchar', length: 20, default: 'open' })

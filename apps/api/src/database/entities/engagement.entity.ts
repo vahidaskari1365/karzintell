@@ -28,7 +28,7 @@ export class Review {
   @Column({ type: 'tinyint', unsigned: true })
   rating: number;
 
-  @Column({ length: 150, nullable: true })
+  @Column({ type: 'varchar', length: 150, nullable: true })
   title: string | null;
 
   @Column({ type: 'text', nullable: true })

@@ -21,7 +21,7 @@ export class Role {
   @Column({ length: 100 })
   label: string;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   description: string | null;
 
   @Column({ name: 'is_system', type: 'tinyint', width: 1, default: 0 })

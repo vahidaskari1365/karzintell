@@ -17,7 +17,7 @@ export class Coupon {
   @Column({ length: 50, unique: true })
   code: string;
 
-  @Column({ length: 120, nullable: true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   title: string | null;
 
   @Column({ type: 'varchar', length: 10 })
@@ -42,7 +42,7 @@ export class Coupon {
   usedCount: number;
 
   /** نام کمپین (گروه‌بندی کوپن‌ها) */
-  @Column({ length: 120, nullable: true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   campaign: string | null;
 
   /** فقط روی این محصول‌ها؛ NULL = همه - MySQL uses json instead of jsonb */
@@ -84,7 +84,7 @@ export class Cart {
   @Index()
   userId: number | null;
 
-  @Column({ name: 'session_id', length: 36, nullable: true })
+  @Column({ name: 'session_id', type: 'varchar', length: 36, nullable: true })
   @Index()
   sessionId: string | null;
 

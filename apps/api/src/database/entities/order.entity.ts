@@ -55,10 +55,10 @@ export class Order {
   @Column({ name: 'coupon_id', type: 'int', unsigned: true, nullable: true })
   couponId: number | null;
 
-  @Column({ name: 'coupon_code', length: 50, nullable: true })
+  @Column({ type: 'varchar', name: 'coupon_code', length: 50, nullable: true })
   couponCode: string | null;
 
-  @Column({ name: 'shipping_method', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'shipping_method', length: 100, nullable: true })
   shippingMethod: string | null;
 
   // MySQL uses json instead of jsonb
@@ -71,10 +71,10 @@ export class Order {
   @Column({ name: 'admin_note', type: 'text', nullable: true })
   adminNote: string | null;
 
-  @Column({ length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip: string | null;
 
-  @Column({ name: 'user_agent', length: 255, nullable: true })
+  @Column({ type: 'varchar', name: 'user_agent', length: 255, nullable: true })
   userAgent: string | null;
 
   // MySQL uses datetime instead of timestamptz
@@ -90,7 +90,7 @@ export class Order {
   @Column({ name: 'cancelled_at', type: 'datetime', nullable: true })
   cancelledAt: Date | null;
 
-  @Column({ name: 'cancel_reason', length: 300, nullable: true })
+  @Column({ type: 'varchar', name: 'cancel_reason', length: 300, nullable: true })
   cancelReason: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
@@ -127,7 +127,7 @@ export class OrderItem {
   @Column({ name: 'product_name', length: 190 })
   productName: string;
 
-  @Column({ name: 'variant_title', length: 190, nullable: true })
+  @Column({ type: 'varchar', name: 'variant_title', length: 190, nullable: true })
   variantTitle: string | null;
 
   @Column({ name: 'unit_price', type: 'bigint', transformer: bigint })
@@ -158,13 +158,13 @@ export class OrderStatusHistory {
   @Index()
   orderId: number;
 
-  @Column({ name: 'from_status', length: 30, nullable: true })
+  @Column({ type: 'varchar', name: 'from_status', length: 30, nullable: true })
   fromStatus: string | null;
 
   @Column({ name: 'to_status', length: 30 })
   toStatus: string;
 
-  @Column({ length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   note: string | null;
 
   @Column({ name: 'changed_by', type: 'bigint', unsigned: true, nullable: true })
@@ -200,13 +200,13 @@ export class Payment {
   @Column({ type: 'varchar', length: 20, default: 'initiated' })
   status: PaymentStatusRow;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   authority: string | null;
 
-  @Column({ name: 'ref_id', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'ref_id', length: 100, nullable: true })
   refId: string | null;
 
-  @Column({ name: 'card_pan', length: 20, nullable: true })
+  @Column({ type: 'varchar', name: 'card_pan', length: 20, nullable: true })
   cardPan: string | null;
 
   // MySQL uses json instead of jsonb
@@ -235,10 +235,10 @@ export class Shipment {
   @Column({ length: 50, default: 'post' })
   provider: string;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   method: string | null;
 
-  @Column({ name: 'tracking_code', length: 50, nullable: true })
+  @Column({ type: 'varchar', name: 'tracking_code', length: 50, nullable: true })
   trackingCode: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'pending' })

@@ -75,7 +75,7 @@ export class ShippingMethod {
   @Column({ name: 'free_above', type: 'bigint', nullable: true, transformer: bigint })
   freeAbove: number | null;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   eta: string | null;
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })

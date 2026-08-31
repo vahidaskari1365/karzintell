@@ -20,13 +20,13 @@ export class Brand {
   @Column({ length: 140, unique: true })
   slug: string;
 
-  @Column({ name: 'logo_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'logo_path', length: 500, nullable: true })
   logoPath: string | null;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   website: string | null;
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
@@ -64,10 +64,10 @@ export class Category {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'image_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'image_path', length: 500, nullable: true })
   imagePath: string | null;
 
-  @Column({ length: 80, nullable: true })
+  @Column({ type: 'varchar', length: 80, nullable: true })
   icon: string | null;
 
   @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
@@ -76,10 +76,10 @@ export class Category {
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: boolean;
 
-  @Column({ name: 'meta_title', length: 190, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_title', length: 190, nullable: true })
   metaTitle: string | null;
 
-  @Column({ name: 'meta_description', length: 300, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
@@ -108,10 +108,10 @@ export class Attribute {
   @Column({ type: 'varchar', length: 20, default: 'select' })
   type: AttributeType;
 
-  @Column({ length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   unit: string | null;
 
-  @Column({ name: 'group_name', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'group_name', length: 100, nullable: true })
   groupName: string | null;
 
   @Column({ name: 'is_filterable', type: 'tinyint', width: 1, default: 1 })

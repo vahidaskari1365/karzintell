@@ -19,19 +19,19 @@ export class Warehouse {
   @Column({ length: 30, unique: true })
   code: string;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   province: string | null;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   city: string | null;
 
   @Column({ type: 'text', nullable: true })
   address: string | null;
 
-  @Column({ name: 'postal_code', length: 10, nullable: true })
+  @Column({ type: 'varchar', name: 'postal_code', length: 10, nullable: true })
   postalCode: string | null;
 
-  @Column({ length: 15, nullable: true })
+  @Column({ type: 'varchar', length: 15, nullable: true })
   phone: string | null;
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
@@ -91,13 +91,13 @@ export class StockMovement {
   @Column({ name: 'qty_after', type: 'int' })
   qtyAfter: number;
 
-  @Column({ name: 'reference_type', length: 30, nullable: true })
+  @Column({ type: 'varchar', name: 'reference_type', length: 30, nullable: true })
   referenceType: string | null;
 
   @Column({ name: 'reference_id', type: 'bigint', unsigned: true, nullable: true })
   referenceId: number | null;
 
-  @Column({ length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   note: string | null;
 
   @Column({ name: 'created_by', type: 'bigint', unsigned: true, nullable: true })

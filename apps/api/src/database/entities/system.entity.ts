@@ -23,7 +23,7 @@ export class Notification {
   @Column({ length: 190 })
   title: string;
 
-  @Column({ length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   body: string | null;
 
   // MySQL uses json instead of jsonb
@@ -80,7 +80,7 @@ export class AuditLog {
   @Column({ length: 100 })
   action: string;
 
-  @Column({ name: 'subject_type', length: 50, nullable: true })
+  @Column({ type: 'varchar', name: 'subject_type', length: 50, nullable: true })
   subjectType: string | null;
 
   @Column({ name: 'subject_id', type: 'bigint', unsigned: true, nullable: true })
@@ -94,10 +94,10 @@ export class AuditLog {
   @Column({ name: 'new_values', type: 'json', nullable: true })
   newValues: Record<string, unknown> | null;
 
-  @Column({ length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip: string | null;
 
-  @Column({ name: 'user_agent', length: 255, nullable: true })
+  @Column({ type: 'varchar', name: 'user_agent', length: 255, nullable: true })
   userAgent: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
@@ -115,16 +115,16 @@ export class FileRecord {
   @Column({ length: 500 })
   path: string;
 
-  @Column({ name: 'original_name', length: 255, nullable: true })
+  @Column({ type: 'varchar', name: 'original_name', length: 255, nullable: true })
   originalName: string | null;
 
-  @Column({ name: 'mime_type', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'mime_type', length: 100, nullable: true })
   mimeType: string | null;
 
   @Column({ name: 'size_bytes', type: 'bigint', nullable: true })
   sizeBytes: number | null;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   purpose: string | null;
 
   @Column({ name: 'owner_id', type: 'bigint', unsigned: true, nullable: true })

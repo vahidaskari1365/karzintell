@@ -21,7 +21,7 @@ export class Product {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ length: 50, nullable: true, unique: true })
+  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
   code: string | null;
 
   @Column({ name: 'category_id', type: 'int', unsigned: true })
@@ -37,7 +37,7 @@ export class Product {
   @Column({ length: 220, unique: true })
   slug: string;
 
-  @Column({ name: 'short_description', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'short_description', length: 500, nullable: true })
   shortDescription: string | null;
 
   @Column({ type: 'text', nullable: true })
@@ -87,10 +87,10 @@ export class Product {
   @Column({ name: 'max_price', type: 'bigint', nullable: true, transformer: bigint })
   maxPrice: number | null;
 
-  @Column({ name: 'meta_title', length: 190, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_title', length: 190, nullable: true })
   metaTitle: string | null;
 
-  @Column({ name: 'meta_description', length: 300, nullable: true })
+  @Column({ type: 'varchar', name: 'meta_description', length: 300, nullable: true })
   metaDescription: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
@@ -115,10 +115,10 @@ export class ProductVariant {
   @Column({ length: 64, unique: true })
   sku: string;
 
-  @Column({ length: 32, nullable: true })
+  @Column({ type: 'varchar', length: 32, nullable: true })
   barcode: string | null;
 
-  @Column({ length: 190, nullable: true })
+  @Column({ type: 'varchar', length: 190, nullable: true })
   title: string | null;
 
   @Column({ type: 'bigint', transformer: bigint })
@@ -182,7 +182,7 @@ export class ProductImage {
   @Column({ length: 500 })
   path: string;
 
-  @Column({ length: 190, nullable: true })
+  @Column({ type: 'varchar', length: 190, nullable: true })
   alt: string | null;
 
   @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
@@ -204,7 +204,7 @@ export class ProductVideo {
   @Index()
   productId: number;
 
-  @Column({ length: 190, nullable: true })
+  @Column({ type: 'varchar', length: 190, nullable: true })
   title: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'upload' })
@@ -213,7 +213,7 @@ export class ProductVideo {
   @Column({ name: 'source_url', length: 500 })
   sourceUrl: string;
 
-  @Column({ name: 'poster_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'poster_path', length: 500, nullable: true })
   posterPath: string | null;
 
   @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })
@@ -278,7 +278,7 @@ export class ProductAttributeValue {
   @Column({ name: 'attribute_value_id', type: 'int', unsigned: true, nullable: true })
   attributeValueId: number | null;
 
-  @Column({ name: 'custom_value', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'custom_value', length: 500, nullable: true })
   customValue: string | null;
 
   @Column({ name: 'sort_order', type: 'int', unsigned: true, default: 0 })

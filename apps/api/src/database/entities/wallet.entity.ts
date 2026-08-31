@@ -47,13 +47,13 @@ export class WalletTransaction {
   @Column({ name: 'balance_after', type: 'bigint', transformer: bigint })
   balanceAfter: number;
 
-  @Column({ name: 'reference_type', length: 30, nullable: true })
+  @Column({ type: 'varchar', name: 'reference_type', length: 30, nullable: true })
   referenceType: string | null;
 
   @Column({ name: 'reference_id', type: 'bigint', unsigned: true, nullable: true })
   referenceId: number | null;
 
-  @Column({ length: 300, nullable: true })
+  @Column({ type: 'varchar', length: 300, nullable: true })
   description: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
