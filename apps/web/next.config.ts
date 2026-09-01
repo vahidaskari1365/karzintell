@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import os from 'os';
 
 /**
  * تنظیمات Next.js — Production روی cPanel/Shared Hosting:
@@ -19,6 +20,27 @@ const nextConfig: NextConfig = {
   images: {
     // تصاویر از هاست خود سایت (یا لینک خارجی) — بدون بهینه‌سازی Next کار می‌کنیم
     unoptimized: true,
+  },
+  /**
+   * محدود کردن Worker/Thread های webpack در محیط Shared Hosting با منابع محدود.
+   * از خطای pthread_create: Resource temporarily unavailable جلوگیری می‌کند.
+   * حداکثر ۲ worker یا تعداد CPU موجود منهای ۱ (هر کدام کمتر بود).
+   */
+  webpack(config, { isServer }) {
+    const cpuCount = os.cpus().length;
+    const maxWorkers = Math.min(2, Math.max(1, cpuCount - 1));
+    if (config.parallelism !== undefined) {
+      config.parallelism = maxWorkers;
+    }
+    // محدود کردن worker threads در terser
+    if (config.optimization?.minimizer) {
+      for (const minimizer of config.optimization.minimizer) {
+        if (minimizer && (minimizer as any).options?.terserOptions !== undefined) {
+          (minimizer as any).options.parallel = maxWorkers;
+        }
+      }
+    }
+    return config;
   },
   async rewrites() {
     return [

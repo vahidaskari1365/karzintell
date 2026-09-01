@@ -817,7 +817,7 @@ export class InitialStoreMySql1750000000000 implements MigrationInterface {
       "",
       "CREATE TABLE IF NOT EXISTS `files` (",
       "  `id` BIGINT UNSIGNED AUTO_INCREMENT NOT NULL,",
-      "  `disk` VARCHAR(20) NOT NULL DEFAULT 's3',",
+      "  `disk` VARCHAR(20) NOT NULL DEFAULT 'local',",
       "  `path` VARCHAR(500) NOT NULL,",
       "  `original_name` VARCHAR(255) NULL,",
       "  `mime_type` VARCHAR(100) NULL,",

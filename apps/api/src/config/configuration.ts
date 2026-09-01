@@ -52,7 +52,8 @@ export const env = {
     database: process.env.DB_NAME || "karzintell",
     // SSL برای MySQL روی هاست محلی/معیمولی غیرفعال است
     ssl: false,
-    poolSize: int(process.env.DB_POOL_SIZE, 10),
+    // در Shared Hosting پیش‌فرض ۵ اتصال توصیه می‌شود
+    poolSize: int(process.env.DB_POOL_SIZE, 5),
     logging: bool(process.env.DB_LOGGING, false),
     // Charset برای پشتیبانی از UTF-8 فارسی
     charset: "utf8mb4",

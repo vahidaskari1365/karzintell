@@ -45,4 +45,11 @@ Thumbs.db
 *.sql.gz
 *.dump
 
+# آرشیوها — نباید وارد ریپو شوند
+*.zip
+*.rar
+*.tar.gz
+*.7z
+*.tar
+
 .vercel
