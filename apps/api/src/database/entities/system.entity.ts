@@ -109,7 +109,7 @@ export class FileRecord {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   id: number;
 
-  @Column({ length: 20, default: 's3' })
+  @Column({ length: 20, default: 'local' })
   disk: string;
 
   @Column({ length: 500 })

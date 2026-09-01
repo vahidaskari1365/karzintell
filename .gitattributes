@@ -1,0 +1,23 @@
+# Force LF line endings for all text files
+# (پروژه روی Windows توسعه داده می‌شود ولی روی Linux/cPanel اجرا می‌شود)
+* text=auto eol=lf
+
+# Binary files - no conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.svg binary
+*.mp4 binary
+*.webm binary
+*.zip binary
+*.rar binary
+*.tar binary
+*.gz binary
+*.pdf binary

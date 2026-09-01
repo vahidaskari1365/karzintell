@@ -161,6 +161,10 @@ cPanel → **Software → Setup Node.js App** (یا CloudLinux Node.js Selector)
 | Pre-build command | (خالی) |
 | Run `npm install` during deployment | ✅ روشن |
 
+> **نکته منابع:** اگر cPanel خطای `pthread_create: Resource temporarily unavailable` داد،
+> Build command را به این شکل بگذارید:
+> `NODE_OPTIONS=--max-old-space-size=1024 npm run build`
+
 بعد از Create، cPanel خودش `npm install` و `npm run build` را در `apps/api` اجرا می‌کند.
 (اگر Build command خالی بگذارید، خودتان با Terminal مراحل ۵/۶ را بزنید — نتیجه یکی است.)
 
@@ -227,6 +231,10 @@ npm start        # Ctrl+C کنید؛ cPanel خودش سرویس را اجرا م
 | **Application startup file** | `server.js` |
 | Build command | `npm run build` |
 | Run `npm install` during deployment | ✅ روشن |
+
+> **نکته منابع:** اگر Next.js Build خطای حافظه/Thread داد، Build command را این‌گونه بگذارید:
+> `NODE_OPTIONS=--max-old-space-size=1536 npm run build`
+> (این مقدار از قبل در script داخل `package.json` تنظیم شده است)
 
 > فرانت‌اند `server.js` (سرور رسمی Next.js) است که روی پورتی که cPanel با متغیر
 > `PORT` تعیین می‌کند listen می‌کند و `/api/v1` و `/uploads` را به `BACKEND_URL`
