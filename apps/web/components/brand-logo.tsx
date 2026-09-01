@@ -86,6 +86,7 @@ export function BrandSignature({
   tagline = false,
   subtitle = false,
   pop = false,
+  animated = true,
 }: {
   tone?: 'light' | 'dark';
   size?: 'md' | 'lg';
@@ -93,6 +94,7 @@ export function BrandSignature({
   tagline?: boolean;
   subtitle?: boolean;
   pop?: boolean;
+  animated?: boolean;
 }) {
   const brand = useBranding();
   const customLogo = isCustomBrandLogo(brand.logo) ? brand.logo : null;
@@ -120,9 +122,10 @@ export function BrandSignature({
     <div className="inline-flex flex-col items-start gap-2">
       <div
         className={clsx(
-          'brand-shell brand-shell-3d',
+          'brand-shell',
           tone === 'dark' ? 'brand-shell-dark' : 'brand-shell-light',
           scale.shell,
+          animated && 'brand-shell-3d',
           pop && 'logo-pop',
           className,
         )}
@@ -135,7 +138,7 @@ export function BrandSignature({
             <BrandLogo className={clsx(scale.custom, 'logo-glow')} src={customLogo} />
           </span>
         ) : (
-          <BrandMark className={scale.mark} tone={tone} motion="brand-mark-float" />
+          <BrandMark className={scale.mark} tone={tone} motion={animated ? 'brand-mark-float' : ''} />
         )}
 
         <div className="relative z-[2] flex min-w-0 flex-col items-start justify-center">
@@ -163,11 +166,13 @@ export function BrandLockup({
   subtitle = true,
   size = 'lg',
   pop = true,
+  animated = true,
 }: {
   dark?: boolean;
   subtitle?: boolean;
   size?: 'md' | 'lg';
   pop?: boolean;
+  animated?: boolean;
 }) {
-  return <BrandSignature tone={dark ? 'dark' : 'light'} size={size} tagline subtitle={subtitle} pop={pop} />;
+  return <BrandSignature tone={dark ? 'dark' : 'light'} size={size} tagline subtitle={subtitle} pop={pop} animated={animated} />;
 }
