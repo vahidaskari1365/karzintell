@@ -5,6 +5,8 @@ const int = (v: string | undefined, d: number): number => {
   const n = parseInt(v ?? "", 10);
   return Number.isFinite(n) ? n : d;
 };
+const boundedInt = (v: string | undefined, d: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, int(v, d)));
 const bool = (v: string | undefined, d: boolean): boolean =>
   v === undefined ? d : v === "1" || v === "true" || v === "yes";
 
@@ -53,7 +55,8 @@ export const env = {
     // SSL برای MySQL روی هاست محلی/معیمولی غیرفعال است
     ssl: false,
     // در Shared Hosting پیش‌فرض ۵ اتصال توصیه می‌شود
-    poolSize: int(process.env.DB_POOL_SIZE, 5),
+    // Bound the pool so a mistaken ENV cannot exhaust a Shared Hosting account.
+    poolSize: boundedInt(process.env.DB_POOL_SIZE, 5, 1, 10),
     logging: bool(process.env.DB_LOGGING, false),
     // Charset برای پشتیبانی از UTF-8 فارسی
     charset: "utf8mb4",
@@ -164,7 +167,11 @@ const WEAK_SECRETS = [
   'dev-access-secret-change-me',
   'dev-refresh-secret-change-me',
   'change-me-access-secret',
+  'change-me-access-secret-32chars-minimum',
   'change-me-refresh-secret',
+  'change-me-refresh-secret-32chars-minimum',
+  'replace-with-at-least-32-random-characters',
+  'your-database-password',
   'secret',
   'root_secret',
   'masterKey123',
@@ -187,7 +194,9 @@ export function assertSecureConfiguration() {
   check('JWT_ACCESS_SECRET', process.env.JWT_ACCESS_SECRET, 32);
   check('JWT_REFRESH_SECRET', process.env.JWT_REFRESH_SECRET, 32);
   check('DB_PASSWORD', process.env.DB_PASSWORD);
-  if (!process.env.DB_HOST && !process.env.DB_NAME) problems.push('DB_HOST و DB_NAME تنظیم نشده‌اند');
+  check('DB_USER', process.env.DB_USER);
+  check('DB_NAME', process.env.DB_NAME);
+  check('DB_HOST', process.env.DB_HOST);
   if (env.redis.enabled) check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
 
   if (problems.length) {

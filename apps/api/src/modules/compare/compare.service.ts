@@ -62,7 +62,7 @@ export class CompareService {
        LEFT JOIN brands b ON b.id = p.brand_id
        LEFT JOIN categories c ON c.id = p.category_id
        WHERE p.id IN (${ph}) AND p.status = 'published' AND p.deleted_at IS NULL
-       ORDER BY array_position(ARRAY[${ph}]::bigint[], p.id)`,
+       ORDER BY FIELD(p.id, ${ph})`,
       [...ids, ...ids],
     );
 

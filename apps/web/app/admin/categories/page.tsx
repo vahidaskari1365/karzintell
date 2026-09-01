@@ -38,10 +38,13 @@ export default function AdminCategoriesPage() {
   });
 
   const save = useMutation({
-    mutationFn: async (f: CategoryForm) =>
-      f.id
-        ? api(`/admin/categories/${f.id}`, { method: 'PATCH', body: JSON.stringify(f) })
-        : api('/admin/categories', { method: 'POST', body: JSON.stringify(f) }),
+    mutationFn: async (f: CategoryForm) => {
+      // The UI uses 0 as the root sentinel; the MySQL FK requires NULL.
+      const payload = { ...f, parentId: f.parentId || null, sortOrder: Number(f.sortOrder) };
+      return f.id
+        ? api(`/admin/categories/${f.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+        : api('/admin/categories', { method: 'POST', body: JSON.stringify(payload) });
+    },
     onSuccess: () => {
       toast.success('دسته ذخیره شد');
       setForm(null);

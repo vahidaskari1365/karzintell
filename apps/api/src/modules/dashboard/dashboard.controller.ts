@@ -24,7 +24,7 @@ export class DashboardController {
     );
     const [salesMonth] = await dbQuery(this.em,
       `SELECT COALESCE(SUM(grand_total),0) AS total, COUNT(*) AS cnt
-       FROM orders WHERE payment_status = 'paid' AND paid_at >= date_trunc('month', CURRENT_TIMESTAMP) AND deleted_at IS NULL`,
+       FROM orders WHERE payment_status = 'paid' AND paid_at >= DATE_FORMAT(CURRENT_TIMESTAMP, '%Y-%m-01 00:00:00') AND deleted_at IS NULL`,
     );
     const [orderStats] = await dbQuery(this.em,
       `SELECT
@@ -46,9 +46,9 @@ export class DashboardController {
     );
 
     const chart = await dbQuery(this.em,
-      `SELECT paid_at::date AS day, COALESCE(SUM(grand_total),0) AS total, COUNT(*) AS cnt
+      `SELECT DATE(paid_at) AS day, COALESCE(SUM(grand_total),0) AS total, COUNT(*) AS cnt
        FROM orders
-       WHERE payment_status = 'paid' AND paid_at >= CURRENT_DATE - INTERVAL '13 days'
+       WHERE payment_status = 'paid' AND paid_at >= CURRENT_DATE - INTERVAL 13 DAY
        GROUP BY DATE(paid_at)
        ORDER BY day ASC`,
     );
@@ -95,10 +95,10 @@ export class DashboardController {
   ) {
     const fromDate = from ? new Date(from) : new Date(Date.now() - 30 * 86400_000);
     const toDate = to ? new Date(to + ' 23:59:59') : new Date();
-    const format = groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
+    const format = groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
 
     const rows = await dbQuery(this.em,
-      `SELECT to_char(paid_at, ?) AS period,
+      `SELECT DATE_FORMAT(paid_at, ?) AS period,
               COALESCE(SUM(grand_total),0) AS total,
               COALESCE(SUM(discount_total),0) AS discount,
               COUNT(*) AS orders
@@ -171,7 +171,7 @@ export class DashboardController {
     if (from) { dateCond += ' AND o.paid_at >= ?'; params.push(new Date(from)); }
     if (to) { dateCond += ' AND o.paid_at <= ?'; params.push(new Date(to + ' 23:59:59')); }
     const rows = await dbQuery(this.em,
-      `SELECT to_char(o.paid_at, ?) AS bucket,
+      `SELECT DATE_FORMAT(o.paid_at, ?) AS bucket,
               COUNT(DISTINCT o.id) AS orders,
               COALESCE(SUM(oi.total_price - oi.discount_amount),0) AS revenue,
               COALESCE(SUM(COALESCE(v.cost_price,0) * oi.quantity),0) AS cost,

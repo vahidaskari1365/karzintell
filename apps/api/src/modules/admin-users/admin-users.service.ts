@@ -37,8 +37,8 @@ export class AdminUsersService {
       .leftJoin('roles', 'r', 'r.id = ru.role_id')
       .select(['u.id AS id', 'u.fullName AS "fullName"', 'u.email AS email', 'u.phone AS phone',
         'u.status AS status', 'u.lastLoginAt AS "lastLoginAt"', 'u.createdAt AS "createdAt"'])
-      .addSelect(`STRING_AGG(DISTINCT r.name, ',') AS "roleNames"`)
-      .addSelect(`STRING_AGG(DISTINCT r.id::text, ',') AS "roleIds"`)
+      .addSelect(`GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ',') AS "roleNames"`)
+      .addSelect(`GROUP_CONCAT(DISTINCT r.id ORDER BY r.id SEPARATOR ',') AS "roleIds"`)
       .groupBy('u.id')
       .orderBy('u.id', 'DESC')
       .offset(p.skip)
