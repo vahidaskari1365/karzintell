@@ -1,6 +1,12 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, QueryFailedError, Repository } from 'typeorm';
 import {
   Attribute, AttributeValue, Brand, Category, CategoryAttribute,
 } from '../../database/entities';
@@ -11,6 +17,7 @@ import { slugify } from '../../common/utils';
 @Injectable()
 export class CatalogService {
   private static TREE_KEY = 'cat:tree';
+  private readonly logger = new Logger(CatalogService.name);
 
   constructor(
     @InjectRepository(Category) private readonly categories: Repository<Category>,
@@ -94,17 +101,75 @@ export class CatalogService {
   }
 
   async saveCategory(dto: Partial<Category> & { id?: number }) {
-    const slug = (dto.slug && slugify(dto.slug)) || slugify(dto.name || '');
+    // The admin form uses 0 for "root". 0 is not NULL and violates fk_cat_parent.
+    const existing = dto.id ? await this.categories.findOne({ where: { id: dto.id } }) : null;
+    if (dto.id && !existing)
+      throw new NotFoundException({ code: 'CATEGORY_NOT_FOUND', message: 'دسته‌بندی یافت نشد' });
+    const rawParentId = dto.parentId === undefined ? existing?.parentId : dto.parentId;
+    const parentId = rawParentId === 0 || rawParentId == null ? null : rawParentId;
+    const name = typeof dto.name === 'string' ? dto.name.trim() : existing?.name?.trim() || '';
+    const slug = slugify((dto.slug?.trim() || existing?.slug || name).trim());
+    if (!name || !slug) {
+      throw new BadRequestException({ code: 'CATEGORY_NAME_REQUIRED', message: 'نام دسته‌بندی الزامی است' });
+    }
+
+    if (parentId !== null) {
+      if (!Number.isInteger(parentId) || parentId < 1)
+        throw new BadRequestException({ code: 'INVALID_PARENT', message: 'والد دسته‌بندی نامعتبر است' });
+      const parent = await this.categories.findOne({ where: { id: parentId } });
+      if (!parent) throw new NotFoundException({ code: 'PARENT_NOT_FOUND', message: 'دسته والد یافت نشد' });
+      if (dto.id && parentId === dto.id)
+        throw new ConflictException({ code: 'CATEGORY_SELF_PARENT', message: 'دسته نمی‌تواند والد خودش باشد' });
+
+      // Prevent longer cycles (A -> B -> A), not just direct self-parenting.
+      if (dto.id) {
+        let cursor: number | null = parentId;
+        while (cursor !== null) {
+          if (cursor === dto.id)
+            throw new ConflictException({ code: 'CATEGORY_CYCLE', message: 'ساختار والد دسته‌بندی حلقه‌ای است' });
+          const ancestor = await this.categories.findOne({ where: { id: cursor } });
+          cursor = ancestor?.parentId ?? null;
+        }
+      }
+    }
+
     const clash = await this.categories.findOne({ where: { slug } });
     if (clash && clash.id !== dto.id)
       throw new ConflictException({ code: 'SLUG_TAKEN', message: 'اسلاگ دسته تکراری است' });
-    dto.slug = slug;
-    if (dto.id) {
-      if (dto.parentId === dto.id) throw new ConflictException('دسته نمی‌تواند والد خودش باشد');
-      await this.categories.update(dto.id, dto);
-    } else {
-      dto.id = (await this.categories.save(this.categories.create(dto))).id;
+
+    const values: Partial<Category> = {
+      name,
+      slug,
+      parentId,
+      ...(dto.description !== undefined ? { description: dto.description } : {}),
+      ...(dto.imagePath !== undefined ? { imagePath: dto.imagePath } : {}),
+      ...(dto.icon !== undefined ? { icon: dto.icon } : {}),
+      ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+      ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      ...(dto.metaTitle !== undefined ? { metaTitle: dto.metaTitle } : {}),
+      ...(dto.metaDescription !== undefined ? { metaDescription: dto.metaDescription } : {}),
+    };
+
+    try {
+      if (dto.id) {
+        await this.categories.update(dto.id, values);
+      } else {
+        const created = await this.categories.save(this.categories.create(values));
+        dto.id = created.id;
+      }
+    } catch (error) {
+      // Keep driver details in server logs, but never expose SQL/connection data.
+      if (error instanceof QueryFailedError) {
+        const driverCode = String((error as any).driverError?.code || '');
+        this.logger.error(`category write failed (${driverCode || 'DB_ERROR'}): ${(error as Error).message}`);
+        if (driverCode === 'ER_DUP_ENTRY')
+          throw new ConflictException({ code: 'SLUG_TAKEN', message: 'اسلاگ دسته تکراری است' });
+        if (driverCode === 'ER_NO_REFERENCED_ROW_2')
+          throw new BadRequestException({ code: 'INVALID_PARENT', message: 'دسته والد یافت نشد' });
+      }
+      throw error;
     }
+
     await this.redis.del(CatalogService.TREE_KEY);
     return this.categories.findOne({ where: { id: dto.id } });
   }

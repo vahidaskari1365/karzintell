@@ -242,7 +242,7 @@ export class CmsService {
         p.id, p.name, p.slug, p.short_description AS "shortDesc", p.description AS body, p.features,
         p.min_price AS "minPrice", p.warranty_months AS warranty,
         b.name AS "brandName", c.name AS "categoryName",
-        (SELECT STRING_AGG(CONCAT(a.name, ': ', COALESCE(av.value, pattr.custom_value)), ', ')
+        (SELECT GROUP_CONCAT(CONCAT(a.name, ': ', COALESCE(av.value, pattr.custom_value)) SEPARATOR ', ')
          FROM product_attributes pattr
          JOIN attributes a ON a.id = pattr.attribute_id
          LEFT JOIN attribute_values av ON av.id = pattr.attribute_value_id
