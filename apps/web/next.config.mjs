@@ -1,4 +1,3 @@
-import type { NextConfig } from 'next';
 import os from 'os';
 
 /**
@@ -10,13 +9,17 @@ import os from 'os';
  * (پیش‌فرض: http://127.0.0.1:4000 — همان هاست).
  *
  * هیچ وابستگی به Vercel، Supabase یا سرویس خارجی برای اجرا وجود ندارد.
+ *
+ * نکته: این فایل به‌صورت .mjs (ESM JavaScript) نوشته شده تا در production
+ * نیازی به TypeScript نباشد و Next.js بتواند آن را مستقیم load کند.
  */
 
 // Backend روی همان هاست: در cPanel معمولاً http://127.0.0.1:<port-backend>
 // یا ساب‌دامن اختصاصی Backend (مثلاً http://api.karzintell.com)
 const apiOrigin = (process.env.BACKEND_URL || process.env.INTERNAL_API_URL || 'http://127.0.0.1:4000').replace(/\/+$/, '');
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
     // تصاویر از هاست خود سایت (یا لینک خارجی) — بدون بهینه‌سازی Next کار می‌کنیم
     unoptimized: true,
@@ -35,8 +38,8 @@ const nextConfig: NextConfig = {
     // محدود کردن worker threads در terser
     if (config.optimization?.minimizer) {
       for (const minimizer of config.optimization.minimizer) {
-        if (minimizer && (minimizer as any).options?.terserOptions !== undefined) {
-          (minimizer as any).options.parallel = maxWorkers;
+        if (minimizer && minimizer.options?.terserOptions !== undefined) {
+          minimizer.options.parallel = maxWorkers;
         }
       }
     }
