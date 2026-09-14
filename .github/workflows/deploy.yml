@@ -11,8 +11,9 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # استفاده از self-hosted runner (روی ویندوز شما) به‌دلیل بلاک شدن IP های GitHub Actions توسط هاست ایران
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 30
 
     steps:
       - name: 📥 Checkout code
@@ -32,6 +33,7 @@ jobs:
       # ──────────────────────────────────────────────
       - name: 🔨 Build API
         working-directory: apps/api
+        shell: bash
         run: |
           npm ci --legacy-peer-deps
           npm run build
@@ -41,6 +43,7 @@ jobs:
       # ──────────────────────────────────────────────
       - name: 🔨 Build Web
         working-directory: apps/web
+        shell: bash
         env:
           NEXT_PUBLIC_API_URL: /api/v1
           NEXT_PUBLIC_SITE_URL: https://karzintell.com
@@ -54,6 +57,7 @@ jobs:
       # ۳) Package deployment tarballs
       # ──────────────────────────────────────────────
       - name: 📦 Package API
+        shell: bash
         run: |
           tar -czf api-deploy.tar.gz \
             -C apps/api \
@@ -63,6 +67,7 @@ jobs:
             .npmrc
 
       - name: 📦 Package Web
+        shell: bash
         run: |
           tar -czf web-deploy.tar.gz \
             -C apps/web \
@@ -84,9 +89,10 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
+        shell: bash
         run: |
-          set +e  # Don't exit on error - we want to see all output
-          set -x  # Trace every command
+          set +e
+          set -x
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -142,6 +148,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
+        shell: bash
         run: |
           # Create staging directory on server
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
@@ -167,6 +174,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
+        shell: bash
         run: |
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
@@ -178,35 +186,23 @@ jobs:
       # ۷) Verify deployment
       # ──────────────────────────────────────────────
       - name: ✅ Verify deployment
+        shell: bash
         run: |
           echo "Waiting for apps to restart..."
           sleep 10
-
           echo "Testing API health..."
           API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.karzintell.com/api/v1/health || echo "000")
           echo "  API: HTTP $API_STATUS"
-
           echo "Testing Web..."
           WEB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://karzintell.com || echo "000")
           echo "  Web: HTTP $WEB_STATUS"
 
-          if [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "404" ]; then
-            echo "✅ API is responding"
-          else
-            echo "⚠️  API might have issues (HTTP $API_STATUS)"
-          fi
-
-          if [ "$WEB_STATUS" = "200" ]; then
-            echo "✅ Web is responding"
-          else
-            echo "⚠️  Web might have issues (HTTP $WEB_STATUS)"
-          fi
-
       - name: 📊 Deployment summary
         if: always()
+        shell: bash
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Server:** ${{ secrets.SSH_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner:** self-hosted Windows" >> $GITHUB_STEP_SUMMARY
