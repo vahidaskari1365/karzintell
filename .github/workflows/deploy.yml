@@ -20,21 +20,67 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🟢 Check Node.js
-        shell: bash
+        shell: powershell
         run: |
-          echo "Node version: $(node -v)"
-          echo "npm version: $(npm -v)"
-          if ! command -v node &> /dev/null; then
-            echo "❌ Node.js not found. Please install Node.js 20+ LTS from https://nodejs.org/"
-            exit 1
-          fi
-          # Check Node version is 20+
-          NODE_MAJOR=$(node -v | sed 's/v\([0-9]*\).*/\1/')
-          if [ "$NODE_MAJOR" -lt 20 ]; then
-            echo "❌ Node.js version $NODE_MAJOR is too old. Please install Node.js 20+ LTS."
-            exit 1
-          fi
-          echo "✅ Node.js v$NODE_MAJOR is ready"
+          Write-Host "PATH entries containing nodejs:"
+          $env:PATH -split ';' | Where-Object { $_ -match 'nodejs' }
+
+          Write-Host ""
+          Write-Host "Trying to find node..."
+          $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+          if ($nodeCmd) {
+            Write-Host "Found node at: $($nodeCmd.Source)"
+            $nodeVersion = node -v
+            $npmVersion = npm -v
+            Write-Host "Node version: $nodeVersion"
+            Write-Host "npm version: $npmVersion"
+
+            # Parse major version
+            $major = [int]($nodeVersion -replace 'v(\d+).*', '$1')
+            if ($major -lt 20) {
+              Write-Host "❌ Node.js version $major is too old. Need 20+."
+              exit 1
+            }
+            Write-Host "✅ Node.js v$major is ready"
+          } else {
+            Write-Host "❌ node not found in PATH. Trying common locations..."
+
+            # Try common Node.js install paths
+            $commonPaths = @(
+              "C:\Program Files\nodejs",
+              "C:\Program Files (x86)\nodejs",
+              "$env:LOCALAPPDATA\Programs\nodejs",
+              "$env:APPDATA\npm"
+            )
+
+            $nodeFound = $false
+            foreach ($path in $commonPaths) {
+              $nodeExe = Join-Path $path "node.exe"
+              if (Test-Path $nodeExe) {
+                Write-Host "Found node.exe at: $nodeExe"
+                Write-Host "##vso[task.prependpath]$path"
+                $env:PATH = "$path;$env:PATH"
+                $nodeFound = $true
+                break
+              }
+            }
+
+            if (-not $nodeFound) {
+              Write-Host "❌ Node.js not found. Please install from https://nodejs.org/"
+              exit 1
+            }
+
+            $nodeVersion = node -v
+            $npmVersion = npm -v
+            Write-Host "Node version: $nodeVersion"
+            Write-Host "npm version: $npmVersion"
+            Write-Host "✅ Node.js found and added to PATH"
+          }
+
+          # Export PATH for subsequent bash steps via GITHUB_PATH
+          $nodePath = (Get-Command node).Source | Split-Path
+          Add-Content -Path $env:GITHUB_PATH -Value $nodePath
+          Write-Host "Added $nodePath to GITHUB_PATH for subsequent steps"
 
       # ──────────────────────────────────────────────
       # ۱) Build API (NestJS → dist/)
