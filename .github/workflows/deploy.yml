@@ -1,0 +1,155 @@
+name: Deploy to Karzintell Server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-karzintell
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            apps/api/package-lock.json
+            apps/web/package-lock.json
+
+      # ──────────────────────────────────────────────
+      # ۱) Build API (NestJS → dist/)
+      # ──────────────────────────────────────────────
+      - name: 🔨 Build API
+        working-directory: apps/api
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+
+      # ──────────────────────────────────────────────
+      # ۲) Build Web (Next.js → .next/)
+      # ──────────────────────────────────────────────
+      - name: 🔨 Build Web
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_API_URL: /api/v1
+          NEXT_PUBLIC_SITE_URL: https://karzintell.com
+          NEXT_PUBLIC_APP_URL: https://karzintell.com
+          BACKEND_URL: https://api.karzintell.com
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+
+      # ──────────────────────────────────────────────
+      # ۳) Package deployment tarballs
+      # ──────────────────────────────────────────────
+      - name: 📦 Package API
+        run: |
+          tar -czf api-deploy.tar.gz \
+            -C apps/api \
+            dist \
+            package.json \
+            package-lock.json \
+            .npmrc
+
+      - name: 📦 Package Web
+        run: |
+          tar -czf web-deploy.tar.gz \
+            -C apps/web \
+            .next \
+            public \
+            server.js \
+            package.json \
+            package-lock.json \
+            next.config.ts \
+            postcss.config.mjs \
+            .npmrc
+
+      # ──────────────────────────────────────────────
+      # ۴) Setup SSH connection
+      # ──────────────────────────────────────────────
+      - name: 🔑 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Add server to known_hosts (prevent host key verification prompt)
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          # Test connection
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            'echo "SSH connection OK"'
+
+      # ──────────────────────────────────────────────
+      # ۵) Upload packages to server
+      # ──────────────────────────────────────────────
+      - name: 📤 Upload packages
+        run: |
+          # Create staging directory on server
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            'mkdir -p /home/karzinte/deploy-staging'
+
+          # Upload tarballs and deploy script
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.SSH_PORT }} \
+            api-deploy.tar.gz \
+            web-deploy.tar.gz \
+            scripts/deploy-on-server.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/karzinte/deploy-staging/
+
+      # ──────────────────────────────────────────────
+      # ۶) Deploy on server
+      # ──────────────────────────────────────────────
+      - name: 🚀 Deploy to server
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            'bash /home/karzinte/deploy-staging/deploy-on-server.sh 2>&1'
+
+      # ──────────────────────────────────────────────
+      # ۷) Verify deployment
+      # ──────────────────────────────────────────────
+      - name: ✅ Verify deployment
+        run: |
+          echo "Waiting for apps to restart..."
+          sleep 10
+
+          echo "Testing API health..."
+          API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.karzintell.com/api/v1/health || echo "000")
+          echo "  API: HTTP $API_STATUS"
+
+          echo "Testing Web..."
+          WEB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://karzintell.com || echo "000")
+          echo "  Web: HTTP $WEB_STATUS"
+
+          if [ "$API_STATUS" = "200" ] || [ "$API_STATUS" = "404" ]; then
+            echo "✅ API is responding"
+          else
+            echo "⚠️  API might have issues (HTTP $API_STATUS)"
+          fi
+
+          if [ "$WEB_STATUS" = "200" ]; then
+            echo "✅ Web is responding"
+          else
+            echo "⚠️  Web might have issues (HTTP $WEB_STATUS)"
+          fi
+
+      - name: 📊 Deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Server:** ${{ secrets.SSH_HOST }}" >> $GITHUB_STEP_SUMMARY

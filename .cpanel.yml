@@ -1,7 +1,12 @@
----
-deployment:
-  tasks:
-    - export DEPLOYPATH=/home/karzinte/repositories/karzintell/
-    - /bin/cp -R apps $DEPLOYPATH
-    - /bin/cp package.json $DEPLOYPATH
-    - /bin/cp package-lock.json $DEPLOYPATH
+# ============================================================================
+# این فایل توسط cPanel Git Version Control استفاده می‌شود.
+#
+# ⚠️  ما از GitHub Actions برای deploy استفاده می‌کنیم (نه cPanel Git Deploy).
+#     این فایل عمداً خالی/no-op شده تا با deploy خودکار تداخل نداشته باشد.
+#
+# اگر cPanel → Git Version Control روی ریپو karzintell تنظیم شده، می‌توانید:
+#   1. آن را حذف کنید (cPanel → Git Version Control → Manage → Delete)
+#   2. یا این فایل را که no-op است، رها کنید (آسیبی ندارد)
+#
+# برای deploy واقعی به فایل .github/workflows/deploy.yml مراجعه کنید.
+# ============================================================================
