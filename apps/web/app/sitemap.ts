@@ -5,11 +5,22 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const revalidate = 3600; // بازسازی ساعتی
 
-async function fetchJson<T>(path: string): Promise<T | null> {
+/**
+ * fetch امن برای زمان build:
+ *  - در زمان build در CI، سرور Backend در دسترس نیست یا ممکن است پاسخ غیر آرایه‌ای بدهد.
+ *  - در صورت هر خطا/پاسخ غیرمعتبر، null برمی‌گرداند (sitemap فقط شامل مسیرهای استاتیک می‌شود).
+ */
+async function fetchJsonArray<T>(path: string): Promise<T[] | null> {
   try {
     const res = await fetch(`${API_URL}${path}`, { next: { revalidate } });
     if (!res.ok) return null;
-    return (await res.json()) as T;
+    const json: unknown = await res.json();
+    // API envelope: { data: [...] } یا مستقیم آرایه
+    const list: unknown =
+      Array.isArray(json) ? json :
+      (json && typeof json === 'object' && 'data' in json) ? (json as { data?: unknown }).data :
+      null;
+    return Array.isArray(list) ? (list as T[]) : null;
   } catch {
     return null;
   }
@@ -26,11 +37,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/pages/contact`, changeFrequency: 'monthly', priority: 0.3 },
   ];
 
-  // محصولات منتشرشده
-  const products = await fetchJson<{ data: Array<{ slug: string; updatedAt?: string }> }>(
+  // محصولات منتشرشده — در زمان build اگر API در دسترس نباشد، خالی برمی‌گردد
+  const products = await fetchJsonArray<{ slug: string; updatedAt?: string }>(
     '/products?limit=1000&status=published',
   );
-  const productRoutes: MetadataRoute.Sitemap = (products?.data || [])
+  const productRoutes: MetadataRoute.Sitemap = (products || [])
     .filter((p) => p?.slug)
     .map((p) => ({
       url: `${SITE_URL}/products/${p.slug}`,
@@ -40,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   // دسته‌بندی‌ها
-  const categories = await fetchJson<{ data: Array<{ slug: string; children?: Array<{ slug: string }> }> }>(
+  const categories = await fetchJsonArray<{ slug: string; children?: Array<{ slug: string }> }>(
     '/categories/tree',
   );
   const categoryRoutes: MetadataRoute.Sitemap = [];
@@ -51,18 +62,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (n.children?.length) walk(n.children as any);
     }
   };
-  walk(categories?.data || []);
+  walk(categories || []);
 
   // صفحات CMS
-  const pages = await fetchJson<{ data: Array<{ slug: string }> }>('/pages');
-  const pageRoutes: MetadataRoute.Sitemap = (pages?.data || [])
+  const pages = await fetchJsonArray<{ slug: string }>('/pages');
+  const pageRoutes: MetadataRoute.Sitemap = (pages || [])
     .filter((p) => p?.slug)
     .map((p) => ({ url: `${SITE_URL}/pages/${p.slug}`, changeFrequency: 'monthly', priority: 0.4 }));
 
   // مقالات وبلاگ و اخبار
   const [blog, news] = await Promise.all([
-    fetchJson<{ data: Array<{ slug: string; updatedAt?: string }> }>('/blog?limit=1000'),
-    fetchJson<{ data: Array<{ slug: string; updatedAt?: string }> }>('/news?limit=1000'),
+    fetchJsonArray<{ slug: string; updatedAt?: string }>('/blog?limit=1000'),
+    fetchJsonArray<{ slug: string; updatedAt?: string }>('/news?limit=1000'),
   ]);
   // همه پست‌ها (چه بلاگ چه خبر) در مسیر /blog/:slug باز می‌شوند
   const postRoutes = (list?: Array<{ slug: string; updatedAt?: string }> | null): MetadataRoute.Sitemap =>
@@ -80,7 +91,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...productRoutes,
     ...categoryRoutes,
     ...pageRoutes,
-    ...postRoutes(blog?.data),
-    ...postRoutes(news?.data),
+    ...postRoutes(blog),
+    ...postRoutes(news),
   ];
 }
