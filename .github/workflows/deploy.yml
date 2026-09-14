@@ -79,42 +79,89 @@ jobs:
       # ۴) Setup SSH connection
       # ──────────────────────────────────────────────
       - name: 🔑 Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+
+          # Write private key (using printf to preserve newlines correctly)
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+
+          # Debug: show key info (without revealing content)
+          echo "Key file size: $(wc -c < ~/.ssh/deploy_key) bytes"
+          echo "Key file lines: $(wc -l < ~/.ssh/deploy_key) lines"
+          echo "Key first line: $(head -1 ~/.ssh/deploy_key)"
+          echo "Key last line: $(tail -1 ~/.ssh/deploy_key)"
+
+          # Validate key format
+          if ! head -1 ~/.ssh/deploy_key | grep -q "BEGIN"; then
+            echo "❌ ERROR: Key does not start with '-----BEGIN'"
+            echo "First 20 chars: $(head -c 20 ~/.ssh/deploy_key)"
+            exit 1
+          fi
+          if ! tail -1 ~/.ssh/deploy_key | grep -q "END"; then
+            echo "❌ ERROR: Key does not end with '-----END'"
+            echo "Last 20 chars: $(tail -c 20 ~/.ssh/deploy_key)"
+            exit 1
+          fi
+          echo "✅ Key format looks valid"
+
           # Add server to known_hosts (prevent host key verification prompt)
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-          # Test connection
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            'echo "SSH connection OK"'
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "✅ Host key added to known_hosts"
+
+          # Test connection with verbose for debugging
+          echo "Testing SSH connection..."
+          ssh -v -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            "$SSH_USER@$SSH_HOST" \
+            'echo "SSH connection OK"' 2>&1 | tail -40
 
       # ──────────────────────────────────────────────
       # ۵) Upload packages to server
       # ──────────────────────────────────────────────
       - name: 📤 Upload packages
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           # Create staging directory on server
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o BatchMode=yes \
+            "$SSH_USER@$SSH_HOST" \
             'mkdir -p /home/karzinte/deploy-staging'
 
           # Upload tarballs and deploy script
-          scp -i ~/.ssh/deploy_key -P ${{ secrets.SSH_PORT }} \
+          scp -i ~/.ssh/deploy_key -P "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o BatchMode=yes \
             api-deploy.tar.gz \
             web-deploy.tar.gz \
             scripts/deploy-on-server.sh \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/karzinte/deploy-staging/
+            "$SSH_USER@$SSH_HOST:/home/karzinte/deploy-staging/"
 
       # ──────────────────────────────────────────────
       # ۶) Deploy on server
       # ──────────────────────────────────────────────
       - name: 🚀 Deploy to server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o BatchMode=yes \
+            "$SSH_USER@$SSH_HOST" \
             'bash /home/karzinte/deploy-staging/deploy-on-server.sh 2>&1'
 
       # ──────────────────────────────────────────────
