@@ -5,7 +5,7 @@
   "description": "کارزینتل — API فروشگاه (NestJS + TypeORM + MySQL) — مستقل و قابل اجرا روی cPanel",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "node --max-old-space-size=1024 node_modules/.bin/tsc -p tsconfig.build.json",
+    "build": "node --max-old-space-size=1024 ./node_modules/typescript/bin/tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "start:prod": "NODE_ENV=production node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
