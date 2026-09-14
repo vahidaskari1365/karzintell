@@ -88,41 +88,55 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # Write private key (using printf to preserve newlines correctly)
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          # Write private key, normalize line endings, and trim trailing empty lines
+          # (Handles CRLF from Windows clipboard, extra trailing newlines, etc.)
+          printf '%s\n' "$SSH_PRIVATE_KEY" \
+            | sed 's/\r$//' \
+            | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' \
+            > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           # Debug: show key info (without revealing content)
           echo "Key file size: $(wc -c < ~/.ssh/deploy_key) bytes"
           echo "Key file lines: $(wc -l < ~/.ssh/deploy_key) lines"
-          echo "Key first line: $(head -1 ~/.ssh/deploy_key)"
-          echo "Key last line: $(tail -1 ~/.ssh/deploy_key)"
+          FIRST_LINE=$(head -1 ~/.ssh/deploy_key)
+          LAST_LINE=$(tail -1 ~/.ssh/deploy_key)
+          echo "Key first line starts with: ${FIRST_LINE:0:25}..."
+          echo "Key last line starts with: ${LAST_LINE:0:25}..."
 
-          # Validate key format
-          if ! head -1 ~/.ssh/deploy_key | grep -q "BEGIN"; then
-            echo "❌ ERROR: Key does not start with '-----BEGIN'"
-            echo "First 20 chars: $(head -c 20 ~/.ssh/deploy_key)"
+          # Validate key format (BEGIN and END markers, on any line)
+          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "❌ ERROR: Key does not contain 'BEGIN OPENSSH PRIVATE KEY' marker"
+            echo "First 30 chars of file: $(head -c 30 ~/.ssh/deploy_key)"
             exit 1
           fi
-          if ! tail -1 ~/.ssh/deploy_key | grep -q "END"; then
-            echo "❌ ERROR: Key does not end with '-----END'"
-            echo "Last 20 chars: $(tail -c 20 ~/.ssh/deploy_key)"
+          if ! grep -q "END OPENSSH PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "❌ ERROR: Key does not contain 'END OPENSSH PRIVATE KEY' marker"
+            echo "Last 30 chars of file: $(tail -c 30 ~/.ssh/deploy_key)"
             exit 1
           fi
-          echo "✅ Key format looks valid"
+          echo "✅ Key format looks valid (BEGIN + END markers present)"
+
+          # Verify key is parseable by ssh-keygen
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
+            echo "❌ ERROR: ssh-keygen cannot parse the private key"
+            echo "This usually means the key was pasted incorrectly (extra/missing characters)"
+            exit 1
+          fi
+          echo "✅ Private key is valid and parseable"
 
           # Add server to known_hosts (prevent host key verification prompt)
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           echo "✅ Host key added to known_hosts"
 
-          # Test connection with verbose for debugging
+          # Test connection
           echo "Testing SSH connection..."
-          ssh -v -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o BatchMode=yes \
             -o ConnectTimeout=15 \
             "$SSH_USER@$SSH_HOST" \
-            'echo "SSH connection OK"' 2>&1 | tail -40
+            'echo "SSH connection OK"' 2>&1 | tail -20
 
       # ──────────────────────────────────────────────
       # ۵) Upload packages to server
