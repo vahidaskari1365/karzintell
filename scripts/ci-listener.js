@@ -150,11 +150,11 @@ function runDeploy(commitSha, pusher) {
 // ── Connect to smee.io ─────────────────────────────────────────────────────
 function connectToSmee() {
   const url = new URL(SMEE_URL);
-  log('🔌', colors.blue, `اتصال به ${url.host}...`);
+  log('🔌', colors.blue, `اتصال به ${url.host}${url.pathname}...`);
 
   const req = https.get({
     hostname: url.hostname,
-    path: url.pathname + '/events',
+    path: url.pathname,
     headers: {
       'Accept': 'text/event-stream',
       'Cache-Control': 'no-cache',
