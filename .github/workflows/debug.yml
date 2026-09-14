@@ -1,0 +1,63 @@
+name: Debug Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 5
+
+    steps:
+      - name: 🔍 Debug Environment
+        shell: powershell
+        run: |
+          Write-Host "========== ENVIRONMENT INFO =========="
+          Write-Host "OS: $env:OS"
+          Write-Host "Computer: $env:COMPUTERNAME"
+          Write-Host "User: $env:USERNAME"
+          Write-Host "PWD: $(Get-Location)"
+          Write-Host ""
+          Write-Host "========== NODE CHECK =========="
+          $node = Get-Command node -ErrorAction SilentlyContinue
+          if ($node) {
+            Write-Host "✅ node found at: $($node.Source)"
+            Write-Host "Node version: $(node -v)"
+            Write-Host "npm version: $(npm -v)"
+          } else {
+            Write-Host "❌ node NOT in PATH"
+            Write-Host ""
+            Write-Host "Searching common locations..."
+            $paths = @(
+              "C:\Program Files\nodejs\node.exe",
+              "C:\Program Files (x86)\nodejs\node.exe",
+              "$env:LOCALAPPDATA\Programs\nodejs\node.exe",
+              "$env:APPDATA\npm\node.exe"
+            )
+            foreach ($p in $paths) {
+              Write-Host "  Checking: $p"
+              if (Test-Path $p) {
+                Write-Host "  ✅ FOUND at: $p"
+              }
+            }
+          }
+          Write-Host ""
+          Write-Host "========== PATH VARIABLE =========="
+          $env:PATH -split ';' | ForEach-Object { Write-Host "  $_" }
+          Write-Host ""
+          Write-Host "========== GIT CHECK =========="
+          $git = Get-Command git -ErrorAction SilentlyContinue
+          if ($git) {
+            Write-Host "✅ git found at: $($git.Source)"
+            git --version
+          } else {
+            Write-Host "❌ git NOT in PATH"
+          }
+          Write-Host ""
+          Write-Host "========== BASH CHECK =========="
+          $bash = Get-Command bash -ErrorAction SilentlyContinue
+          if ($bash) {
+            Write-Host "✅ bash found at: $($bash.Source)"
+          } else {
+            Write-Host "❌ bash NOT in PATH"
+          }
