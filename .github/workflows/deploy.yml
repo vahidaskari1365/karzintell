@@ -85,53 +85,38 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
+          set +e  # Don't exit on error - we want to see all output
+          set -x  # Trace every command
+
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
           # Write private key, normalize line endings, and trim trailing empty lines
-          # (Handles CRLF from Windows clipboard, extra trailing newlines, etc.)
           printf '%s\n' "$SSH_PRIVATE_KEY" \
             | sed 's/\r$//' \
             | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' \
             > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          # Debug: show key info (without revealing content)
-          echo "Key file size: $(wc -c < ~/.ssh/deploy_key) bytes"
-          echo "Key file lines: $(wc -l < ~/.ssh/deploy_key) lines"
-          FIRST_LINE=$(head -1 ~/.ssh/deploy_key)
-          LAST_LINE=$(tail -1 ~/.ssh/deploy_key)
-          echo "Key first line starts with: ${FIRST_LINE:0:25}..."
-          echo "Key last line starts with: ${LAST_LINE:0:25}..."
+          echo "=== Key info ==="
+          wc -c ~/.ssh/deploy_key
+          wc -l ~/.ssh/deploy_key
+          head -1 ~/.ssh/deploy_key | cut -c1-25
+          tail -1 ~/.ssh/deploy_key | cut -c1-25
 
-          # Validate key format (BEGIN and END markers, on any line)
-          if ! grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/deploy_key; then
-            echo "❌ ERROR: Key does not contain 'BEGIN OPENSSH PRIVATE KEY' marker"
-            echo "First 30 chars of file: $(head -c 30 ~/.ssh/deploy_key)"
-            exit 1
-          fi
-          if ! grep -q "END OPENSSH PRIVATE KEY" ~/.ssh/deploy_key; then
-            echo "❌ ERROR: Key does not contain 'END OPENSSH PRIVATE KEY' marker"
-            echo "Last 30 chars of file: $(tail -c 30 ~/.ssh/deploy_key)"
-            exit 1
-          fi
-          echo "✅ Key format looks valid (BEGIN + END markers present)"
+          echo "=== Validate key format ==="
+          grep -c "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/deploy_key
+          grep -c "END OPENSSH PRIVATE KEY" ~/.ssh/deploy_key
 
-          # Verify key is parseable by ssh-keygen
-          if ! ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1; then
-            echo "❌ ERROR: ssh-keygen cannot parse the private key"
-            echo "This usually means the key was pasted incorrectly (extra/missing characters)"
-            exit 1
-          fi
-          echo "✅ Private key is valid and parseable"
+          echo "=== Validate key parseable ==="
+          ssh-keygen -y -f ~/.ssh/deploy_key
+          echo "ssh-keygen exit: $?"
 
-          # Add server to known_hosts (prevent host key verification prompt)
-          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          echo "✅ Host key added to known_hosts"
+          echo "=== Add server to known_hosts ==="
+          ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>&1
+          echo "ssh-keyscan exit: $?"
 
-          # Test connection (write output to file to avoid masking issues)
-          echo "Testing SSH connection..."
-          SSH_OUTPUT=/tmp/ssh_test.log
+          echo "=== Test SSH connection ==="
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o BatchMode=yes \
@@ -139,31 +124,15 @@ jobs:
             -o PreferredAuthentications=publickey \
             -o IdentitiesOnly=yes \
             "$SSH_USER@$SSH_HOST" \
-            'echo "SSH_CONNECTION_OK"' > "$SSH_OUTPUT" 2>&1
+            'echo "SSH_CONNECTION_OK"' 2>&1
           SSH_EXIT=$?
-          echo "SSH exit code: $SSH_EXIT"
-          echo "=== SSH output (sanitized - masking potential secrets) ==="
-          # Replace any occurrence of host/user/port with placeholder
-          sed -e "s/$SSH_HOST/SSH_HOST/g" \
-              -e "s/$SSH_USER/SSH_USER/g" \
-              -e "s/$SSH_PORT/SSH_PORT/g" \
-              "$SSH_OUTPUT" || true
-          echo "=== End of SSH output ==="
+          echo "=== SSH exit code: $SSH_EXIT ==="
 
           if [ "$SSH_EXIT" -ne 0 ]; then
-            echo "❌ SSH connection failed with exit code $SSH_EXIT"
-            echo "Common causes:"
-            echo "  - 255: Permission denied (publickey) — public key not in authorized_keys"
-            echo "  - 1:   Connection refused / network issue"
+            echo "❌ SSH failed with code $SSH_EXIT"
             exit 1
           fi
-
-          if grep -q "SSH_CONNECTION_OK" "$SSH_OUTPUT"; then
-            echo "✅ SSH connection successful!"
-          else
-            echo "❌ SSH connected but expected response not received"
-            exit 1
-          fi
+          echo "✅ SSH OK"
 
       # ──────────────────────────────────────────────
       # ۵) Upload packages to server
