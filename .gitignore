@@ -53,3 +53,70 @@ Thumbs.db
 *.tar
 
 .vercel
+
+# ============================================================================
+# Agent Skills — فقط فایل‌های زیر در گیت commit می‌شوند:
+#   - .agents/skills/          (skill های اصلی)
+#   - .agents/README.md        (راهنما)
+#   - .claude/skills/          (symlinks برای Claude Code)
+#   - skills-lock.json         (نسخه‌های نصب شده)
+#
+# سایر پوشه‌های agent که skills CLI ایجاد کرده برای agent های دیگه‌ست که
+# ما استفاده نمی‌کنیم، پس ignore می‌شوند تا ریپو شلوغ نشود.
+# ============================================================================
+.aider-desk/
+.augment/
+.autohand/
+.bob/
+.codeartsdoer/
+.codebuddy/
+.codemaker/
+.codestudio/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.devin/
+.forge/
+.fx/
+.goose/
+.grok/
+.hermes/
+.iflow/
+.inferencesh/
+.jazz/
+.junie/
+.kimchi/
+.kiro/
+.kode/
+.lingma/
+.mcpjam/
+.minimax/
+.moxby/
+.mux/
+.neovate/
+.ona/
+.openhands/
+.pi/
+.pochi/
+.posit/
+.qoder/
+.qwen/
+.reasonix/
+.roo/
+.rovodev/
+.tabnine/
+.terramind/
+.tinycloud/
+.trae/
+.windsurf/
+.zencoder/
+.zai/
+.adal/
+.vibe/
+.zcode/
+
+# Other agent skill directories (we only keep .agents/skills and .claude/skills)
+/skills/
+/agent/
+/data/
