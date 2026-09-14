@@ -8,26 +8,12 @@
  * وقتی GitHub یک webhook می‌فرستد، این اسکریپت آن را دریافت کرده و
  * اسکریپت deploy را اجرا می‌کند.
  *
- * نحوه کار:
- *   1. GitHub → webhook → smee.io (پروکسی رایگان)
- *   2. این اسکریپت به smee.io متصل می‌شود (Server-Sent Events)
- *   3. وقتی webhook دریافت شد، signature را بررسی می‌کند
- *   4. اگر معتبر بود، scripts/local-deploy.js را اجرا می‌کند
- *
  * استفاده:
  *   node scripts/ci-listener.js
- *
- * تنظیمات از طریق متغیرهای محیطی یا فایل .env.local در ریشه پروژه:
- *   SMEE_URL=https://smee.io/your-channel
- *   WEBHOOK_SECRET=your-webhook-secret
- *   REPO_OWNER=vahidaskari1365
- *   REPO_NAME=karzintell
- *   BRANCH=main
  * ============================================================================
  */
 
 const https = require('https');
-const http = require('http');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -45,7 +31,6 @@ if (fs.existsSync(envPath)) {
     if (idx === -1) return;
     const key = line.slice(0, idx).trim();
     let val = line.slice(idx + 1).trim();
-    // Remove surrounding quotes
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
@@ -62,9 +47,6 @@ const BRANCH = process.env.BRANCH || 'main';
 
 if (!SMEE_URL) {
   console.error('❌ SMEE_URL تنظیم نشده. لطفاً فایل .env.local را بسازید.');
-  console.error('   نمونه:');
-  console.error('   SMEE_URL=https://smee.io/your-unique-channel');
-  console.error('   WEBHOOK_SECRET=your-secret');
   process.exit(1);
 }
 
@@ -72,7 +54,7 @@ console.log('╔═════════════════════�
 console.log('║  Karzintell CI Listener                                  ║');
 console.log('╠════════════════════════════════════════════════════════════╣');
 console.log(`║  SMEE URL:      ${SMEE_URL.padEnd(45).slice(0, 45)}║`);
-console.log(`║  Repo:          ${REPO_OWNER}/${REPO_NAME}`.padEnd(60) + '║');
+console.log(`║  Repo:          ${REPO_OWNER}/${REPO_NAME}`.slice(0, 59).padEnd(60) + '║');
 console.log(`║  Branch:        ${BRANCH.padEnd(45).slice(0, 45)}║`);
 console.log(`║  Webhook Secret: ${WEBHOOK_SECRET ? '✅ Set' : '⚠️  Not set'}`.padEnd(60) + '║');
 console.log('╚════════════════════════════════════════════════════════════╝');
@@ -128,12 +110,11 @@ function runDeploy(commitSha, pusher) {
   const deployScript = path.join(__dirname, 'local-deploy.js');
   const shortSha = commitSha.slice(0, 7);
 
-  // Run deploy script
   const child = spawn('node', [deployScript], {
     cwd: path.join(__dirname, '..'),
     stdio: 'inherit',
     env: { ...process.env, DEPLOY_COMMIT: commitSha },
-    shell: true,
+    shell: false,
   });
 
   child.on('close', (code) => {
@@ -147,90 +128,73 @@ function runDeploy(commitSha, pusher) {
   });
 }
 
-// ── Connect to smee.io ─────────────────────────────────────────────────────
-function connectToSmee() {
-  const url = new URL(SMEE_URL);
-  log('🔌', colors.blue, `اتصال به ${url.host}${url.pathname}...`);
+// ── Parse smee.io event data ──────────────────────────────────────────────
+function parseSmeeEvent(data) {
+  // smee.io sends JSON with the original headers and body
+  // The structure can vary, so we try multiple approaches
 
-  const req = https.get({
-    hostname: url.hostname,
-    path: url.pathname,
-    headers: {
-      'Accept': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-    },
-    timeout: 30000,
-  }, (res) => {
-    if (res.statusCode !== 200) {
-      log('❌', colors.red, `خطا در اتصال به smee.io: HTTP ${res.statusCode}`);
-      log('🔄', colors.yellow, 'تلاش مجدد در ۵ ثانیه...');
-      setTimeout(connectToSmee, 5000);
-      return;
-    }
+  let event = null;
+  let body = null;
+  let signature = null;
 
-    log('✅', colors.green, 'متصل شدیم! منتظر webhook...');
-    log('⏳', colors.blue, 'برای خروج Ctrl+C بزن');
+  // Try to get event type from various locations
+  event = data['x-github-event'] ||
+          data['X-Github-Event'] ||
+          data['X-GitHub-Event'] ||
+          (data.body && typeof data.body === 'object' && (data.body['x-github-event'] || data.body['X-GitHub-Event'])) ||
+          null;
 
-    let buffer = '';
+  // Try to get signature
+  signature = data['x-hub-signature-256'] ||
+             data['X-Hub-Signature-256'] ||
+             data['x-hub-signature'] ||
+             data['X-Hub-Signature'] ||
+             null;
 
-    res.on('data', (chunk) => {
-      buffer += chunk.toString();
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // Keep incomplete line
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            handleWebhook(data);
-          } catch (e) {
-            // Not JSON, ignore
-          }
-        }
+  // Try to get body (the actual GitHub payload)
+  if (data.body) {
+    if (typeof data.body === 'string') {
+      try {
+        body = JSON.parse(data.body);
+      } catch {
+        body = null;
       }
-    });
+    } else {
+      body = data.body;
+    }
+  } else {
+    // Maybe the data itself IS the body
+    body = data;
+  }
 
-    res.on('end', () => {
-      log('⚠️', colors.yellow, 'اتصال قطع شد');
-      log('🔄', colors.yellow, 'تلاش مجدد در ۵ ثانیه...');
-      setTimeout(connectToSmee, 5000);
-    });
-
-    res.on('error', (err) => {
-      log('❌', colors.red, `خطا: ${err.message}`);
-      setTimeout(connectToSmee, 5000);
-    });
-  });
-
-  req.on('error', (err) => {
-    log('❌', colors.red, `خطا در اتصال: ${err.message}`);
-    log('🔄', colors.yellow, 'تلاش مجدد در ۵ ثانیه...');
-    setTimeout(connectToSmee, 5000);
-  });
-
-  req.on('timeout', () => {
-    log('⏰', colors.yellow, 'timeout در اتصال — تلاش مجدد...');
-    req.destroy();
-    setTimeout(connectToSmee, 5000);
-  });
+  return { event, body, signature };
 }
 
 // ── Handle webhook payload ─────────────────────────────────────────────────
-function handleWebhook(data) {
-  // smee.io wraps the original payload in data.body (when forwarded)
-  // or it might be the raw payload itself
-  const payload = data.body || data;
-  const event = data['x-github-event'] || payload['x-github-event'];
+function handleWebhook(rawData) {
+  const { event, body, signature } = parseSmeeEvent(rawData);
 
-  log('📨', colors.cyan, `Webhook دریافت شد: event=${event || 'unknown'}`);
+  // Debug: log what we received (truncated)
+  const eventDisplay = event || 'unknown';
+  log('📨', colors.cyan, `Webhook دریافت شد: event=${eventDisplay}`);
 
   // Only handle push events
   if (event !== 'push') {
-    log('⏭️', colors.gray, `نادیده گرفته شد (فقط push پردازش می‌شود)`);
+    if (event === 'ping') {
+      log('🏓', colors.gray, 'GitHub ping event — نادیده گرفته شد');
+    } else if (!event) {
+      log('⚠️', colors.gray, `event type نامشخص — نادیده گرفته شد`);
+    } else {
+      log('⏭️', colors.gray, `نادیده گرفته شد (فقط push پردازش می‌شود)`);
+    }
     return;
   }
 
-  const body = typeof payload === 'string' ? JSON.parse(payload) : payload;
+  if (!body) {
+    log('❌', colors.red, 'بدنه webhook خالی است');
+    return;
+  }
+
   const ref = body.ref;
   const repoFullName = body.repository?.full_name;
 
@@ -248,9 +212,10 @@ function handleWebhook(data) {
   }
 
   // Verify signature
-  const signature = data['x-hub-signature-256'] || data['x-hub-signature'];
   if (WEBHOOK_SECRET && signature) {
-    const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const payloadStr = typeof rawData.body === 'string'
+      ? rawData.body
+      : JSON.stringify(body);
     if (!verifySignature(payloadStr, signature)) {
       log('❌', colors.red, 'اعتبارسنجی signature ناموفق بود — webhook رد شد');
       return;
@@ -273,6 +238,114 @@ function handleWebhook(data) {
   runDeploy(commitSha, pusher);
 }
 
+// ── Connect to smee.io ─────────────────────────────────────────────────────
+let isConnecting = false;
+let currentRequest = null;
+let reconnectTimeout = null;
+
+function connectToSmee() {
+  // Prevent multiple concurrent connections
+  if (isConnecting) {
+    log('⚠️', colors.gray, 'در حال اتصال... صبر کنید');
+    return;
+  }
+
+  // Cancel any pending reconnect
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+
+  // Destroy existing connection if any
+  if (currentRequest) {
+    try { currentRequest.destroy(); } catch {}
+    currentRequest = null;
+  }
+
+  isConnecting = true;
+
+  const url = new URL(SMEE_URL);
+  log('🔌', colors.blue, `اتصال به smee.io${url.pathname}...`);
+
+  currentRequest = https.get({
+    hostname: url.hostname,
+    path: url.pathname,
+    headers: {
+      'Accept': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+    },
+    timeout: 60000,
+  }, (res) => {
+    isConnecting = false;
+
+    if (res.statusCode !== 200) {
+      log('❌', colors.red, `خطا در اتصال به smee.io: HTTP ${res.statusCode}`);
+      scheduleReconnect();
+      return;
+    }
+
+    log('✅', colors.green, 'متصل شدیم! منتظر webhook...');
+    log('⏳', colors.blue, 'برای خروج Ctrl+C بزن');
+
+    let buffer = '';
+
+    res.on('data', (chunk) => {
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Keep incomplete line
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            handleWebhook(data);
+          } catch (e) {
+            // Not valid JSON, ignore
+          }
+        }
+      }
+    });
+
+    res.on('end', () => {
+      log('⚠️', colors.yellow, 'اتصال قطع شد');
+      currentRequest = null;
+      scheduleReconnect();
+    });
+
+    res.on('error', (err) => {
+      isConnecting = false;
+      log('❌', colors.red, `خطا: ${err.message}`);
+      currentRequest = null;
+      scheduleReconnect();
+    });
+  });
+
+  currentRequest.on('error', (err) => {
+    isConnecting = false;
+    log('❌', colors.red, `خطا در اتصال: ${err.message}`);
+    currentRequest = null;
+    scheduleReconnect();
+  });
+
+  currentRequest.on('timeout', () => {
+    isConnecting = false;
+    log('⏰', colors.yellow, 'timeout در اتصال — تلاش مجدد...');
+    try { currentRequest.destroy(); } catch {}
+    currentRequest = null;
+    scheduleReconnect();
+  });
+}
+
+function scheduleReconnect() {
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+  }
+  reconnectTimeout = setTimeout(() => {
+    reconnectTimeout = null;
+    connectToSmee();
+  }, 5000);
+}
+
 // ── Start ───────────────────────────────────────────────────────────────────
 console.log('');
 connectToSmee();
@@ -281,6 +354,9 @@ connectToSmee();
 process.on('SIGINT', () => {
   console.log('\n');
   log('👋', colors.yellow, 'خروج...');
+  if (currentRequest) {
+    try { currentRequest.destroy(); } catch {}
+  }
   process.exit(0);
 });
 
