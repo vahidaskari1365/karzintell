@@ -130,28 +130,31 @@ function runDeploy(commitSha, pusher) {
 
 // ── Parse smee.io event data ──────────────────────────────────────────────
 function parseSmeeEvent(data) {
-  // smee.io sends JSON with the original headers and body
-  // The structure can vary, so we try multiple approaches
+  // smee.io sends SSE events in this format:
+  //   data: {"x-github-event":"push","body":{...},"x-hub-signature-256":"...","timestamp":...}
+  //
+  // The actual GitHub payload is in data.body
+  // The event type is in data['x-github-event']
+  // The signature is in data['x-hub-signature-256']
 
   let event = null;
   let body = null;
   let signature = null;
 
-  // Try to get event type from various locations
+  // Event type — smee.io stores it as 'x-github-event' in the wrapper
   event = data['x-github-event'] ||
           data['X-Github-Event'] ||
           data['X-GitHub-Event'] ||
-          (data.body && typeof data.body === 'object' && (data.body['x-github-event'] || data.body['X-GitHub-Event'])) ||
           null;
 
-  // Try to get signature
+  // Signature — smee.io stores it as 'x-hub-signature-256'
   signature = data['x-hub-signature-256'] ||
              data['X-Hub-Signature-256'] ||
              data['x-hub-signature'] ||
              data['X-Hub-Signature'] ||
              null;
 
-  // Try to get body (the actual GitHub payload)
+  // Body — the actual GitHub payload is in data.body
   if (data.body) {
     if (typeof data.body === 'string') {
       try {
@@ -162,9 +165,6 @@ function parseSmeeEvent(data) {
     } else {
       body = data.body;
     }
-  } else {
-    // Maybe the data itself IS the body
-    body = data;
   }
 
   return { event, body, signature };
