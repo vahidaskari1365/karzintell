@@ -129,14 +129,41 @@ jobs:
           ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           echo "✅ Host key added to known_hosts"
 
-          # Test connection
+          # Test connection (write output to file to avoid masking issues)
           echo "Testing SSH connection..."
+          SSH_OUTPUT=/tmp/ssh_test.log
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" \
             -o StrictHostKeyChecking=no \
             -o BatchMode=yes \
             -o ConnectTimeout=15 \
+            -o PreferredAuthentications=publickey \
+            -o IdentitiesOnly=yes \
             "$SSH_USER@$SSH_HOST" \
-            'echo "SSH connection OK"' 2>&1 | tail -20
+            'echo "SSH_CONNECTION_OK"' > "$SSH_OUTPUT" 2>&1
+          SSH_EXIT=$?
+          echo "SSH exit code: $SSH_EXIT"
+          echo "=== SSH output (sanitized - masking potential secrets) ==="
+          # Replace any occurrence of host/user/port with placeholder
+          sed -e "s/$SSH_HOST/SSH_HOST/g" \
+              -e "s/$SSH_USER/SSH_USER/g" \
+              -e "s/$SSH_PORT/SSH_PORT/g" \
+              "$SSH_OUTPUT" || true
+          echo "=== End of SSH output ==="
+
+          if [ "$SSH_EXIT" -ne 0 ]; then
+            echo "❌ SSH connection failed with exit code $SSH_EXIT"
+            echo "Common causes:"
+            echo "  - 255: Permission denied (publickey) — public key not in authorized_keys"
+            echo "  - 1:   Connection refused / network issue"
+            exit 1
+          fi
+
+          if grep -q "SSH_CONNECTION_OK" "$SSH_OUTPUT"; then
+            echo "✅ SSH connection successful!"
+          else
+            echo "❌ SSH connected but expected response not received"
+            exit 1
+          fi
 
       # ──────────────────────────────────────────────
       # ۵) Upload packages to server
