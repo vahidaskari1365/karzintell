@@ -82,10 +82,29 @@ else
     warn "No existing dist/ to backup"
 fi
 
+# REMOVE old dist completely before extracting new one
+# This prevents stale .js files from old modules lingering on the server
+log "Removing old dist/..."
+rm -rf dist 2>/dev/null || true
+ok "Old dist/ removed"
+
 # Extract new files (overwrites dist/, package.json, package-lock.json, .npmrc)
 log "Extracting new API files..."
 tar -xzf "$STAGING/api-deploy.tar.gz" -C "$API_APP"
 ok "Files extracted"
+
+# Verify sellers module exists in the new dist
+if [ -d "dist/modules/sellers" ]; then
+    ok "Sellers module found in new dist/"
+else
+    warn "WARNING: Sellers module NOT found in dist/modules/sellers/!"
+    warn "This means vendor endpoints will return 404."
+fi
+
+# Also clean npm cache to ensure fresh install
+log "Cleaning npm cache..."
+"$NODE_BIN/npm" cache clean --force 2>/dev/null || true
+ok "npm cache cleaned"
 
 # Install production dependencies
 log "Installing production dependencies (this may take a minute)..."
@@ -157,10 +176,35 @@ else
     warn "No existing .next/ to backup"
 fi
 
+# REMOVE old .next completely before extracting new one
+# This prevents stale cached pages from old routes lingering on the server
+log "Removing old .next/..."
+rm -rf .next 2>/dev/null || true
+ok "Old .next/ removed"
+
 # Extract new files
 log "Extracting new Web files..."
 tar -xzf "$STAGING/web-deploy.tar.gz" -C "$WEB_APP"
 ok "Files extracted"
+
+# Verify vendor route exists in the new build
+if [ -d ".next/server/app/vendor" ] || [ -f ".next/server/app/vendor/page.html" ] || [ -d ".next/server/app/vendor/products" ]; then
+    ok "Vendor routes found in new .next/"
+else
+    warn "Vendor routes not clearly found — checking build manifest..."
+    if [ -f ".next/routes-manifest.json" ]; then
+        if grep -q '"\/vendor"' .next/routes-manifest.json 2>/dev/null || grep -q '/vendor/' .next/routes-manifest.json 2>/dev/null; then
+            ok "Vendor routes confirmed in routes-manifest.json"
+        else
+            warn "Vendor routes NOT found in routes-manifest.json!"
+        fi
+    fi
+fi
+
+# Also clean npm cache for web
+log "Cleaning npm cache..."
+"$NODE_BIN/npm" cache clean --force 2>/dev/null || true
+ok "npm cache cleaned"
 
 # Install production dependencies
 log "Installing production dependencies (this may take a minute)..."
