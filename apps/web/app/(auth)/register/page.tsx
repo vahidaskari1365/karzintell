@@ -106,7 +106,7 @@ function RegisterForm() {
           <Input
             value={form.fullName}
             onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-300 focus:border-teal-500/50"
             placeholder="مثلاً علی محمدی"
           />
         </Field>
@@ -116,7 +116,7 @@ function RegisterForm() {
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
             placeholder="09xxxxxxxxx"
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-300 focus:border-teal-500/50"
           />
         </Field>
         <Field label="ایمیل (اختیاری)">
@@ -126,7 +126,7 @@ function RegisterForm() {
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             placeholder="you@example.com"
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-300 focus:border-teal-500/50"
           />
         </Field>
         <Field label="رمز عبور" required hint="حداقل ۸ کاراکتر">
@@ -136,7 +136,7 @@ function RegisterForm() {
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-300 focus:border-teal-500/50"
           />
         </Field>
         <CaptchaField value={captcha} onChange={setCaptcha} refreshKey={captchaRefresh} />
@@ -156,13 +156,13 @@ function RegisterForm() {
             <div className="w-full border-t border-slate-700" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-transparent px-3 text-2xs text-slate-500">یا</span>
+            <span className="bg-transparent px-3 text-2xs text-slate-400">یا</span>
           </div>
         </div>
 
         <GoogleButton label="ثبت‌نام با گوگل" variant="register" />
 
-        <div className="text-center text-sm text-slate-400">
+        <div className="text-center text-sm text-slate-300">
           قبلاً ثبت‌نام کرده‌اید؟{' '}
           <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-bold text-teal-400 underline hover:text-teal-300">
             وارد شوید
@@ -175,7 +175,7 @@ function RegisterForm() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="mt-6 flex justify-center gap-6 text-2xs text-slate-500"
+        className="mt-6 flex justify-center gap-6 text-2xs text-slate-400"
       >
         <span className="flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal-500" />

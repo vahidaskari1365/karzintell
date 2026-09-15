@@ -121,7 +121,7 @@ function LoginForm() {
         <KeyRound className="h-6 w-6 text-teal-400" />
         ورود به حساب
       </h1>
-      <p className="mb-6 text-sm text-slate-400">با رمز عبور یا کد یک‌بارمصرف وارد شوید</p>
+      <p className="mb-6 text-sm text-slate-300">با رمز عبور یا کد یک‌بارمصرف وارد شوید</p>
 
       <Tabs
         tabs={[{ key: 'password', label: 'با رمز عبور' }, { key: 'otp', label: 'با پیامک/ایمیل' }]}
@@ -144,25 +144,25 @@ function LoginForm() {
               تأیید و ورود
             </Button>
             <div className="text-center">
-              <button onClick={() => { setTfaTicket(null); setTfaCode(''); }} className="text-xs text-slate-400 underline hover:text-slate-200">بازگشت به ورود</button>
+              <button onClick={() => { setTfaTicket(null); setTfaCode(''); }} className="text-xs text-slate-300 underline hover:text-slate-200">بازگشت به ورود</button>
             </div>
           </>
         ) : (
           <>
             <Field label="موبایل یا ایمیل" required>
-              <Input dir="ltr" value={form.identifier} onChange={(e) => set('identifier', e.target.value)} placeholder="09xxxxxxxxx یا email@example.com" className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50" />
+              <Input dir="ltr" value={form.identifier} onChange={(e) => set('identifier', e.target.value)} placeholder="09xxxxxxxxx یا email@example.com" className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-300 focus:border-emerald-500/50" />
             </Field>
 
             {mode === 'password' ? (
               <>
                 <Field label="رمز عبور" required>
-                  <Input dir="ltr" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50" />
+                  <Input dir="ltr" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-300 focus:border-emerald-500/50" />
                 </Field>
                 <Button className="w-full !bg-gradient-to-r !bg-teal-500 !text-slate-900 !text-white" size="lg" onClick={doLogin} loading={sending}>
                   <KeyRound className="h-4.5 w-4.5" /> ورود
                 </Button>
                 <div className="text-center">
-                  <Link href="/forgot" className="text-xs text-slate-400 underline hover:text-slate-200">رمز عبور را فراموش کرده‌ام</Link>
+                  <Link href="/forgot" className="text-xs text-slate-300 underline hover:text-slate-200">رمز عبور را فراموش کرده‌ام</Link>
                 </div>
               </>
             ) : otpStep === 'send' ? (
@@ -183,7 +183,7 @@ function LoginForm() {
             <Button className="w-full !bg-gradient-to-r !bg-teal-500 !text-slate-900 !text-white" size="lg" onClick={verifyOtp} loading={sending} disabled={form.code.length !== 5}>
               تأیید و ورود
             </Button>
-            <button onClick={() => setOtpStep('send')} className="w-full text-center text-xs text-slate-400 underline hover:text-slate-200">ارسال مجدد</button>
+            <button onClick={() => setOtpStep('send')} className="w-full text-center text-xs text-slate-300 underline hover:text-slate-200">ارسال مجدد</button>
           </>
         )}
 
@@ -193,14 +193,14 @@ function LoginForm() {
                 <div className="w-full border-t border-slate-700" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-transparent px-3 text-2xs text-slate-500">یا</span>
+                <span className="bg-transparent px-3 text-2xs text-slate-400">یا</span>
               </div>
             </div>
             <GoogleButton label="ورود با گوگل" variant="login" />
           </>
         )}
 
-        <div className="border-t border-slate-700/50 pt-4 text-center text-sm text-slate-400">
+        <div className="border-t border-slate-700/50 pt-4 text-center text-sm text-slate-300">
           حساب ندارید؟{' '}
           <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-teal-400 underline hover:text-teal-300">ثبت‌نام کنید</Link>
         </div>
