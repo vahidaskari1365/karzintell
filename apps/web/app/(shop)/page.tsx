@@ -50,18 +50,24 @@ function CinematicHero() {
       {/* پیش‌بارگذاری پُستر؛ تا لحظه‌ی آماده‌شدن ویدیو نمایش داده می‌شود */}
       <link rel="preload" as="image" href="/assets/hero-cover.png" />
 
-      {/* ویدیوی هیرو — از ابتدای باز شدن صفحه پخش می‌شود */}
+      {/* ویدیوی هیرو — از ابتدای باز شدن صفحه پخش می‌شود
+          در موبایل: از hero-cover1.mp4 (سبک‌تر) استفاده می‌شود */}
       <video
-        src="/assets/hero-cover2.mp4"
         poster="/assets/hero-cover.png"
         autoPlay
         muted
         loop
         playsInline
-        disablePictureInPicture
         preload="auto"
         className="absolute inset-0 h-full w-full select-none object-cover object-center"
-      />
+      >
+        {/* سورس دسکتاپ (کیفیت بالا) */}
+        <source src="/assets/hero-cover2.mp4" type="video/mp4" media="(min-width: 768px)" />
+        {/* سورس موبایل (سبک‌تر) */}
+        <source src="/assets/hero-cover1.mp4" type="video/mp4" />
+        {/* fallback اگر ویدیو پخش نشد */}
+        <img src="/assets/hero-cover.png" alt="کارزینتل" className="absolute inset-0 h-full w-full object-cover" />
+      </video>
 
       {/* لایه‌ی تیره برای خوانایی متن روی تصویر */}
       <div aria-hidden className="absolute inset-0 bg-[radial-gradient(120%_95%_at_50%_20%,rgba(5,7,8,0.30)_0%,rgba(5,7,8,0.72)_100%)]" />
