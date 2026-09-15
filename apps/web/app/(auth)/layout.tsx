@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { LiveAuthBackground } from '@/components/live-auth-bg';
+import { BrandSignature } from '@/components/brand-logo';
 
 /**
  * Layout صفحات احراز هویت (login / register / forgot)
@@ -11,7 +11,8 @@ import { LiveAuthBackground } from '@/components/live-auth-bg';
  * کارت: شفاف (transparent) با backdrop-blur خفیف — تا عکس پس‌زمینه
  * کاملاً دیده بشه و فقط متن فرم خوانا باشه.
  *
- * لوگو: از فایل رسمی karzin-logo.png سایت استفاده می‌شود.
+ * لوگو: همون BrandSignature که در هدر و فوتر سایت استفاده می‌شود
+ * (با tone="dark" و size="lg" برای بزرگ‌تر دیده شدن در صفحه احراز هویت).
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,19 +22,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* ───── محتوا (z-index: 10) ───── */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center">
-        {/* ───── لوگوی رسمی سایت ───── */}
+        {/* ───── لوگوی رسمی سایت (همان هدر/فوتر) ───── */}
         <Link href="/" className="mb-8 transition-transform hover:scale-105">
-          <Image
-            src="/karzin-logo.png"
-            alt="کارزینتل"
-            width={220}
-            height={70}
-            priority
-            className="h-auto w-auto"
-            style={{
-              filter: 'drop-shadow(0 0 12px rgba(20, 184, 166, 0.4))',
-            }}
-          />
+          <BrandSignature size="lg" tone="dark" />
         </Link>
 
         {/* ───── کارت شفاف ───── */}
