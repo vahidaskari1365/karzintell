@@ -89,12 +89,12 @@ export function LiveAuthBackground() {
         </div>
       )}
 
-      {/* ─── لایه ۴: overlay نیمه‌شفاف برای خوانایی ─── */}
+      {/* ─── لایه ۴: overlay خیلی سبک (فقط برای خوانایی متن فرم) ─── */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(135deg, rgba(5, 10, 14, 0.55) 0%, rgba(5, 10, 14, 0.45) 50%, rgba(5, 10, 14, 0.65) 100%)',
+            'linear-gradient(135deg, rgba(5, 10, 14, 0.25) 0%, rgba(5, 10, 14, 0.20) 50%, rgba(5, 10, 14, 0.35) 100%)',
           zIndex: 4,
         }}
       />

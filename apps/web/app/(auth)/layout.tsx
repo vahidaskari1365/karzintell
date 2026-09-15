@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BrandLockup } from '@/components/brand-logo';
+import Image from 'next/image';
 import { LiveAuthBackground } from '@/components/live-auth-bg';
 
 /**
@@ -7,7 +7,11 @@ import { LiveAuthBackground } from '@/components/live-auth-bg';
  *
  * پس‌زمینه: عکس auth-bg.png به‌صورت زنده (Live) — نئون‌ها روشن/خاموش
  * می‌شن، film grain سینمایی، pulse ملایم نور مرکزی.
- * کارت: شیشه‌ای با border teal.
+ *
+ * کارت: شفاف (transparent) با backdrop-blur خفیف — تا عکس پس‌زمینه
+ * کاملاً دیده بشه و فقط متن فرم خوانا باشه.
+ *
+ * لوگو: از فایل رسمی karzin-logo.png سایت استفاده می‌شود.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,18 +21,32 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* ───── محتوا (z-index: 10) ───── */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center">
-        {/* لوگو */}
+        {/* ───── لوگوی رسمی سایت ───── */}
         <Link href="/" className="mb-8 transition-transform hover:scale-105">
-          <BrandLockup />
+          <Image
+            src="/karzin-logo.png"
+            alt="کارزینتل"
+            width={220}
+            height={70}
+            priority
+            className="h-auto w-auto"
+            style={{
+              filter: 'drop-shadow(0 0 12px rgba(20, 184, 166, 0.4))',
+            }}
+          />
         </Link>
 
-        {/* کارت شیشه‌ای */}
+        {/* ───── کارت شفاف ───── */}
+        {/* کارت شفاف است (background: transparent) تا عکس پس‌زمینه دیده بشه.
+            فقط یک backdrop-blur خفیف و border ظریف برای جداسازی فرم از پس‌زمینه. */}
         <div
-          className="w-full max-w-md rounded-3xl border p-8 shadow-2xl backdrop-blur-xl"
+          className="w-full max-w-md rounded-3xl border p-8"
           style={{
-            borderColor: 'rgba(20, 184, 166, 0.25)',
-            background: 'rgba(8, 16, 20, 0.75)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(20, 184, 166, 0.08) inset, 0 0 60px rgba(20, 184, 166, 0.05)',
+            borderColor: 'rgba(20, 184, 166, 0.20)',
+            background: 'transparent',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(20, 184, 166, 0.05) inset',
           }}
         >
           {children}
