@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api-client';
 import { toast, useAuthStore } from '@/lib/auth-store';
@@ -12,13 +12,10 @@ import { toast, useAuthStore } from '@/lib/auth-store';
  * و id_token را به backend ما می‌فرستد. backend توکن را اعتبارسنجی می‌کند و
  * کاربر را وارد می‌کند (یا حساب جدید می‌سازد با status=pending).
  *
- * نیاز به env var دارد: NEXT_PUBLIC_GOOGLE_CLIENT_ID
- * اگر تنظیم نشده باشد، دکمه نمایش داده نمی‌شود.
+ * Client ID از /api/google-config خوانده می‌شود (server-side env)
+ * — اینطوری نیازی به rebuild نیست و فقط cPanel restart کافی است.
  */
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-
-// Load Google Identity Services script
 let gisLoaded = false;
 function loadGoogleScript(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -55,8 +52,23 @@ export function GoogleButton({
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const [clientId, setClientId] = useState<string>('');
+  const [enabled, setEnabled] = useState(false);
 
-  if (!GOOGLE_CLIENT_ID) {
+  // Fetch Google Client ID from server-side API
+  useEffect(() => {
+    fetch('/api/google-config')
+      .then((res) => res.json())
+      .then((data) => {
+        setClientId(data.clientId || '');
+        setEnabled(!!data.enabled);
+      })
+      .catch(() => {
+        // silent fail — button won't show
+      });
+  }, []);
+
+  if (!enabled || !clientId) {
     // اگر Google Client ID تنظیم نشده، دکمه نمایش داده نمی‌شود
     return null;
   }
@@ -72,7 +84,7 @@ export function GoogleButton({
       }
 
       google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: clientId,
         callback: async (response: { credential: string }) => {
           if (!response.credential) {
             toast.error('ورود با گوگل ناموفق بود');
@@ -97,7 +109,6 @@ export function GoogleButton({
               router.push('/login');
             }
           } catch (e: any) {
-            // خطای USER_PENDING → کاربر باید صبر کند
             if (e?.code === 'USER_PENDING') {
               toast.info(e.message || 'حساب شما در انتظار تأیید مدیر است');
               router.push('/login');
@@ -110,10 +121,8 @@ export function GoogleButton({
         },
       });
 
-      // نمایش پنجره انتخاب اکانت گوگل
       google.accounts.id.prompt((notification: any) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // fallback: open OneTap dialog
           google.accounts.id.renderButton(
             document.createElement('div'),
             { theme: 'outline', size: 'large' }
