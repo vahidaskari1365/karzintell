@@ -123,4 +123,18 @@ export class AdminUsersController {
     const { items, total, page: p, limit: lim } = await this.service.list({ page, limit, status: 'pending' });
     return { data: items, meta: { page: p, limit: lim, total } };
   }
+
+  /**
+   * ارسال پیام مستقیم از ادمین به کاربر
+   * پیام به‌عنوان notification برای کاربر ذخیره می‌شود
+   */
+  @Post(':id/message')
+  @RequirePermissions('users.update')
+  async sendMessage(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { title: string; body?: string },
+    @CurrentUser() admin: AuthUser,
+  ) {
+    return { data: await this.service.sendMessage(id, dto.title, dto.body, admin) };
+  }
 }

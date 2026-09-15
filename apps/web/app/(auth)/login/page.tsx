@@ -9,6 +9,7 @@ import { toast, useAuthStore } from '@/lib/auth-store';
 import { Button, Field, Input, Tabs } from '@/components/ui';
 import { CaptchaField, CaptchaValue } from '@/components/captcha';
 import { normalizeDigits } from '@/lib/format';
+import { GoogleButton } from '@/components/google-button';
 
 type LoginResult = { accessToken?: string; user?: any; requireTwoFactor?: boolean; ticket?: string };
 
@@ -116,7 +117,10 @@ function LoginForm() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-black text-slate-900">ورود به حساب</h1>
+      <h1 className="mb-1 flex items-center gap-2 text-2xl font-black text-slate-100">
+        <KeyRound className="h-6 w-6 text-emerald-400" />
+        ورود به حساب
+      </h1>
       <p className="mb-6 text-sm text-slate-400">با رمز عبور یا کد یک‌بارمصرف وارد شوید</p>
 
       <Tabs
@@ -129,65 +133,76 @@ function LoginForm() {
         {/* مرحله ورود دومرحله‌ای */}
         {tfaTicket ? (
           <>
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 text-center text-sm text-blue-800">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm text-emerald-300">
               <Smartphone className="mx-auto mb-2 h-8 w-8" />
               ورود دومرحله‌ای فعال است — کد ۶ رقمی اپلیکیشن تأیید (Google Authenticator) را وارد کنید
             </div>
             <Field label="کد تأیید هویت" required>
-              <Input dir="ltr" inputMode="numeric" maxLength={6} value={tfaCode} onChange={(e) => setTfaCode(normalizeDigits(e.target.value))} className="text-center text-lg tracking-[0.5em]" onKeyDown={(e) => e.key === 'Enter' && verifyTfa()} autoFocus />
+              <Input dir="ltr" inputMode="numeric" maxLength={6} value={tfaCode} onChange={(e) => setTfaCode(normalizeDigits(e.target.value))} className="text-center text-lg tracking-[0.5em] bg-slate-900/40 border-slate-700/50 text-slate-100" onKeyDown={(e) => e.key === 'Enter' && verifyTfa()} autoFocus />
             </Field>
-            <Button className="w-full" size="lg" onClick={verifyTfa} loading={sending} disabled={tfaCode.length !== 6}>
+            <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={verifyTfa} loading={sending} disabled={tfaCode.length !== 6}>
               تأیید و ورود
             </Button>
             <div className="text-center">
-              <button onClick={() => { setTfaTicket(null); setTfaCode(''); }} className="text-xs text-slate-400 underline hover:text-slate-700">بازگشت به ورود</button>
+              <button onClick={() => { setTfaTicket(null); setTfaCode(''); }} className="text-xs text-slate-400 underline hover:text-slate-200">بازگشت به ورود</button>
             </div>
           </>
         ) : (
           <>
             <Field label="موبایل یا ایمیل" required>
-              <Input dir="ltr" value={form.identifier} onChange={(e) => set('identifier', e.target.value)} placeholder="09xxxxxxxxx یا email@example.com" />
+              <Input dir="ltr" value={form.identifier} onChange={(e) => set('identifier', e.target.value)} placeholder="09xxxxxxxxx یا email@example.com" className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50" />
             </Field>
 
             {mode === 'password' ? (
               <>
                 <Field label="رمز عبور" required>
-                  <Input dir="ltr" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} />
+                  <Input dir="ltr" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50" />
                 </Field>
-                <Button className="w-full" size="lg" onClick={doLogin} loading={sending}>
+                <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={doLogin} loading={sending}>
                   <KeyRound className="h-4.5 w-4.5" /> ورود
                 </Button>
                 <div className="text-center">
-                  <Link href="/forgot" className="text-xs text-slate-400 underline hover:text-slate-700">رمز عبور را فراموش کرده‌ام</Link>
+                  <Link href="/forgot" className="text-xs text-slate-400 underline hover:text-slate-200">رمز عبور را فراموش کرده‌ام</Link>
                 </div>
               </>
             ) : otpStep === 'send' ? (
               <>
                 <CaptchaField value={captcha} onChange={setCaptcha} refreshKey={captchaRefresh} />
-                <Button className="w-full" size="lg" onClick={sendOtp} loading={sending}>
+                <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={sendOtp} loading={sending}>
                   <MessageSquare className="h-4.5 w-4.5" /> ارسال کد تأیید
                 </Button>
               </>
             ) : (
           <>
             <Field label={`کد ارسال‌شده به ${form.identifier}`} required>
-              <Input dir="ltr" inputMode="numeric" maxLength={5} value={form.code} onChange={(e) => set('code', e.target.value)} className="text-center text-lg tracking-[0.5em]" onKeyDown={(e) => e.key === 'Enter' && verifyOtp()} />
+              <Input dir="ltr" inputMode="numeric" maxLength={5} value={form.code} onChange={(e) => set('code', e.target.value)} className="text-center text-lg tracking-[0.5em] bg-slate-900/40 border-slate-700/50 text-slate-100" onKeyDown={(e) => e.key === 'Enter' && verifyOtp()} />
             </Field>
             {devCode && (
-              <p className="rounded-xl bg-amber-50 p-2.5 text-center text-xs text-amber-700">حالت توسعه — کد: <b dir="ltr">{devCode}</b></p>
+              <p className="rounded-xl bg-amber-500/10 p-2.5 text-center text-xs text-amber-300">حالت توسعه — کد: <b dir="ltr">{devCode}</b></p>
             )}
-            <Button className="w-full" size="lg" onClick={verifyOtp} loading={sending} disabled={form.code.length !== 5}>
+            <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={verifyOtp} loading={sending} disabled={form.code.length !== 5}>
               تأیید و ورود
             </Button>
-            <button onClick={() => setOtpStep('send')} className="w-full text-center text-xs text-slate-400 underline">ارسال مجدد</button>
-          </>
-        )}
+            <button onClick={() => setOtpStep('send')} className="w-full text-center text-xs text-slate-400 underline hover:text-slate-200">ارسال مجدد</button>
           </>
         )}
 
-        <div className="border-t border-slate-100 pt-4 text-center text-sm text-slate-500">
+            {/* گزینه ورود با گوگل */}
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-700" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-transparent px-3 text-2xs text-slate-500">یا</span>
+              </div>
+            </div>
+            <GoogleButton label="ورود با گوگل" variant="login" />
+          </>
+        )}
+
+        <div className="border-t border-slate-700/50 pt-4 text-center text-sm text-slate-400">
           حساب ندارید؟{' '}
-          <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-slate-900 underline">ثبت‌نام کنید</Link>
+          <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-emerald-400 underline hover:text-emerald-300">ثبت‌نام کنید</Link>
         </div>
       </div>
     </div>

@@ -15,6 +15,7 @@ import { AdminCreateUserDto, AdminUpdateUserDto } from './admin-users.dto';
 import { DomainException } from '../../common/http-exception.filter';
 import { AuthUser, isSuper } from '../../common/types';
 import { isPrivilegedPermission } from '../../shared';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminUsersService {
@@ -25,6 +26,7 @@ export class AdminUsersService {
     @InjectRepository(PermissionUser) private readonly permUsers: Repository<PermissionUser>,
     @InjectRepository(RoleUser) private readonly roleUsers: Repository<RoleUser>,
     private readonly rbac: RbacService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(query: {
@@ -292,5 +294,41 @@ export class AdminUsersService {
         message: 'اعطای این مجوزها فقط توسط مدیر ارشد مجاز است',
       });
     }
+  }
+
+  /**
+   * ارسال پیام مستقیم از ادمین به کاربر
+   * پیام به‌عنوان notification در inbox کاربر ذخیره می‌شود و در پنل کاربری
+   * (بخش اعلان‌ها) نمایش داده می‌شود.
+   */
+  async sendMessage(userId: number, title: string, body: string | undefined, admin: AuthUser) {
+    const user = await this.users.findOne({ where: { id: userId }, relations: { roles: true } });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    if (user.roles?.some((r) => r.name === 'super_admin') && !isSuper(admin)) {
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'ارسال پیام به super_admin فقط توسط مدیر ارشد مجاز است' });
+    }
+
+    const trimmedTitle = title?.trim();
+    if (!trimmedTitle) {
+      throw new DomainException('BAD_REQUEST', 'عنوان پیام نمی‌تواند خالی باشد', 400);
+    }
+
+    // notify به‌صورت background ولی در همان tick اجرا می‌شود — پیام ذخیره می‌شود
+    const bodyText = (body || '').trim() || undefined;
+    await this.notifications.notify(
+      userId,
+      'admin.message',
+      trimmedTitle,
+      bodyText,
+      { fromAdmin: admin.id, fromAdminName: admin.fullName || 'مدیر' },
+    );
+
+    return {
+      sent: true,
+      to: { id: user.id, fullName: user.fullName, phone: user.phone, email: user.email },
+      from: { id: admin.id, fullName: admin.fullName },
+      message: { title: trimmedTitle, body: bodyText ?? null },
+      sentAt: new Date().toISOString(),
+    };
   }
 }

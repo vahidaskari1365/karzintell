@@ -64,12 +64,12 @@ export default function AdminPendingUsersPage() {
   });
 
   return (
-    <div>
+    <div className="text-slate-200">
       <PageHeader
         title="کاربران در انتظار تأیید"
         subtitle="کاربرانی که ثبت‌نام کرده‌اند ولی ادمین باید تأییدشان کند"
         action={
-          <div className="flex items-center gap-2 text-sm text-amber-300">
+          <div className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">
             <Clock className="h-4 w-4" />
             <span>{faNumber(total)} کاربر در انتظار</span>
           </div>
@@ -85,35 +85,42 @@ export default function AdminPendingUsersPage() {
           <span className="text-sm text-slate-500">همه کاربران تأیید شده‌اند یا در انتظار ثبت‌نام هستند</span>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/40">
+        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40">
           <table className="w-full min-w-[640px] text-sm">
-            <thead>
+            <thead className="bg-slate-900/80 text-xs text-slate-400">
               <tr>
-                <th>نام</th>
-                <th>موبایل</th>
-                <th>ایمیل</th>
-                <th>تاریخ ثبت‌نام</th>
-                <th>وضعیت</th>
-                {canApprove && <th className="text-left">عملیات</th>}
+                <th className="px-4 py-3 text-start font-bold">نام</th>
+                <th className="px-4 py-3 text-start font-bold">موبایل</th>
+                <th className="px-4 py-3 text-start font-bold">ایمیل</th>
+                <th className="px-4 py-3 text-start font-bold">تاریخ ثبت‌نام</th>
+                <th className="px-4 py-3 text-start font-bold">وضعیت</th>
+                {canApprove && <th className="px-4 py-3 text-start font-bold">عملیات</th>}
               </tr>
             </thead>
             <tbody>
               {items.map((u) => (
-                <tr key={u.id}>
-                  <td className="font-medium text-slate-100">{u.fullName}</td>
-                  <td className="font-mono text-sm">{faNumber(u.phone)}</td>
-                  <td className="text-sm text-slate-400">{u.email || '—'}</td>
-                  <td className="text-sm text-slate-400">
+                <tr key={u.id} className="border-t border-slate-800 transition-colors hover:bg-slate-800/40">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/30 to-rose-500/30 text-xs font-bold text-amber-200">
+                        {u.fullName.charAt(0)}
+                      </div>
+                      <span className="font-medium text-slate-100">{u.fullName}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-300" dir="ltr">{faNumber(u.phone)}</td>
+                  <td className="px-4 py-3 text-sm text-slate-500">{u.email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-400">
                     {new Date(u.createdAt).toLocaleDateString('fa-IR')}
                   </td>
-                  <td>
-                    <span className={`inline-block rounded-full border px-2.5 py-1 text-xs font-bold ${STATUS_LABELS[u.status]?.color || STATUS_LABELS.pending.color}`}>
+                  <td className="px-4 py-3">
+                    <span className={`inline-block rounded-full border px-2.5 py-1 text-2xs font-bold ${STATUS_LABELS[u.status]?.color || STATUS_LABELS.pending.color}`}>
                       {STATUS_LABELS[u.status]?.label || u.status}
                     </span>
                   </td>
                   {canApprove && (
-                    <td>
-                      <div className="flex gap-2">
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1.5">
                         <Button
                           size="sm"
                           variant="success"
