@@ -60,7 +60,7 @@ export function LiveAuthBackground() {
         <div
           className="absolute inset-0 -z-20"
           style={{
-            mixBlendMode: 'screen',
+            mixBlendMode: 'lighten',
             animation: 'neon-flicker 4.2s linear infinite',
           }}
         >
@@ -68,27 +68,36 @@ export function LiveAuthBackground() {
           <div
             className="absolute inset-0"
             style={{
-              background: 'radial-gradient(ellipse at center, rgba(20, 255, 180, 0.15) 0%, transparent 60%)',
+              background: 'radial-gradient(ellipse at center, rgba(20, 255, 180, 0.22) 0%, transparent 65%)',
             }}
           />
-          {/* خطوط افقی که با flicker پالس می‌کنن */}
+          {/* خطوط افقی که با flicker پالس می‌کنن — نئون واقعی با درخشش */}
           <div
             className="absolute inset-x-0 top-[68%] h-px"
             style={{
               background: 'linear-gradient(90deg, transparent 0%, #14ffb4 50%, transparent 100%)',
-              filter: 'blur(1px)',
-              boxShadow: '0 0 12px #14ffb4, 0 0 24px #14ffb4',
+              filter: 'blur(1.5px)',
+              boxShadow: '0 0 20px #14ffb4, 0 0 40px rgba(20, 255, 180, 0.6)',
+            }}
+          />
+          {/* خط عمودی که از بالا میاد — مثل تابلوی نئون روشن شدن */}
+          <div
+            className="absolute inset-y-0 left-1/2 w-px"
+            style={{
+              background: 'linear-gradient(180deg, transparent 0%, rgba(20, 255, 180, 0.5) 50%, transparent 100%)',
+              filter: 'blur(0.5px)',
+              boxShadow: '0 0 10px rgba(20, 255, 180, 0.4)',
             }}
           />
         </div>
       )}
 
-      {/* ─── لایه ۴: overlay تیره برای خوانایی ─── */}
+      {/* ─── لایه ۴: overlay نیمه‌شفاف برای خوانایی (نسبت ۵۰-۶۰٪ تا عکس دیده بشه) ─── */}
       <div
         className="absolute inset-0 -z-10"
         style={{
           background:
-            'linear-gradient(135deg, rgba(5, 10, 14, 0.78) 0%, rgba(5, 10, 14, 0.65) 50%, rgba(5, 10, 14, 0.82) 100%)',
+            'linear-gradient(135deg, rgba(5, 10, 14, 0.55) 0%, rgba(5, 10, 14, 0.45) 50%, rgba(5, 10, 14, 0.65) 100%)',
         }}
       />
 
@@ -96,7 +105,7 @@ export function LiveAuthBackground() {
       {/* نویز تصادفی که آروم به‌هسته — حس فیلم سینمایی */}
       {!reducedMotion && (
         <>
-          <svg className="absolute inset-0 -z-10 h-full w-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute inset-0 -z-10 h-full w-full opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
             <filter id="grain-noise">
               <feTurbulence
                 type="fractalNoise"
