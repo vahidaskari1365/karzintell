@@ -77,18 +77,18 @@ function ReviewsContent() {
               <Card key={r.id} className="p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-bold text-slate-200">{r.productName || r.product?.name || `#${r.productId}`}</p>
-                    <p className="text-2xs text-slate-400">{r.userName || r.user?.fullName} · {faDateTime(r.createdAt)}</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{r.productName || r.product?.name || `#${r.productId}`}</p>
+                    <p className="text-2xs text-slate-600 dark:text-slate-400">{r.userName || r.user?.fullName} · {faDateTime(r.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <RatingStars value={r.rating} />
                     <Pill status={r.status} label={labelOf({ pending: 'در انتظار', approved: 'تأیید', rejected: 'رد' }, r.status)} />
                   </div>
                 </div>
-                {r.title && <p className="mt-2 text-sm font-bold text-slate-300">{r.title}</p>}
-                {r.body && <p className="mt-1 text-sm leading-7 text-slate-400">{r.body}</p>}
-                {r.sellerReply && <p className="mt-2 rounded-lg bg-slate-900/40 p-2 text-xs text-slate-400">پاسخ فروشگاه: {r.sellerReply}</p>}
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-800 pt-3">
+                {r.title && <p className="mt-2 text-sm font-bold text-slate-700 dark:text-slate-300">{r.title}</p>}
+                {r.body && <p className="mt-1 text-sm leading-7 text-slate-600 dark:text-slate-400">{r.body}</p>}
+                {r.sellerReply && <p className="mt-2 rounded-lg bg-white dark:bg-slate-900/40 p-2 text-xs text-slate-600 dark:text-slate-400">پاسخ فروشگاه: {r.sellerReply}</p>}
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-200 dark:border-slate-800 pt-3">
                   {r.status !== 'approved' && (
                     <Button size="sm" onClick={() => moderate.mutate({ id: r.id, action: 'approve' })}><Check className="h-4 w-4" /> تأیید</Button>
                   )}
@@ -114,14 +114,14 @@ function ReviewsContent() {
           {questionItems.map((q: any) => (
             <Card key={q.id} className="p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-bold text-slate-200">{q.productName || q.product?.name || `#${q.productId}`}</p>
-                <p className="text-2xs text-slate-400">{q.userName || q.user?.fullName} · {faDateTime(q.createdAt)}</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{q.productName || q.product?.name || `#${q.productId}`}</p>
+                <p className="text-2xs text-slate-600 dark:text-slate-400">{q.userName || q.user?.fullName} · {faDateTime(q.createdAt)}</p>
               </div>
-              <p className="mt-2 flex items-start gap-2 text-sm leading-7 text-slate-300">
+              <p className="mt-2 flex items-start gap-2 text-sm leading-7 text-slate-700 dark:text-slate-300">
                 <MessageCircleQuestion className="mt-1 h-4 w-4 shrink-0 text-sky-500" /> {q.question}
               </p>
               {q.answer && <p className="mt-2 rounded-lg bg-emerald-50 p-2.5 text-xs leading-6 text-emerald-800">پاسخ: {q.answer}</p>}
-              <div className="mt-3 border-t border-slate-800 pt-3">
+              <div className="mt-3 border-t border-slate-200 dark:border-slate-800 pt-3">
                 {answerFor?.id === q.id ? (
                   <div className="space-y-2">
                     <Textarea rows={2} value={answerText} onChange={(e) => setAnswerText(e.target.value)} placeholder="پاسخ تخصصی…" />

@@ -64,7 +64,7 @@ export default function AdminPendingUsersPage() {
   });
 
   return (
-    <div className="text-slate-200">
+    <div className="text-slate-800 dark:text-slate-200">
       <PageHeader
         title="کاربران در انتظار تأیید"
         subtitle="کاربرانی که ثبت‌نام کرده‌اند ولی ادمین باید تأییدشان کند"
@@ -79,15 +79,15 @@ export default function AdminPendingUsersPage() {
       {isLoading ? (
         <PageLoading />
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-14 text-center">
-          <UserCheck className="h-12 w-12 text-slate-400" />
-          <span className="text-base font-semibold text-slate-300">هیچ کاربر pending‌ای وجود ندارد</span>
-          <span className="text-sm text-slate-400">همه کاربران تأیید شده‌اند یا در انتظار ثبت‌نام هستند</span>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 px-6 py-14 text-center">
+          <UserCheck className="h-12 w-12 text-slate-600 dark:text-slate-400" />
+          <span className="text-base font-semibold text-slate-700 dark:text-slate-300">هیچ کاربر pending‌ای وجود ندارد</span>
+          <span className="text-sm text-slate-600 dark:text-slate-400">همه کاربران تأیید شده‌اند یا در انتظار ثبت‌نام هستند</span>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-slate-900/80 text-xs text-slate-400">
+            <thead className="bg-slate-100 dark:bg-slate-900/80 text-xs text-slate-600 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-3 text-start font-bold">نام</th>
                 <th className="px-4 py-3 text-start font-bold">موبایل</th>
@@ -99,18 +99,18 @@ export default function AdminPendingUsersPage() {
             </thead>
             <tbody>
               {items.map((u) => (
-                <tr key={u.id} className="border-t border-slate-800 transition-colors hover:bg-slate-800/40">
+                <tr key={u.id} className="border-t border-slate-200 dark:border-slate-800 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/40">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/30 to-rose-500/30 text-xs font-bold text-amber-200">
                         {u.fullName.charAt(0)}
                       </div>
-                      <span className="font-medium text-slate-100">{u.fullName}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{u.fullName}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-300" dir="ltr">{faNumber(u.phone)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-400">{u.email || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-slate-400">
+                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300" dir="ltr">{faNumber(u.phone)}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{u.email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                     {new Date(u.createdAt).toLocaleDateString('fa-IR')}
                   </td>
                   <td className="px-4 py-3">

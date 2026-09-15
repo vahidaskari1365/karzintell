@@ -33,7 +33,7 @@ export default function AdminCustomersPage() {
       <PageHeader title="مشتریان" subtitle={data ? `${faNumber(data.meta?.total || 0)} مشتری` : undefined} />
       <form onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(q); }} className="relative mb-4 max-w-md">
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="نام، موبایل یا ایمیل…" className="ps-9" />
-        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
       </form>
 
       {isLoading ? (
@@ -61,11 +61,11 @@ export default function AdminCustomersPage() {
                     <td className={tableCls.td}><span className="font-medium">{c.fullName}</span></td>
                     <td className={tableCls.td}>
                       <p className="text-xs" dir="ltr">{c.phone}</p>
-                      {c.email && <p className="text-2xs text-slate-400" dir="ltr">{c.email}</p>}
+                      {c.email && <p className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{c.email}</p>}
                     </td>
                     <td className={tableCls.td}>{faNumber(c.ordersCount ?? 0)}</td>
                     <td className={tableCls.td}>{c.totalSpent != null ? toToman(c.totalSpent) : '—'}</td>
-                    <td className={tableCls.td}><span className="text-xs text-slate-400">{faDate(c.createdAt)}</span></td>
+                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-400">{faDate(c.createdAt)}</span></td>
                     <td className={tableCls.td}><Pill status={c.status} label={labelOf({ active: 'فعال', pending: 'در انتظار', suspended: 'معلق' }, c.status)} /></td>
                     <td className={`${tableCls.td} text-left`}>
                       <Link href={`/admin/customers/${c.id}`}><Button size="sm" variant="secondary">پرونده</Button></Link>

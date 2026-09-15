@@ -82,18 +82,18 @@ export default function AdminBrandsPage() {
                   <td className={tableCls.td}>
                     <span className="font-medium">{b.name}</span>
                   </td>
-                  <td className={tableCls.td}><code className="text-xs text-slate-400" dir="ltr">{b.slug}</code></td>
+                  <td className={tableCls.td}><code className="text-xs text-slate-600 dark:text-slate-400" dir="ltr">{b.slug}</code></td>
                   <td className={tableCls.td}>{b.website ? <a href={b.website} target="_blank" className="text-xs text-sky-600" rel="noreferrer">لینک</a> : '—'}</td>
                   <td className={tableCls.td}><Pill status={b.isActive ? 'active' : 'archived'} label={b.isActive ? 'فعال' : 'غیرفعال'} /></td>
                   <td className={`${tableCls.td} text-left`}>
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => setForm({ id: b.id, name: b.name, slug: b.slug, logoPath: b.logoPath || '', website: b.website || '', description: b.description || '', sortOrder: String(b.sortOrder), isActive: b.isActive })}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"
+                        className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setDeleting(b)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                      <button onClick={() => setDeleting(b)} className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

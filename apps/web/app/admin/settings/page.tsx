@@ -65,15 +65,15 @@ export default function AdminSettingsPage() {
       <div className="space-y-4">
         {(groups || []).map((g) => (
           <Card key={g.group} className="p-5">
-            <p className="mb-4 text-sm font-bold text-slate-200">{GROUP_LABELS[g.group] || g.group}</p>
+            <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-200">{GROUP_LABELS[g.group] || g.group}</p>
             <div className="space-y-3">
               {g.items.map((item) => {
                 const isBool = item.value === 'true' || item.value === 'false';
                 return (
                   <div key={item.key} className="grid items-center gap-2 sm:grid-cols-[220px_1fr_auto]">
                     <div>
-                      <p className="text-xs font-medium text-slate-300" dir="ltr">{item.key}</p>
-                      <p className="text-2xs text-slate-400">{item.type}</p>
+                      <p className="text-xs font-medium text-slate-700 dark:text-slate-300" dir="ltr">{item.key}</p>
+                      <p className="text-2xs text-slate-600 dark:text-slate-400">{item.type}</p>
                     </div>
                     {isBool ? (
                       <Switch checked={draft[item.key] === 'true'} onChange={(v) => setDraft({ ...draft, [item.key]: String(v) })} />
@@ -85,7 +85,7 @@ export default function AdminSettingsPage() {
                         className="text-sm"
                       />
                     )}
-                    <label className="flex items-center gap-1.5 text-2xs text-slate-400" title="قابل خواندن از API عمومی">
+                    <label className="flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-400" title="قابل خواندن از API عمومی">
                       <input
                         type="checkbox"
                         checked={!!pubFlags[item.key]}
@@ -102,7 +102,7 @@ export default function AdminSettingsPage() {
         ))}
 
         <Card className="p-5">
-          <p className="mb-3 text-sm font-bold text-slate-200">افزودن کلید جدید</p>
+          <p className="mb-3 text-sm font-bold text-slate-800 dark:text-slate-200">افزودن کلید جدید</p>
           <div className="grid gap-3 sm:grid-cols-[220px_1fr_auto]">
             <Input dir="ltr" placeholder="store.custom_key" value={newKey.key} onChange={(e) => setNewKey({ ...newKey, key: e.target.value })} />
             <Input placeholder="مقدار" value={newKey.value} onChange={(e) => setNewKey({ ...newKey, value: e.target.value })} />

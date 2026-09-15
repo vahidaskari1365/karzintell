@@ -82,16 +82,16 @@ export default function AdminReportsPage() {
               { label: 'مالیات', value: `${toToman(data.totals.tax)} تومان` },
             ].map((k) => (
               <Card key={k.label} className="p-4">
-                <p className="text-2xs text-slate-400">{k.label}</p>
-                <p className="mt-1 text-lg font-black text-slate-100">{k.value}</p>
+                <p className="text-2xs text-slate-600 dark:text-slate-400">{k.label}</p>
+                <p className="mt-1 text-lg font-black text-slate-900 dark:text-slate-100">{k.value}</p>
               </Card>
             ))}
           </div>
 
           <Card className="mb-5 p-5">
-            <p className="mb-4 text-sm font-bold text-slate-200">روند ({groupBy === 'day' ? 'روزانه' : 'ماهانه'})</p>
+            <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-200">روند ({groupBy === 'day' ? 'روزانه' : 'ماهانه'})</p>
             {data.series.length === 0 ? (
-              <p className="py-8 text-center text-xs text-slate-400">در این بازه فروشی ثبت نشده</p>
+              <p className="py-8 text-center text-xs text-slate-600 dark:text-slate-400">در این بازه فروشی ثبت نشده</p>
             ) : (
               <div className="flex h-48 items-end gap-1 overflow-x-auto pb-6">
                 {data.series.map((s) => (
@@ -100,7 +100,7 @@ export default function AdminReportsPage() {
                       className="w-full rounded-t-lg bg-gradient-to-t from-sky-600 to-sky-300 transition group-hover:from-sky-700"
                       style={{ height: `${Math.max(3, (s.total / maxTotal) * 180)}px` }}
                     />
-                    <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-2xs text-slate-400" dir="ltr">{s.period.slice(5)}</p>
+                    <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{s.period.slice(5)}</p>
                     <div className="pointer-events-none absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-2xs text-white group-hover:block">
                       {toToman(s.total)} تومان<br />{faNumber(s.orders)} سفارش
                     </div>
@@ -112,28 +112,28 @@ export default function AdminReportsPage() {
 
           {/* گزارش سود ناخالص */}
           <Card className="mb-5 p-5">
-            <p className="mb-4 text-sm font-bold text-slate-200">سود ناخالص (فروش − بهای تمام‌شده)</p>
+            <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-200">سود ناخالص (فروش − بهای تمام‌شده)</p>
             <div className="mb-5 grid grid-cols-3 gap-3">
               {[
                 { label: 'درآمد خالص اقلام', value: profitTotals.revenue, cls: 'text-sky-700' },
                 { label: 'بهای تمام‌شده', value: profitTotals.cost, cls: 'text-rose-600' },
                 { label: 'سود ناخالص', value: profitTotals.profit, cls: profitTotals.profit >= 0 ? 'text-emerald-700' : 'text-rose-700' },
               ].map((k) => (
-                <div key={k.label} className="rounded-2xl bg-slate-900/40 p-4 text-center">
-                  <p className="text-2xs text-slate-400">{k.label}</p>
+                <div key={k.label} className="rounded-2xl bg-white dark:bg-slate-900/40 p-4 text-center">
+                  <p className="text-2xs text-slate-600 dark:text-slate-400">{k.label}</p>
                   <p className={`mt-1 text-base font-black ${k.cls}`}>{toToman(k.value)} تومان</p>
                 </div>
               ))}
             </div>
             {(profit || []).length === 0 ? (
-              <p className="py-4 text-center text-xs text-slate-400">داده‌ای در این بازه نیست</p>
+              <p className="py-4 text-center text-xs text-slate-600 dark:text-slate-400">داده‌ای در این بازه نیست</p>
             ) : (
               <div className="max-h-56 space-y-1 overflow-y-auto">
                 {(profit || []).map((p) => (
-                  <div key={p.bucket} className="flex items-center justify-between rounded-xl px-3 py-2 text-xs odd:bg-slate-900/40" >
-                    <span className="text-slate-400" dir="ltr">{p.bucket}</span>
+                  <div key={p.bucket} className="flex items-center justify-between rounded-xl px-3 py-2 text-xs odd:bg-white dark:bg-slate-900/40" >
+                    <span className="text-slate-600 dark:text-slate-400" dir="ltr">{p.bucket}</span>
                     <span className={p.profit >= 0 ? 'font-bold text-emerald-700' : 'font-bold text-rose-700'}>
-                      {toToman(p.profit)} تومان <span className="font-normal text-slate-400">({faNumber(p.orders)} سفارش)</span>
+                      {toToman(p.profit)} تومان <span className="font-normal text-slate-600 dark:text-slate-400">({faNumber(p.orders)} سفارش)</span>
                     </span>
                   </div>
                 ))}
@@ -146,41 +146,41 @@ export default function AdminReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* پرفروش‌ترین‌ها */}
         <div className={tableCls.wrap}>
-          <p className="border-b border-slate-800 px-5 py-4 text-sm font-bold text-slate-200">پرفروش‌ترین محصولات</p>
+          <p className="border-b border-slate-200 dark:border-slate-800 px-5 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">پرفروش‌ترین محصولات</p>
           <table className={tableCls.table}>
             <tbody>
               {topItems.map((t: any, i: number) => (
                 <tr key={t.productId || t.id || i} className={tableCls.row}>
-                  <td className={tableCls.td}><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800/40 text-2xs font-black text-slate-400">{faNumber(i + 1)}</span></td>
+                  <td className={tableCls.td}><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800/40 text-2xs font-black text-slate-600 dark:text-slate-400">{faNumber(i + 1)}</span></td>
                   <td className={tableCls.td}><span className="text-xs font-medium">{t.productName || t.name}</span></td>
                   <td className={tableCls.td}>{faNumber(t.qty || t.sold || 0)} عدد</td>
                   <td className={tableCls.td}>{t.revenue != null ? `${toToman(t.revenue)} تومان` : '—'}</td>
                 </tr>
               ))}
-              {topItems.length === 0 && <tr><td className="p-6 text-center text-xs text-slate-400">داده‌ای نیست</td></tr>}
+              {topItems.length === 0 && <tr><td className="p-6 text-center text-xs text-slate-600 dark:text-slate-400">داده‌ای نیست</td></tr>}
             </tbody>
           </table>
         </div>
 
         {/* کم‌موجودی */}
         <div className={tableCls.wrap}>
-          <p className="border-b border-slate-800 px-5 py-4 text-sm font-bold text-slate-200">اقلام کم‌موجود انبار</p>
+          <p className="border-b border-slate-200 dark:border-slate-800 px-5 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">اقلام کم‌موجود انبار</p>
           <table className={tableCls.table}>
             <tbody>
               {lowItems.slice(0, 10).map((l: any, i: number) => (
                 <tr key={l.variantId || i} className={tableCls.row}>
-                  <td className={tableCls.td}><span className="text-xs font-medium">{l.productName}</span><br /><span className="text-2xs text-slate-400" dir="ltr">{l.sku}</span></td>
+                  <td className={tableCls.td}><span className="text-xs font-medium">{l.productName}</span><br /><span className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{l.sku}</span></td>
                   <td className={tableCls.td}><Pill status={Number(l.available ?? l.quantity) <= 0 ? 'rejected' : 'pending'} label={`${faNumber(l.available ?? l.quantity ?? 0)} عدد`} /></td>
                 </tr>
               ))}
-              {lowItems.length === 0 && <tr><td className="p-6 text-center text-xs text-slate-400">همه اقلام شارژ هستند 🎉</td></tr>}
+              {lowItems.length === 0 && <tr><td className="p-6 text-center text-xs text-slate-600 dark:text-slate-400">همه اقلام شارژ هستند 🎉</td></tr>}
             </tbody>
           </table>
         </div>
 
         {/* مشتریان برتر */}
         <div className={`${tableCls.wrap} lg:col-span-2`}>
-          <p className="border-b border-slate-800 px-5 py-4 text-sm font-bold text-slate-200">مشتریان برتر (بر اساس مبلغ خرید)</p>
+          <p className="border-b border-slate-200 dark:border-slate-800 px-5 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">مشتریان برتر (بر اساس مبلغ خرید)</p>
           <table className={tableCls.table}>
             <thead className={tableCls.thead}>
               <tr>
@@ -195,13 +195,13 @@ export default function AdminReportsPage() {
               {(topCustomers || []).map((c: any, i: number) => (
                 <tr key={c.id} className={tableCls.row}>
                   <td className={tableCls.td}><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-50 text-2xs font-black text-amber-600">{faNumber(i + 1)}</span></td>
-                  <td className={tableCls.td}><span className="text-xs font-medium">{c.fullName}</span><br /><span className="text-2xs text-slate-400" dir="ltr">{c.phone}</span></td>
+                  <td className={tableCls.td}><span className="text-xs font-medium">{c.fullName}</span><br /><span className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{c.phone}</span></td>
                   <td className={tableCls.td}>{faNumber(c.ordersCount)} سفارش</td>
                   <td className={`${tableCls.td} font-bold`}>{toToman(c.totalSpent)} تومان</td>
-                  <td className={tableCls.td}><span className="text-2xs text-slate-400">{c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString('fa-IR') : '—'}</span></td>
+                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-400">{c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString('fa-IR') : '—'}</span></td>
                 </tr>
               ))}
-              {(topCustomers || []).length === 0 && <tr><td colSpan={5} className="p-6 text-center text-xs text-slate-400">داده‌ای نیست</td></tr>}
+              {(topCustomers || []).length === 0 && <tr><td colSpan={5} className="p-6 text-center text-xs text-slate-600 dark:text-slate-400">داده‌ای نیست</td></tr>}
             </tbody>
           </table>
         </div>

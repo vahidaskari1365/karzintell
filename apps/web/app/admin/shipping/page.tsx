@@ -182,18 +182,18 @@ export default function AdminShippingPage() {
 
       <div className="space-y-5">
         {(zones || []).length === 0 && (
-          <Card className="p-8 text-center text-sm text-slate-400">
-            <Truck className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+          <Card className="p-8 text-center text-sm text-slate-600 dark:text-slate-400">
+            <Truck className="mx-auto mb-2 h-8 w-8 text-slate-700 dark:text-slate-300" />
             هنوز منطقه ارسالی تعریف نشده است. اولین منطقه را بسازید (مثلاً «سراسر کشور» با استان خالی).
           </Card>
         )}
         {(zones || []).map((z) => (
           <Card key={z.id}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
-                <h2 className="font-black text-slate-100">{z.name}</h2>
-                {!z.isActive && <span className="rounded-full bg-slate-800/40 px-2 py-0.5 text-[10px] text-slate-400">غیرفعال</span>}
-                <span className="text-xs text-slate-400">
+                <h2 className="font-black text-slate-900 dark:text-slate-100">{z.name}</h2>
+                {!z.isActive && <span className="rounded-full bg-slate-800/40 px-2 py-0.5 text-[10px] text-slate-600 dark:text-slate-400">غیرفعال</span>}
+                <span className="text-xs text-slate-600 dark:text-slate-400">
                   {z.provinces?.length ? z.provinces.join('، ') : 'همه استان‌ها (پیش‌فرض)'}
                   {z.cities?.length ? ` — شهرها: ${z.cities.join('، ')}` : ''}
                 </span>
@@ -206,7 +206,7 @@ export default function AdminShippingPage() {
                 <Button size="sm" variant="ghost" onClick={() => setRemoveZone(z)}><Trash2 className="h-4 w-4 text-rose-500" /></Button>
               </div>
             </div>
-            {z.methods.length === 0 && <p className="text-xs text-slate-400">هنوز روشی برای این منطقه تعریف نشده است.</p>}
+            {z.methods.length === 0 && <p className="text-xs text-slate-600 dark:text-slate-400">هنوز روشی برای این منطقه تعریف نشده است.</p>}
             {z.methods.length > 0 && (
               <div className={tableCls.wrap}>
                 <table className={tableCls.table}>
@@ -232,12 +232,12 @@ export default function AdminShippingPage() {
                         <td className={tableCls.td}>
                           {m.isActive
                             ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">فعال</span>
-                            : <span className="rounded-full bg-slate-800/40 px-2 py-0.5 text-[10px] text-slate-400">غیرفعال</span>}
+                            : <span className="rounded-full bg-slate-800/40 px-2 py-0.5 text-[10px] text-slate-600 dark:text-slate-400">غیرفعال</span>}
                         </td>
                         <td className={tableCls.td}>
                           <div className="flex gap-1">
-                            <button onClick={() => setMethodDialog({ zoneId: z.id, method: m })} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"><Pencil className="h-4 w-4" /></button>
-                            <button onClick={() => setRemoveMethod(m)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => setMethodDialog({ zoneId: z.id, method: m })} className="rounded-lg p-1.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"><Pencil className="h-4 w-4" /></button>
+                            <button onClick={() => setRemoveMethod(m)} className="rounded-lg p-1.5 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </td>
                       </tr>

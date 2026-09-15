@@ -96,15 +96,15 @@ export default function AdminBannersPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((b) => (
-            <div key={b.id} className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/40">
+            <div key={b.id} className="overflow-hidden rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40">
               <div className="relative h-32 bg-slate-800/40">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={mediaUrl(b.imagePath) || undefined} alt="" className="h-full w-full object-cover" />
                 <span className="absolute end-2 top-2"><Pill status={b.isActive ? 'active' : 'archived'} label={b.isActive ? 'فعال' : 'غیرفعال'} /></span>
               </div>
               <div className="p-3.5">
-                <p className="font-bold text-slate-200">{b.title}</p>
-                <p className="mt-0.5 text-2xs text-slate-400">
+                <p className="font-bold text-slate-800 dark:text-slate-200">{b.title}</p>
+                <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-400">
                   {POSITIONS.find((p) => p.value === b.position)?.label} · ترتیب {faNumber(b.sortOrder)}
                 </p>
                 <div className="mt-3 flex gap-1.5">

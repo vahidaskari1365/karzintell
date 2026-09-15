@@ -78,19 +78,19 @@ export default function AdminRolesPage() {
               <tr key={r.id} className={tableCls.row}>
                 <td className={tableCls.td}>
                   <p className="flex items-center gap-2 font-bold">
-                    <ShieldCheck className={`h-4 w-4 ${r.name === 'super_admin' ? 'text-rose-500' : 'text-slate-300'}`} />
+                    <ShieldCheck className={`h-4 w-4 ${r.name === 'super_admin' ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`} />
                     {r.title}
-                    {r.isSystem && <span className="rounded bg-slate-800/40 px-1.5 py-0.5 text-2xs text-slate-400">سیستمی</span>}
+                    {r.isSystem && <span className="rounded bg-slate-800/40 px-1.5 py-0.5 text-2xs text-slate-600 dark:text-slate-400">سیستمی</span>}
                   </p>
-                  {r.description && <p className="mt-0.5 text-2xs text-slate-400">{r.description}</p>}
+                  {r.description && <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-400">{r.description}</p>}
                 </td>
-                <td className={tableCls.td}><code className="text-xs text-slate-400" dir="ltr">{r.name}</code></td>
+                <td className={tableCls.td}><code className="text-xs text-slate-600 dark:text-slate-400" dir="ltr">{r.name}</code></td>
                 <td className={tableCls.td}>{faNumber(r.userCount)}</td>
                 <td className={tableCls.td}>
                   {r.permissions === '*' ? (
                     <Pill status="rejected" label="همه دسترسی‌ها (کامل)" />
                   ) : (
-                    <span className="text-xs text-slate-400">{faNumber(r.permissions.length)} مجوز</span>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">{faNumber(r.permissions.length)} مجوز</span>
                   )}
                 </td>
                 <td className={`${tableCls.td} text-left`}>
@@ -99,7 +99,7 @@ export default function AdminRolesPage() {
                       ماتریس دسترسی
                     </Button>
                     {canDelete && !r.isSystem && (
-                      <button onClick={() => setDeleting(r)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                      <button onClick={() => setDeleting(r)} className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     )}
@@ -209,15 +209,15 @@ function RoleMatrixDialog({
             const selectedCount = perms.filter((p) => checked.has(p.key)).length;
             return (
               <Card key={g} className="p-3.5">
-                <button onClick={() => canEdit && toggleGroup(g, perms)} className="mb-2 flex w-full items-center justify-between text-sm font-bold text-slate-300">
+                <button onClick={() => canEdit && toggleGroup(g, perms)} className="mb-2 flex w-full items-center justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
                   {groupLabels[g] || g}
-                  <span className={`text-2xs ${selectedCount === perms.length ? 'text-emerald-600' : selectedCount > 0 ? 'text-orange-500' : 'text-slate-300'}`}>
+                  <span className={`text-2xs ${selectedCount === perms.length ? 'text-emerald-600' : selectedCount > 0 ? 'text-orange-500' : 'text-slate-700 dark:text-slate-300'}`}>
                     {faNumber(selectedCount)}/{faNumber(perms.length)}
                   </span>
                 </button>
                 <div className="space-y-1.5">
                   {perms.map((p) => (
-                    <label key={p.key} className="flex cursor-pointer items-center gap-2 text-xs text-slate-400">
+                    <label key={p.key} className="flex cursor-pointer items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                       <input
                         type="checkbox"
                         checked={checked.has(p.key)}
