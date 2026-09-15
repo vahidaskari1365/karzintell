@@ -189,10 +189,10 @@ export default function AdminShippingPage() {
         )}
         {(zones || []).map((z) => (
           <Card key={z.id}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div className="flex items-center gap-3">
-                <h2 className="font-black text-slate-900">{z.name}</h2>
-                {!z.isActive && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">غیرفعال</span>}
+                <h2 className="font-black text-slate-100">{z.name}</h2>
+                {!z.isActive && <span className="rounded-full bg-slate-800/40 px-2 py-0.5 text-[10px] text-slate-400">غیرفعال</span>}
                 <span className="text-xs text-slate-400">
                   {z.provinces?.length ? z.provinces.join('، ') : 'همه استان‌ها (پیش‌فرض)'}
                   {z.cities?.length ? ` — شهرها: ${z.cities.join('، ')}` : ''}
@@ -232,11 +232,11 @@ export default function AdminShippingPage() {
                         <td className={tableCls.td}>
                           {m.isActive
                             ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">فعال</span>
-                            : <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">غیرفعال</span>}
+                            : <span className="rounded-full bg-slate-800/40 px-2 py-0.5 text-[10px] text-slate-400">غیرفعال</span>}
                         </td>
                         <td className={tableCls.td}>
                           <div className="flex gap-1">
-                            <button onClick={() => setMethodDialog({ zoneId: z.id, method: m })} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Pencil className="h-4 w-4" /></button>
+                            <button onClick={() => setMethodDialog({ zoneId: z.id, method: m })} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"><Pencil className="h-4 w-4" /></button>
                             <button onClick={() => setRemoveMethod(m)} className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </td>

@@ -106,7 +106,7 @@ export default function AdminBlogPage() {
                           id: p.id, title: p.title, slug: p.slug, excerpt: p.excerpt || '', body: p.body,
                           coverPath: p.coverPath || '', status: p.status, metaTitle: p.metaTitle || '', metaDescription: p.metaDescription || '',
                         })}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"
                       ><Pencil className="h-4 w-4" /></button>
                       <button onClick={() => setDeleting(p)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>

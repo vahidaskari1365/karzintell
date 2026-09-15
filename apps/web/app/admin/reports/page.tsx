@@ -83,13 +83,13 @@ export default function AdminReportsPage() {
             ].map((k) => (
               <Card key={k.label} className="p-4">
                 <p className="text-2xs text-slate-400">{k.label}</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{k.value}</p>
+                <p className="mt-1 text-lg font-black text-slate-100">{k.value}</p>
               </Card>
             ))}
           </div>
 
           <Card className="mb-5 p-5">
-            <p className="mb-4 text-sm font-bold text-slate-800">روند ({groupBy === 'day' ? 'روزانه' : 'ماهانه'})</p>
+            <p className="mb-4 text-sm font-bold text-slate-200">روند ({groupBy === 'day' ? 'روزانه' : 'ماهانه'})</p>
             {data.series.length === 0 ? (
               <p className="py-8 text-center text-xs text-slate-400">در این بازه فروشی ثبت نشده</p>
             ) : (
@@ -112,14 +112,14 @@ export default function AdminReportsPage() {
 
           {/* گزارش سود ناخالص */}
           <Card className="mb-5 p-5">
-            <p className="mb-4 text-sm font-bold text-slate-800">سود ناخالص (فروش − بهای تمام‌شده)</p>
+            <p className="mb-4 text-sm font-bold text-slate-200">سود ناخالص (فروش − بهای تمام‌شده)</p>
             <div className="mb-5 grid grid-cols-3 gap-3">
               {[
                 { label: 'درآمد خالص اقلام', value: profitTotals.revenue, cls: 'text-sky-700' },
                 { label: 'بهای تمام‌شده', value: profitTotals.cost, cls: 'text-rose-600' },
                 { label: 'سود ناخالص', value: profitTotals.profit, cls: profitTotals.profit >= 0 ? 'text-emerald-700' : 'text-rose-700' },
               ].map((k) => (
-                <div key={k.label} className="rounded-2xl bg-slate-50 p-4 text-center">
+                <div key={k.label} className="rounded-2xl bg-slate-900/40 p-4 text-center">
                   <p className="text-2xs text-slate-400">{k.label}</p>
                   <p className={`mt-1 text-base font-black ${k.cls}`}>{toToman(k.value)} تومان</p>
                 </div>
@@ -130,8 +130,8 @@ export default function AdminReportsPage() {
             ) : (
               <div className="max-h-56 space-y-1 overflow-y-auto">
                 {(profit || []).map((p) => (
-                  <div key={p.bucket} className="flex items-center justify-between rounded-xl px-3 py-2 text-xs odd:bg-slate-50" >
-                    <span className="text-slate-500" dir="ltr">{p.bucket}</span>
+                  <div key={p.bucket} className="flex items-center justify-between rounded-xl px-3 py-2 text-xs odd:bg-slate-900/40" >
+                    <span className="text-slate-400" dir="ltr">{p.bucket}</span>
                     <span className={p.profit >= 0 ? 'font-bold text-emerald-700' : 'font-bold text-rose-700'}>
                       {toToman(p.profit)} تومان <span className="font-normal text-slate-400">({faNumber(p.orders)} سفارش)</span>
                     </span>
@@ -146,12 +146,12 @@ export default function AdminReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* پرفروش‌ترین‌ها */}
         <div className={tableCls.wrap}>
-          <p className="border-b border-slate-100 px-5 py-4 text-sm font-bold text-slate-800">پرفروش‌ترین محصولات</p>
+          <p className="border-b border-slate-800 px-5 py-4 text-sm font-bold text-slate-200">پرفروش‌ترین محصولات</p>
           <table className={tableCls.table}>
             <tbody>
               {topItems.map((t: any, i: number) => (
                 <tr key={t.productId || t.id || i} className={tableCls.row}>
-                  <td className={tableCls.td}><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-2xs font-black text-slate-500">{faNumber(i + 1)}</span></td>
+                  <td className={tableCls.td}><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800/40 text-2xs font-black text-slate-400">{faNumber(i + 1)}</span></td>
                   <td className={tableCls.td}><span className="text-xs font-medium">{t.productName || t.name}</span></td>
                   <td className={tableCls.td}>{faNumber(t.qty || t.sold || 0)} عدد</td>
                   <td className={tableCls.td}>{t.revenue != null ? `${toToman(t.revenue)} تومان` : '—'}</td>
@@ -164,7 +164,7 @@ export default function AdminReportsPage() {
 
         {/* کم‌موجودی */}
         <div className={tableCls.wrap}>
-          <p className="border-b border-slate-100 px-5 py-4 text-sm font-bold text-slate-800">اقلام کم‌موجود انبار</p>
+          <p className="border-b border-slate-800 px-5 py-4 text-sm font-bold text-slate-200">اقلام کم‌موجود انبار</p>
           <table className={tableCls.table}>
             <tbody>
               {lowItems.slice(0, 10).map((l: any, i: number) => (
@@ -180,7 +180,7 @@ export default function AdminReportsPage() {
 
         {/* مشتریان برتر */}
         <div className={`${tableCls.wrap} lg:col-span-2`}>
-          <p className="border-b border-slate-100 px-5 py-4 text-sm font-bold text-slate-800">مشتریان برتر (بر اساس مبلغ خرید)</p>
+          <p className="border-b border-slate-800 px-5 py-4 text-sm font-bold text-slate-200">مشتریان برتر (بر اساس مبلغ خرید)</p>
           <table className={tableCls.table}>
             <thead className={tableCls.thead}>
               <tr>

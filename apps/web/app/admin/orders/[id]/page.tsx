@@ -78,12 +78,12 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <Link href="/admin/orders" className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:text-slate-900">
+        <Link href="/admin/orders" className="rounded-xl border border-slate-700 bg-slate-900/40 p-2 text-slate-400 hover:text-slate-100">
           <ArrowRight className="h-4.5 w-4.5" />
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-black text-slate-900" dir="ltr">{o.code}</h1>
+            <h1 className="text-xl font-black text-slate-100" dir="ltr">{o.code}</h1>
             <Pill status={o.status} label={o.statusLabel} />
             <Pill status={o.paymentStatus} label={o.paymentStatus === 'paid' ? 'پرداخت‌شده' : 'پرداخت‌نشده'} />
           </div>
@@ -91,7 +91,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         </div>
         <Link
           href={`/admin/orders/${id}/invoice`}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 hover:border-slate-900 hover:text-slate-900"
+          className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/40 px-3.5 py-2 text-xs font-bold text-slate-400 hover:border-teal-500 hover:text-slate-100"
         >
           <FileText className="h-4 w-4" /> صدور و چاپ فاکتور
         </Link>
@@ -128,12 +128,12 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 
           {/* تاریخچه */}
           <Card className="p-5">
-            <p className="mb-3 text-sm font-bold text-slate-800">تاریخچه وضعیت</p>
-            <ol className="relative space-y-3 border-s-2 border-slate-100 ps-4">
+            <p className="mb-3 text-sm font-bold text-slate-200">تاریخچه وضعیت</p>
+            <ol className="relative space-y-3 border-s-2 border-slate-800 ps-4">
               {(o.histories || []).map((h: any, idx: number) => (
                 <li key={idx} className="relative">
                   <span className="absolute -start-5.5 top-1 h-2.5 w-2.5 rounded-full bg-orange-400" />
-                  <p className="text-sm text-slate-700">{h.from ? `${h.from} ← ` : ''}<b>{h.to}</b>{h.note && <span className="text-slate-400"> — {h.note}</span>}</p>
+                  <p className="text-sm text-slate-300">{h.from ? `${h.from} ← ` : ''}<b>{h.to}</b>{h.note && <span className="text-slate-400"> — {h.note}</span>}</p>
                   <p className="text-2xs text-slate-400">{faDateTime(h.at)}</p>
                 </li>
               ))}
@@ -142,13 +142,13 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 
           {/* پرداخت‌ها */}
           <Card className="p-5">
-            <p className="mb-3 text-sm font-bold text-slate-800">تراکنش‌ها</p>
+            <p className="mb-3 text-sm font-bold text-slate-200">تراکنش‌ها</p>
             {(o.payments || []).length === 0 ? (
               <p className="text-xs text-slate-400">تراکنشی ثبت نشده</p>
             ) : (
               <ul className="space-y-2">
                 {o.payments.map((p: any) => (
-                  <li key={p.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3 text-xs">
+                  <li key={p.id} className="flex items-center justify-between rounded-xl border border-slate-800 p-3 text-xs">
                     <span>{GATEWAY_LABELS[p.gateway] || p.gateway} · {toToman(Number(p.amount))} تومان</span>
                     <span className="flex items-center gap-2 text-slate-400" dir="ltr">{p.refId || p.authority || ''}</span>
                     <Pill status={p.status} label={labelOf({ paid: 'موفق', pending: 'در انتظار', failed: 'ناموفق', initiated: 'شروع‌شده', cancelled: 'لغوشده', refunded: 'عودت‌شده' }, p.status)} />
@@ -162,7 +162,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         <div className="space-y-4">
           {/* اقدامات */}
           <Card className="space-y-3 p-5">
-            <p className="text-sm font-bold text-slate-800">اقدامات</p>
+            <p className="text-sm font-bold text-slate-200">اقدامات</p>
             {allowed.length === 0 ? (
               <p className="text-xs text-slate-400">این سفارش در وضعیت نهایی است.</p>
             ) : (
@@ -179,7 +179,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                 </Button>
               </>
             )}
-            <div className="flex gap-2 border-t border-slate-100 pt-3">
+            <div className="flex gap-2 border-t border-slate-800 pt-3">
               {canCancel && allowed.includes('cancelled') && (
                 <Button variant="secondary" size="sm" className="flex-1 text-rose-600" onClick={() => setCancelOpen(true)}>
                   <Ban className="h-4 w-4" /> لغو سفارش
@@ -196,9 +196,9 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 
           {/* آدرس */}
           <Card className="p-5">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-800"><MapPin className="h-4 w-4" /> آدرس تحویل</p>
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-200"><MapPin className="h-4 w-4" /> آدرس تحویل</p>
             {o.address ? (
-              <div className="space-y-1 text-xs leading-6 text-slate-600">
+              <div className="space-y-1 text-xs leading-6 text-slate-400">
                 <p>{o.address.receiverName} — <span dir="ltr">{o.address.receiverPhone}</span></p>
                 <p>{o.address.province}، {o.address.city}</p>
                 <p>{o.address.address}{o.address.plaque ? `، پلاک ${o.address.plaque}` : ''}{o.address.unit ? `، واحد ${o.address.unit}` : ''}</p>
@@ -210,25 +210,25 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 
           {/* مبالغ */}
           <Card className="space-y-1.5 p-5 text-sm">
-            <div className="flex justify-between text-slate-500"><span>جمع اقلام</span><span>{toToman(o.subtotal)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>جمع اقلام</span><span>{toToman(o.subtotal)}</span></div>
             {Number(o.discountTotal) > 0 && <div className="flex justify-between text-emerald-600"><span>تخفیف {o.couponCode && `(${o.couponCode})`}</span><span>{toToman(o.discountTotal)}-</span></div>}
-            <div className="flex justify-between text-slate-500"><span>مالیات</span><span>{toToman(o.taxTotal)}</span></div>
-            <div className="flex justify-between text-slate-500"><span>ارسال {o.shippingMethod && `(${o.shippingMethod})`}</span><span>{Number(o.shippingCost) === 0 ? 'رایگان' : toToman(o.shippingCost)}</span></div>
-            <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-black text-slate-900"><span>مبلغ کل</span><span>{toToman(o.grandTotal)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>مالیات</span><span>{toToman(o.taxTotal)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>ارسال {o.shippingMethod && `(${o.shippingMethod})`}</span><span>{Number(o.shippingCost) === 0 ? 'رایگان' : toToman(o.shippingCost)}</span></div>
+            <div className="flex justify-between border-t border-slate-800 pt-2 text-base font-black text-slate-100"><span>مبلغ کل</span><span>{toToman(o.grandTotal)}</span></div>
           </Card>
 
           {/* ارسال */}
           {o.shipment && (
             <Card className="p-5 text-xs">
-              <p className="mb-1 text-sm font-bold text-slate-800"><Truck className="inline h-4 w-4" /> اطلاعات ارسال</p>
-              <p className="text-slate-600">{o.shipment.provider} {o.shipment.method && `· ${o.shipment.method}`}</p>
-              {o.shipment.trackingCode && <p className="mt-1 text-slate-500">کد رهگیری: <b dir="ltr">{o.shipment.trackingCode}</b></p>}
+              <p className="mb-1 text-sm font-bold text-slate-200"><Truck className="inline h-4 w-4" /> اطلاعات ارسال</p>
+              <p className="text-slate-400">{o.shipment.provider} {o.shipment.method && `· ${o.shipment.method}`}</p>
+              {o.shipment.trackingCode && <p className="mt-1 text-slate-400">کد رهگیری: <b dir="ltr">{o.shipment.trackingCode}</b></p>}
             </Card>
           )}
 
           {/* یادداشت داخلی */}
           <Card className="p-5">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-800"><StickyNote className="h-4 w-4" /> یادداشت داخلی</p>
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-200"><StickyNote className="h-4 w-4" /> یادداشت داخلی</p>
             <Textarea rows={3} defaultValue={o.adminNote || ''} onChange={(e) => setAdminNote(e.target.value)} placeholder="فقط برای تیم…" />
             <Button size="sm" variant="secondary" className="mt-2" loading={saveNote.isPending} onClick={() => saveNote.mutate(adminNote ?? o.adminNote ?? '')}>ذخیره</Button>
           </Card>

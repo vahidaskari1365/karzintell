@@ -150,7 +150,7 @@ function TicketDialog({ ticket, onClose }: { ticket: TicketRow; onClose: () => v
             </Button>
           )}
           {t.status !== 'closed' ? (
-          <Button size="sm" variant="ghost" className="text-slate-500" onClick={() => setStatus.mutate('closed')}>
+          <Button size="sm" variant="ghost" className="text-slate-400" onClick={() => setStatus.mutate('closed')}>
             <Lock className="h-3.5 w-3.5" /> بستن تیکت
           </Button>
         ) : (
@@ -159,7 +159,7 @@ function TicketDialog({ ticket, onClose }: { ticket: TicketRow; onClose: () => v
         </div>
       </div>
 
-      <div className="max-h-96 space-y-3 overflow-y-auto rounded-xl bg-slate-50 p-3">
+      <div className="max-h-96 space-y-3 overflow-y-auto rounded-xl bg-slate-900/40 p-3">
         {isLoading ? (
           <PageLoading />
         ) : messages.length === 0 ? (
@@ -169,7 +169,7 @@ function TicketDialog({ ticket, onClose }: { ticket: TicketRow; onClose: () => v
             const mine = m.senderId === user?.id || m.isStaff;
             return (
               <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-2xl p-3 text-sm ${m.isInternal ? 'border border-dashed border-amber-300 bg-amber-50' : mine ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200'}`}>
+                <div className={`max-w-[80%] rounded-2xl p-3 text-sm ${m.isInternal ? 'border border-dashed border-amber-300 bg-amber-50' : mine ? 'bg-slate-800 text-white' : 'bg-slate-900/40 border border-slate-700'}`}>
                   {m.isInternal && <p className="mb-1 text-2xs font-bold text-amber-600">یادداشت داخلی (به کاربر نشان داده نمی‌شود)</p>}
                   <p className="whitespace-pre-wrap leading-7">{m.body}</p>
                   <p className={`mt-1.5 text-2xs ${mine && !m.isInternal ? 'text-slate-400' : 'text-slate-400'}`}>{faDateTime(m.createdAt)}</p>
@@ -184,7 +184,7 @@ function TicketDialog({ ticket, onClose }: { ticket: TicketRow; onClose: () => v
         <div className="mt-3 space-y-2">
           <Textarea rows={3} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="پاسخ به مشتری…" />
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-xs text-slate-500">
+            <label className="flex items-center gap-2 text-xs text-slate-400">
               <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} className="accent-amber-500" />
               یادداشت داخلی
             </label>

@@ -64,8 +64,8 @@ export default function AdminInventoryPage() {
           <div className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> هشدارهای باز موجودی ({faNumber(alerts.length)})</div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {alerts.map((alert) => (
-              <div key={alert.id} className="flex items-center justify-between rounded-xl bg-white/70 px-3 py-2 text-xs">
-                <div><b>{alert.productName}</b><span className="ms-2 text-slate-500" dir="ltr">{alert.sku}</span></div>
+              <div key={alert.id} className="flex items-center justify-between rounded-xl bg-slate-900/40/70 px-3 py-2 text-xs">
+                <div><b>{alert.productName}</b><span className="ms-2 text-slate-400" dir="ltr">{alert.sku}</span></div>
                 <span className="font-bold text-rose-700">{alert.alertType === 'out_of_stock' ? 'اتمام موجودی' : `قابل‌فروش: ${faNumber(alert.available)}`}</span>
               </div>
             ))}
@@ -120,7 +120,7 @@ export default function AdminInventoryPage() {
                         {canManage && (
                           <Button size="sm" variant="secondary" onClick={() => setAdjusting(r)}>اصلاح</Button>
                         )}
-                        <button onClick={() => setHistoryFor(r)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="تاریخچه گردش">
+                        <button onClick={() => setHistoryFor(r)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300" title="تاریخچه گردش">
                           <History className="h-4 w-4" />
                         </button>
                       </div>
@@ -211,12 +211,12 @@ function MovementsDialog({ row, onClose }: { row: StockRow; onClose: () => void 
         <>
           <ul className="max-h-96 space-y-2 overflow-y-auto">
             {(data?.data || []).map((m) => (
-              <li key={m.id} className="rounded-xl border border-slate-100 p-3 text-xs">
+              <li key={m.id} className="rounded-xl border border-slate-800 p-3 text-xs">
                 <div className="flex items-center justify-between">
                   <Pill status={m.type === 'out' ? 'rejected' : 'active'} label={MOVE_LABELS[m.type] || m.type} />
                   <span className="text-slate-400">{faDateTime(m.createdAt)}</span>
                 </div>
-                <p className="mt-1.5 text-slate-600">
+                <p className="mt-1.5 text-slate-400">
                   {faNumber(m.quantity)} عدد — موجودی: {faNumber(m.qtyBefore)} ← {faNumber(m.qtyAfter)}
                 </p>
                 {m.note && <p className="mt-1 text-slate-400">{m.note}</p>}

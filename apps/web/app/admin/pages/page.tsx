@@ -93,7 +93,7 @@ export default function AdminPagesPage() {
                   <td className={tableCls.td}><Pill status={p.status} label={p.status === 'published' ? 'منتشرشده' : 'پیش‌نویس'} /></td>
                   <td className={`${tableCls.td} text-left`}>
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => openEdit(p)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Pencil className="h-4 w-4" /></button>
+                      <button onClick={() => openEdit(p)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"><Pencil className="h-4 w-4" /></button>
                       <button onClick={() => setDeleting(p)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </td>

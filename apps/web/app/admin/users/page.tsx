@@ -77,8 +77,8 @@ export default function AdminUsersPage() {
       />
 
       <form onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(q); }} className="relative mb-4 max-w-md">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="نام، موبایل یا ایمیل…" className="ps-9 bg-slate-900/60 border-slate-700 text-slate-100 placeholder:text-slate-500" />
-        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="نام، موبایل یا ایمیل…" className="ps-9 bg-slate-900/60 border-slate-700 text-slate-100 placeholder:text-slate-400" />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
       </form>
 
       {isLoading ? (
@@ -115,13 +115,13 @@ export default function AdminUsersPage() {
                         </div>
                         <div>
                           <div className="font-medium text-slate-100">{u.fullName}</div>
-                          <div className="text-2xs text-slate-500">شناسه: {faNumber(String(u.id))}</div>
+                          <div className="text-2xs text-slate-400">شناسه: {faNumber(String(u.id))}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-xs text-slate-300" dir="ltr">{faNumber(u.phone)}</p>
-                      {u.email && <p className="text-2xs text-slate-500" dir="ltr">{u.email}</p>}
+                      {u.email && <p className="text-2xs text-slate-400" dir="ltr">{u.email}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
             <p className="text-slate-300">
               آیا از حذف <span className="font-bold text-rose-300">{confirmDelete.fullName}</span> مطمئن هستید؟
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-400">
               این عملیات قابل بازگشت نیست. همه داده‌های کاربر (سفارش‌ها، آدرس‌ها، کیف پول و ...) آرشیو می‌شوند.
             </p>
             <div className="flex gap-2">
@@ -274,7 +274,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
           <Field label="نقش‌ها">
             <div className="flex flex-wrap gap-2 rounded-xl border border-slate-700 bg-slate-900/40 p-3">
               {(roles || []).map((r) => (
-                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${form.roleIds.includes(r.id) ? 'bg-slate-200 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
+                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${form.roleIds.includes(r.id) ? 'bg-slate-200 text-slate-100' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                   <input
                     type="checkbox" className="hidden"
                     checked={form.roleIds.includes(r.id)}
@@ -372,7 +372,7 @@ function EditUserDialog({ user: u, canAssign, onClose }: { user: UserRow; canAss
           <Field label="نقش‌ها">
             <div className="flex flex-wrap gap-2 rounded-xl border border-slate-700 bg-slate-900/40 p-3">
               {(roles || []).map((r) => (
-                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${selRoles.includes(r.id) ? 'bg-slate-200 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
+                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${selRoles.includes(r.id) ? 'bg-slate-200 text-slate-100' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                   <input
                     type="checkbox" className="hidden"
                     checked={selRoles.includes(r.id)}
@@ -523,7 +523,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
 
           {/* Loading more details */}
           {isLoading && (
-            <div className="py-4 text-center text-xs text-slate-500">در حال بارگذاری...</div>
+            <div className="py-4 text-center text-xs text-slate-400">در حال بارگذاری...</div>
           )}
 
           {/* Order stats (if detail loaded) */}
@@ -564,7 +564,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
                     value={msg.title}
                     onChange={(e) => setMsg({ ...msg, title: e.target.value })}
                     placeholder="مثلاً: سفارش شما ارسال شد"
-                    className="bg-slate-900/80 border-slate-700 text-slate-100 placeholder:text-slate-600"
+                    className="bg-slate-900/80 border-slate-700 text-slate-100 placeholder:text-slate-400"
                   />
                 </Field>
                 <Field label="متن پیام (اختیاری)">
@@ -573,7 +573,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
                     onChange={(e) => setMsg({ ...msg, body: e.target.value })}
                     placeholder="متن کامل پیام..."
                     rows={3}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none"
                   />
                 </Field>
                 <Button
@@ -586,7 +586,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
                   <Mail className="h-4 w-4" />
                   ارسال پیام
                 </Button>
-                <p className="text-2xs text-slate-500">
+                <p className="text-2xs text-slate-400">
                   پیام در بخش «اعلان‌های» کاربر نمایش داده می‌شود.
                 </p>
               </div>

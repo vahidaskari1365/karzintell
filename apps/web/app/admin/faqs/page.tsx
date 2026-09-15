@@ -80,13 +80,13 @@ export default function AdminFaqsPage() {
                 <tr key={f.id} className={tableCls.row}>
                   <td className={tableCls.td}><span className="text-2xs text-slate-400">{faNumber(f.sortOrder)}</span></td>
                   <td className={`${tableCls.td} max-w-64 font-bold`}><span className="line-clamp-2 text-xs">{f.question}</span></td>
-                  <td className={`${tableCls.td} max-w-80`}><span className="line-clamp-2 text-2xs text-slate-500">{f.answer}</span></td>
+                  <td className={`${tableCls.td} max-w-80`}><span className="line-clamp-2 text-2xs text-slate-400">{f.answer}</span></td>
                   <td className={tableCls.td}><Pill status={f.isActive ? 'active' : 'pending'} label={f.isActive ? 'فعال' : 'غیرفعال'} /></td>
                   <td className={`${tableCls.td} text-left`}>
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => setForm({ id: f.id, question: f.question, answer: f.answer, sortOrder: f.sortOrder, isActive: f.isActive })}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"
                       ><Pencil className="h-4 w-4" /></button>
                       <button onClick={() => setDeleting(f)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>

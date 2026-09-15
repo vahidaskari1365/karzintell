@@ -97,13 +97,13 @@ export default function AdminProductsPage() {
                   <tr key={p.id} className={tableCls.row}>
                     <td className={tableCls.td}>
                       <div className="flex items-center gap-3">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
                           {p.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={p.image} alt="" className="h-full w-full object-contain" />
                           ) : <span className="text-2xs text-slate-300">بدون عکس</span>}
                         </span>
-                        <button onClick={() => router.push(`/admin/products/${p.id}`)} className="text-start font-medium text-slate-800 hover:text-orange-600">
+                        <button onClick={() => router.push(`/admin/products/${p.id}`)} className="text-start font-medium text-slate-200 hover:text-orange-600">
                           {p.name}
                         </button>
                       </div>
@@ -117,7 +117,7 @@ export default function AdminProductsPage() {
                     <td className={tableCls.td}><Pill status={p.status} label={PRODUCT_STATUS_LABELS[p.status] || p.status} /></td>
                     <td className={`${tableCls.td} text-left`}>
                       <div className="flex justify-end gap-1">
-                        <Link href={`/admin/products/${p.id}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                        <Link href={`/admin/products/${p.id}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300">
                           <Pencil className="h-4 w-4" />
                         </Link>
                         <button onClick={() => setDeleting(p)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600">

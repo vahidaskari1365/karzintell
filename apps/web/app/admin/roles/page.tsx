@@ -80,7 +80,7 @@ export default function AdminRolesPage() {
                   <p className="flex items-center gap-2 font-bold">
                     <ShieldCheck className={`h-4 w-4 ${r.name === 'super_admin' ? 'text-rose-500' : 'text-slate-300'}`} />
                     {r.title}
-                    {r.isSystem && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-2xs text-slate-500">سیستمی</span>}
+                    {r.isSystem && <span className="rounded bg-slate-800/40 px-1.5 py-0.5 text-2xs text-slate-400">سیستمی</span>}
                   </p>
                   {r.description && <p className="mt-0.5 text-2xs text-slate-400">{r.description}</p>}
                 </td>
@@ -90,7 +90,7 @@ export default function AdminRolesPage() {
                   {r.permissions === '*' ? (
                     <Pill status="rejected" label="همه دسترسی‌ها (کامل)" />
                   ) : (
-                    <span className="text-xs text-slate-500">{faNumber(r.permissions.length)} مجوز</span>
+                    <span className="text-xs text-slate-400">{faNumber(r.permissions.length)} مجوز</span>
                   )}
                 </td>
                 <td className={`${tableCls.td} text-left`}>
@@ -209,7 +209,7 @@ function RoleMatrixDialog({
             const selectedCount = perms.filter((p) => checked.has(p.key)).length;
             return (
               <Card key={g} className="p-3.5">
-                <button onClick={() => canEdit && toggleGroup(g, perms)} className="mb-2 flex w-full items-center justify-between text-sm font-bold text-slate-700">
+                <button onClick={() => canEdit && toggleGroup(g, perms)} className="mb-2 flex w-full items-center justify-between text-sm font-bold text-slate-300">
                   {groupLabels[g] || g}
                   <span className={`text-2xs ${selectedCount === perms.length ? 'text-emerald-600' : selectedCount > 0 ? 'text-orange-500' : 'text-slate-300'}`}>
                     {faNumber(selectedCount)}/{faNumber(perms.length)}
@@ -217,7 +217,7 @@ function RoleMatrixDialog({
                 </button>
                 <div className="space-y-1.5">
                   {perms.map((p) => (
-                    <label key={p.key} className="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+                    <label key={p.key} className="flex cursor-pointer items-center gap-2 text-xs text-slate-400">
                       <input
                         type="checkbox"
                         checked={checked.has(p.key)}
