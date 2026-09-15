@@ -86,4 +86,41 @@ export class AdminUsersController {
   ) {
     return { data: await this.service.assignPermissions(id, dto.items, admin) };
   }
+
+  /**
+   * تأیید کاربر pending (فعال‌سازی حساب)
+   * بعد از این کاربر می‌تواند وارد شود
+   */
+  @Post(':id/approve')
+  @RequirePermissions('users.update')
+  async approve(@Param('id', ParseIntPipe) id: number, @CurrentUser() admin: AuthUser) {
+    return { data: await this.service.approve(id, admin) };
+  }
+
+  /**
+   * رد کاربر pending یا تعلیق کاربر active
+   * @body reason: دلیل رد/تعلیق (اختیاری)
+   */
+  @Post(':id/reject')
+  @RequirePermissions('users.update')
+  async reject(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { reason?: string },
+    @CurrentUser() admin: AuthUser,
+  ) {
+    return { data: await this.service.reject(id, dto.reason, admin) };
+  }
+
+  /**
+   * لیست کاربران در انتظار تأیید (pending)
+   */
+  @Get('pending/list')
+  @RequirePermissions('users.view')
+  async pendingList(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const { items, total, page: p, limit: lim } = await this.service.list({ page, limit, status: 'pending' });
+    return { data: items, meta: { page: p, limit: lim, total } };
+  }
 }

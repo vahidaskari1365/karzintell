@@ -31,15 +31,6 @@ export class Product {
   @Column({ name: 'brand_id', type: 'int', unsigned: true, nullable: true })
   brandId: number | null;
 
-  /**
-   * شناسه فروشنده محصول — برای محصولات فروشگاه (single-vendor) null است.
-   * وقتی یک فروشنده محصول اضافه می‌کند، sellerId روی userId او تنظیم می‌شود.
-   * این فیلد برای جداسازی محصولات هر فروشنده در پنل فروشنده استفاده می‌شود.
-   */
-  @Column({ name: 'seller_id', type: 'int', unsigned: true, nullable: true })
-  @Index()
-  sellerId: number | null;
-
   @Column({ length: 190 })
   name: string;
 

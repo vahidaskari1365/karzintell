@@ -170,6 +170,58 @@ export class AdminUsersService {
     return { deleted: true };
   }
 
+  /**
+   * تأیید کاربر pending → active
+   * کاربر می‌تواند بعد از این وارد شود
+   */
+  async approve(id: number, admin: AuthUser) {
+    const user = await this.users.findOne({ where: { id }, relations: { roles: true } });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    if (user.roles?.some((r) => r.name === 'super_admin'))
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'تغییر وضعیت super_admin مجاز نیست' });
+
+    if (user.status === 'active') {
+      return { user: { id: user.id, status: 'active' }, alreadyActive: true };
+    }
+
+    await this.users.update(id, { status: 'active' });
+    await this.rbac.invalidateUser(id);
+    return {
+      user: { id: user.id, fullName: user.fullName, phone: user.phone, email: user.email, status: 'active' },
+      approved: true,
+      approvedBy: admin.id,
+    };
+  }
+
+  /**
+   * رد کاربر pending (حساب معلق می‌ماند) یا تعلیق کاربر active
+   */
+  async reject(id: number, reason: string | undefined, admin: AuthUser) {
+    const user = await this.users.findOne({ where: { id }, relations: { roles: true } });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    if (user.roles?.some((r) => r.name === 'super_admin'))
+      throw new ForbiddenException({ code: 'FORBIDDEN', message: 'تغییر وضعیت super_admin مجاز نیست' });
+
+    // اگر active بود، به suspended تغییر بده (تعلیق)
+    // اگر pending بود، به suspended تغییر بده (رد درخواست)
+    const newStatus = 'suspended';
+    await this.users.update(id, { status: newStatus });
+    await this.rbac.invalidateUser(id);
+
+    return {
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        phone: user.phone,
+        email: user.email,
+        status: newStatus,
+        reason: reason || null,
+      },
+      rejected: true,
+      rejectedBy: admin.id,
+    };
+  }
+
   /** تخصیص نقش‌ها */
   async assignRoles(id: number, roleIds: number[], admin: AuthUser) {
     const target = await this.users.findOne({ where: { id }, relations: { roles: true } });

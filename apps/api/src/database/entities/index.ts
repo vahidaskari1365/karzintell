@@ -2,7 +2,6 @@ export * from './user.entity';
 export * from './rbac.entity';
 export * from './catalog.entity';
 export * from './product.entity';
-export * from './seller-profile.entity';
 export * from './inventory.entity';
 export * from './stock-alert.entity';
 export * from './cart.entity';
@@ -27,7 +26,6 @@ import {
   ProductRelation,
   ProductAttributeValue,
 } from './product.entity';
-import { SellerProfile } from './seller-profile.entity';
 import { Warehouse, Inventory, StockMovement } from './inventory.entity';
 import { StockAlert } from './stock-alert.entity';
 import { Coupon, Cart, CartItem, CouponUsage } from './cart.entity';
@@ -44,7 +42,6 @@ export const ALL_ENTITIES = [
   Brand, Category, Attribute, AttributeValue, CategoryAttribute,
   Product, ProductVariant, ProductVariantValue, ProductImage, ProductVideo,
   Tag, ProductTag, ProductRelation, ProductAttributeValue,
-  SellerProfile,
   Warehouse, Inventory, StockMovement, StockAlert,
   Coupon, Cart, CartItem, CouponUsage,
   Order, OrderItem, OrderStatusHistory, Payment, Shipment,

@@ -61,13 +61,15 @@ export class AuthService {
         message: 'این شماره موبایل یا ایمیل قبلاً ثبت شده است',
       });
 
+    // کاربر با status='pending' ساخته می‌شود — ادمین باید او را تأیید کند
+    // این سیاست امنیتی فروشگاه است: هیچ کاربری بدون تأیید ادمین نمی‌تواند وارد شود
     const user = await this.users.save(
       this.users.create({
         fullName: dto.fullName,
         phone: phone!,
         email,
         passwordHash: await bcrypt.hash(dto.password, env.bcryptRounds),
-        status: 'active',
+        status: 'pending',
         phoneVerifiedAt: null,
         emailVerifiedAt: null,
       } as Partial<User>),
@@ -109,6 +111,11 @@ export class AuthService {
     }
     if (user.status === 'suspended')
       throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
+    if (user.status === 'pending')
+      throw new UnauthorizedException({
+        code: 'USER_PENDING',
+        message: 'حساب شما در انتظار تأیید مدیر است. لطفاً تا تأیید ادمین صبر کنید.',
+      });
 
     // ورود موفق → پاک‌کردن شمارنده تلاش‌های ناموفق
     await Promise.all([
@@ -256,11 +263,23 @@ export class AuthService {
       user = await this.registerAuto(dto.channel, target, dto.fullName);
     }
 
-    // علامت گذاری verified
+    // کاربر pending نمی‌تواند با OTP وارد شود — باید ادمین تأیید کند
+    if (user.status === 'pending') {
+      throw new UnauthorizedException({
+        code: 'USER_PENDING',
+        message: 'حساب شما در انتظار تأیید مدیر است. لطفاً تا تأیید ادمین صبر کنید.',
+      });
+    }
+    if (user.status === 'suspended') {
+      throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
+    }
+
+    // علامت گذاری verified (فقط phoneVerifiedAt/emailVerifiedAt، نه status)
+    // status فقط توسط ادمین قابل تغییر است
     if (dto.channel === 'phone' && !user.phoneVerifiedAt)
-      await this.users.update(user.id, { phoneVerifiedAt: new Date(), status: 'active' });
+      await this.users.update(user.id, { phoneVerifiedAt: new Date() });
     if (dto.channel === 'email' && !user.emailVerifiedAt)
-      await this.users.update(user.id, { emailVerifiedAt: new Date(), status: 'active' });
+      await this.users.update(user.id, { emailVerifiedAt: new Date() });
 
     const tokens = await this.issueTokens(user.id, ip, ua);
     const authUser = await this.rbac.buildAuthUser(user.id);
@@ -373,13 +392,15 @@ export class AuthService {
   private async registerAuto(channel: 'phone' | 'email', target: string, fullName?: string) {
     // رمز تصادفی — کاربر با OTP وارد می‌شود و بعداً می‌تواند رمز بگذارد
     const randomPass = uuid();
+    // کاربر auto-register شده هم pending می‌شود — ادمین باید تأیید کند
+    // (سیاست امنیتی فروشگاه: هیچ کاربری بدون تأیید ادمین نمی‌تواند وارد شود)
     return this.users.save(
       this.users.create({
         fullName: fullName?.trim() || (channel === 'phone' ? `کاربر ${target.slice(-4)}` : target.split('@')[0]),
         phone: channel === 'phone' ? target : `otp-${Date.now()}`,
         email: channel === 'email' ? target : null,
         passwordHash: await bcrypt.hash(randomPass, env.bcryptRounds),
-        status: 'active',
+        status: 'pending',
       } as Partial<User>),
     ).then(async (u) => {
       await this.rbac.assignCustomerRole(u.id);
@@ -439,7 +460,7 @@ export class AuthService {
 
     let user = await this.users.findOne({ where: { email } });
     if (!user) {
-      // ثبت‌نام خودکار کاربر جدید با گوگل
+      // ثبت‌نام خودکار کاربر جدید با گوگل — status=pending (ادمین باید تأیید کند)
       const randomPass = uuid();
       user = await this.users.save(
         this.users.create({
@@ -447,18 +468,29 @@ export class AuthService {
           email,
           phone: `google-${Date.now()}`,
           passwordHash: await bcrypt.hash(randomPass, env.bcryptRounds),
-          status: 'active',
+          status: 'pending',
           avatarPath: avatar,
           emailVerifiedAt: new Date(),
         } as Partial<User>),
       );
       await this.rbac.assignCustomerRole(user.id);
+      // کاربر جدید gوگل هم pending است — نمی‌تواند وارد شود
+      throw new UnauthorizedException({
+        code: 'USER_PENDING',
+        message: 'حساب شما با موفقیت ایجاد شد، اما در انتظار تأیید مدیر است. لطفاً بعداً تلاش کنید.',
+      });
     } else {
       if (user.status === 'suspended') {
         throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
       }
+      if (user.status === 'pending') {
+        throw new UnauthorizedException({
+          code: 'USER_PENDING',
+          message: 'حساب شما در انتظار تأیید مدیر است. لطفاً تا تأیید ادمین صبر کنید.',
+        });
+      }
       if (!user.emailVerifiedAt) {
-        await this.users.update(user.id, { emailVerifiedAt: new Date(), status: 'active' });
+        await this.users.update(user.id, { emailVerifiedAt: new Date() });
       }
       if (avatar && !user.avatarPath) {
         await this.users.update(user.id, { avatarPath: avatar });

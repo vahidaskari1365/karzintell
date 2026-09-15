@@ -42,7 +42,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { FilesModule } from './modules/files/files.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
-import { SellersModule } from './modules/sellers/sellers.module';
 
 @Module({
   imports: [
@@ -96,7 +95,6 @@ import { SellersModule } from './modules/sellers/sellers.module';
     CustomersModule,
     DashboardModule,
     HealthModule,
-    SellersModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

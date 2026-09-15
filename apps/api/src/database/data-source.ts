@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ALL_ENTITIES } from './entities';
 import { InitialStoreMySql1750000000000 } from './migrations/1750000000000-InitialStoreMySql';
-import { AddSellerPanel1726300800000 } from './migrations/1726300800000-AddSellerPanel';
 import { env } from '../config/configuration';
 
 /**
@@ -25,7 +24,6 @@ export const dataSourceOptions: DataSourceOptions = {
   entities: ALL_ENTITIES,
   migrations: [
     InitialStoreMySql1750000000000,
-    AddSellerPanel1726300800000,
   ],
   migrationsTableName: 'migrations',
   extra: {

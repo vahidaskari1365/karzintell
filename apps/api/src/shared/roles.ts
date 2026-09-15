@@ -86,22 +86,4 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     permissions: ["dashboard.view", "products.view", "orders.view", "inventory.view", "inventory.manage"],
   },
   { id: 7, name: "customer", title: "مشتری", description: "کاربر عادی فروشگاه (بدون دسترسی پنل ادمین)", permissions: [] },
-  {
-    id: 8,
-    name: "seller",
-    title: "فروشنده",
-    description: "فروشنده محصولاتی را در فروشگاه قرار می‌دهد و سفارش‌های خود را مدیریت می‌کند",
-    permissions: [
-      "seller.dashboard",
-      "seller.products.view",
-      "seller.products.create",
-      "seller.products.update",
-      "seller.products.delete",
-      "seller.orders.view",
-      "seller.orders.update_status",
-      "seller.profile.manage",
-      "seller.payouts.view",
-      "files.manage",
-    ],
-  },
 ];

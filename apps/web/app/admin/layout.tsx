@@ -6,7 +6,7 @@ import { ReactNode, useState } from 'react';
 import {
   Award, BarChart3, Boxes, FileText, FolderTree, HelpCircle, Image as ImageIcon, LayoutDashboard,
   ListChecks, Menu, Newspaper, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star,
-  Store, Ticket, TicketPercent, Truck, UserCog, Users, X,
+  Store, Ticket, TicketPercent, Truck, UserCheck, UserCog, Users, X,
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth-guard';
 import { BrandMark } from '@/components/brand-logo';
@@ -26,6 +26,7 @@ const MENU: MenuItem[] = [
   { href: '/admin/shipping', label: 'حمل‌ونقل', icon: <Truck className="h-4.5 w-4.5" />, perm: 'settings.manage' },
   { href: '/admin/customers', label: 'مشتریان', icon: <Users className="h-4.5 w-4.5" />, perm: 'customers.view' },
   { href: '/admin/users', label: 'کاربران', icon: <UserCog className="h-4.5 w-4.5" />, perm: 'users.view' },
+  { href: '/admin/users/pending', label: 'کاربران در انتظار', icon: <UserCheck className="h-4.5 w-4.5" />, perm: 'users.view' },
   { href: '/admin/roles', label: 'نقش‌ها و دسترسی', icon: <ShieldCheck className="h-4.5 w-4.5" />, perm: 'roles.view' },
   { href: '/admin/coupons', label: 'کدهای تخفیف', icon: <TicketPercent className="h-4.5 w-4.5" />, perm: 'coupons.manage' },
   { href: '/admin/banners', label: 'بنرها', icon: <ImageIcon className="h-4.5 w-4.5" />, perm: 'banners.manage' },
