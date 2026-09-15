@@ -146,11 +146,22 @@ async function main() {
   // ─── Step 1: Git pull ─────────────────────────────────────────────────
   step('۱) Git Pull');
   try {
-    run('git', ['pull', 'origin', 'main'], { cwd: PROJECT_ROOT });
-    log('✅', colors.green, 'کد به‌روز شد');
+    // First fetch to get latest changes from remote
+    run('git', ['fetch', 'origin'], { cwd: PROJECT_ROOT });
+    // Then hard reset to ensure we have the EXACT code from remote
+    // This prevents stale local changes from breaking the deploy
+    run('git', ['reset', '--hard', 'origin/main'], { cwd: PROJECT_ROOT });
+    log('✅', colors.green, 'کد از remote به‌روز شد (git fetch + reset --hard)');
   } catch (e) {
-    log('⚠️', colors.yellow, `git pull ناموفق بود: ${e.message}`);
-    log('ℹ️', colors.gray, 'ادامه با کد فعلی...');
+    log('⚠️', colors.yellow, `git fetch/reset ناموفق بود: ${e.message}`);
+    log('ℹ️', colors.gray, 'تلاش با git pull معمولی...');
+    try {
+      run('git', ['pull', 'origin', 'main'], { cwd: PROJECT_ROOT });
+      log('✅', colors.green, 'کد به‌روز شد (git pull)');
+    } catch (e2) {
+      log('⚠️', colors.yellow, `git pull هم ناموفق بود: ${e2.message}`);
+      log('ℹ️', colors.gray, 'ادامه با کد فعلی...');
+    }
   }
 
   // ─── Step 2: Build API ───────────────────────────────────────────────
