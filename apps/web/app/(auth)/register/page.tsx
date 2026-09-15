@@ -43,8 +43,8 @@ function RegisterForm() {
     if (form.password.length < 8) return toast.error('رمز عبور باید حداقل ۸ کاراکتر باشد');
     setSending(true);
     try {
-      // ثبت‌نام موفق ولی کاربر pending است → ادمین باید تأیید کند
-      await api('/auth/register', {
+      // ثبت‌نام موفق — کاربر مستقیم active می‌شود و می‌تواند وارد شود
+      const { data } = await api<{ accessToken: string; user: any }>('/auth/register', {
         method: 'POST',
         body: {
           fullName: form.fullName,
@@ -55,9 +55,9 @@ function RegisterForm() {
         },
         auth: false,
       });
-      toast.success('ثبت‌نام شدید');
-      toast.info('پس از تأیید مدیر می‌توانید وارد شوید');
-      setTimeout(() => router.replace('/login?registered=1'), 1500);
+      setAuth(data.accessToken, data.user);
+      toast.success(`خوش آمدید ${data.user.fullName}`);
+      router.replace(next);
     } catch (e: any) {
       toast.error(e?.message || 'خطا در ثبت‌نام');
       setCaptchaRefresh((k) => k + 1);
@@ -80,19 +80,19 @@ function RegisterForm() {
         </p>
       </motion.div>
 
-      {/* ───── پیام سیاست ───── */}
+      {/* ───── پیام خوش‌آمدگویی ───── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.25 }}
         className="mt-5 mb-4 rounded-xl border px-4 py-2.5 text-xs"
         style={{
-          borderColor: 'rgba(245, 158, 11, 0.3)',
-          background: 'rgba(245, 158, 11, 0.08)',
-          color: '#fcd34d',
+          borderColor: 'rgba(20, 184, 166, 0.3)',
+          background: 'rgba(20, 184, 166, 0.08)',
+          color: '#5eead4',
         }}
       >
-        بعد از ثبت‌نام، مدیر حساب شما را تأیید می‌کند. این یک سیاست امنیتی فروشگاه است.
+        ثبت‌نام کنید و بلافاصله وارد حساب خود شوید — بدون نیاز به تأیید مدیر.
       </motion.div>
 
       {/* ───── فرم ───── */}

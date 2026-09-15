@@ -61,15 +61,14 @@ export class AuthService {
         message: 'این شماره موبایل یا ایمیل قبلاً ثبت شده است',
       });
 
-    // کاربر با status='pending' ساخته می‌شود — ادمین باید او را تأیید کند
-    // این سیاست امنیتی فروشگاه است: هیچ کاربری بدون تأیید ادمین نمی‌تواند وارد شود
+    // کاربر با status='active' ساخته می‌شود — بدون نیاز به تأیید ادمین
     const user = await this.users.save(
       this.users.create({
         fullName: dto.fullName,
         phone: phone!,
         email,
         passwordHash: await bcrypt.hash(dto.password, env.bcryptRounds),
-        status: 'pending',
+        status: 'active',
         phoneVerifiedAt: null,
         emailVerifiedAt: null,
       } as Partial<User>),
@@ -392,15 +391,14 @@ export class AuthService {
   private async registerAuto(channel: 'phone' | 'email', target: string, fullName?: string) {
     // رمز تصادفی — کاربر با OTP وارد می‌شود و بعداً می‌تواند رمز بگذارد
     const randomPass = uuid();
-    // کاربر auto-register شده هم pending می‌شود — ادمین باید تأیید کند
-    // (سیاست امنیتی فروشگاه: هیچ کاربری بدون تأیید ادمین نمی‌تواند وارد شود)
+    // کاربر auto-register شده با status='active' ساخته می‌شود (بدون نیاز به تأیید ادمین)
     return this.users.save(
       this.users.create({
         fullName: fullName?.trim() || (channel === 'phone' ? `کاربر ${target.slice(-4)}` : target.split('@')[0]),
         phone: channel === 'phone' ? target : `otp-${Date.now()}`,
         email: channel === 'email' ? target : null,
         passwordHash: await bcrypt.hash(randomPass, env.bcryptRounds),
-        status: 'pending',
+        status: 'active',
       } as Partial<User>),
     ).then(async (u) => {
       await this.rbac.assignCustomerRole(u.id);
@@ -460,7 +458,7 @@ export class AuthService {
 
     let user = await this.users.findOne({ where: { email } });
     if (!user) {
-      // ثبت‌نام خودکار کاربر جدید با گوگل — status=pending (ادمین باید تأیید کند)
+      // ثبت‌نام خودکار کاربر جدید با گوگل — status='active' (بدون نیاز به تأیید ادمین)
       const randomPass = uuid();
       user = await this.users.save(
         this.users.create({
@@ -468,26 +466,19 @@ export class AuthService {
           email,
           phone: `google-${Date.now()}`,
           passwordHash: await bcrypt.hash(randomPass, env.bcryptRounds),
-          status: 'pending',
+          status: 'active',
           avatarPath: avatar,
           emailVerifiedAt: new Date(),
         } as Partial<User>),
       );
       await this.rbac.assignCustomerRole(user.id);
-      // کاربر جدید gوگل هم pending است — نمی‌تواند وارد شود
-      throw new UnauthorizedException({
-        code: 'USER_PENDING',
-        message: 'حساب شما با موفقیت ایجاد شد، اما در انتظار تأیید مدیر است. لطفاً بعداً تلاش کنید.',
-      });
     } else {
       if (user.status === 'suspended') {
         throw new UnauthorizedException({ code: 'USER_SUSPENDED', message: 'حساب شما مسدود شده است' });
       }
       if (user.status === 'pending') {
-        throw new UnauthorizedException({
-          code: 'USER_PENDING',
-          message: 'حساب شما در انتظار تأیید مدیر است. لطفاً تا تأیید ادمین صبر کنید.',
-        });
+        // اگه از قبل pending بوده (ادمین‌ها در حال بررسی)، auto-activate کن
+        await this.users.update(user.id, { status: 'active' });
       }
       if (!user.emailVerifiedAt) {
         await this.users.update(user.id, { emailVerifiedAt: new Date() });
