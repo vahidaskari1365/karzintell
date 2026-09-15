@@ -58,6 +58,16 @@ export const PERMISSIONS = [
   // گزارش‌ها
   { key: "reports.view", title: "مشاهده گزارش‌ها", group: "reports" },
   { key: "reports.export", title: "خروجی گزارش‌ها", group: "reports" },
+  // فروشنده‌ها (Vendor/Seller) — دسترسی به پنل فروشنده و محصولات خودش
+  { key: "seller.dashboard", title: "داشبورد فروشنده", group: "seller" },
+  { key: "seller.products.view", title: "مشاهده محصولات خود", group: "seller" },
+  { key: "seller.products.create", title: "ایجاد محصول", group: "seller" },
+  { key: "seller.products.update", title: "ویرایش محصول خود", group: "seller" },
+  { key: "seller.products.delete", title: "حذف محصول خود", group: "seller" },
+  { key: "seller.orders.view", title: "مشاهده سفارش‌های محصول خود", group: "seller" },
+  { key: "seller.orders.update_status", title: "به‌روزرسانی وضعیت ارسال", group: "seller" },
+  { key: "seller.profile.manage", title: "ویرایش پروفایل فروشندگی", group: "seller" },
+  { key: "seller.payouts.view", title: "مشاهده تسویه‌ها", group: "seller" },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -100,4 +110,5 @@ export const PERMISSION_GROUPS: Record<string, string> = {
   tickets: "تیکت‌ها",
   settings: "تنظیمات",
   reports: "گزارش‌ها",
+  seller: "فروشنده‌ها",
 };

@@ -27,11 +27,27 @@ async function bootstrap() {
     logger: env.isProd ? ['log', 'warn', 'error'] : ['log', 'debug', 'warn', 'error'],
   });
 
-  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    // CORP به 'same-site' تنظیم شده چون API و Web روی زیردامنه‌های یک هاست هستن.
+    // این تنظیم از دسترسی منابع به‌وسیله سایت‌های دیگر جلوگیری می‌کند.
+    crossOriginResourcePolicy: { policy: 'same-site' },
+  }));
   app.use(cookieParser());
   app.useBodyParser('json', { limit: '1mb' });
+  // CORS با function-form: فقط origin های مجاز اجازه credentials دارند.
+  // این از نشت کوکی به origin های ناشناس جلوگیری می‌کند.
   app.enableCors({
-    origin: env.corsOrigins,
+    origin: (origin, callback) => {
+      // origin === undefined → درخواست‌های same-origin یا non-browser (curl, postman)
+      // در این حالت، NestJS به‌طور پیش‌فرض پاسخ می‌دهد بدون ارسال هدر ACAC.
+      if (!origin) return callback(null, true);
+      if (env.corsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      // origin ناشناس → رد کن (هدر ACAC ارسال نمی‌شود → کوکی‌ها نشت نمی‌کنند)
+      return callback(null, false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Cart-Session', 'X-Request-Id'],

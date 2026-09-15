@@ -181,8 +181,9 @@ const WEAK_SECRETS = [
 ];
 
 export function assertSecureConfiguration() {
-  if (!env.isProd) return;
-
+  // در production همیشه اجرا می‌شود
+  // در non-production هم اجرا می‌شود اگر کاربر به‌طور صریح NODE_ENV=production نباشد
+  // ولی JWT یا DB password مقدار پیش‌فرض دارند (احتمال کانفیگ اشتباه)
   const problems: string[] = [];
 
   const check = (label: string, value: string | undefined, minLen = 0) => {
@@ -191,13 +192,24 @@ export function assertSecureConfiguration() {
     if (minLen && value.length < minLen) return problems.push(`${label} کوتاه‌تر از ${minLen} کاراکتر است`);
   };
 
+  // JWT secrets همیشه چک شوند — حتی در development
+  // چون اگر در production فراموش شوند، سایت با secret ضعیف بالا نمی‌آید
   check('JWT_ACCESS_SECRET', process.env.JWT_ACCESS_SECRET, 32);
   check('JWT_REFRESH_SECRET', process.env.JWT_REFRESH_SECRET, 32);
-  check('DB_PASSWORD', process.env.DB_PASSWORD);
-  check('DB_USER', process.env.DB_USER);
-  check('DB_NAME', process.env.DB_NAME);
-  check('DB_HOST', process.env.DB_HOST);
-  if (env.redis.enabled) check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
+
+  // DB و Redis فقط در production چک شوند
+  if (env.isProd) {
+    check('DB_PASSWORD', process.env.DB_PASSWORD);
+    check('DB_USER', process.env.DB_USER);
+    check('DB_NAME', process.env.DB_NAME);
+    check('DB_HOST', process.env.DB_HOST);
+    if (env.redis.enabled) check('REDIS_PASSWORD', process.env.REDIS_PASSWORD);
+
+    // اگر CORS_ORIGINS تنظیم نشده، در production fail کنیم
+    if (!process.env.CORS_ORIGINS) {
+      problems.push('CORS_ORIGINS تنظیم نشده است — در production حتماً باید دامنه‌های مجاز مشخص شوند');
+    }
+  }
 
   if (problems.length) {
     throw new Error(

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { env } from '../../config/configuration';
 import { CurrentUser, Public } from '../../common/decorators';
@@ -17,6 +18,12 @@ import {
 } from './auth.dto';
 
 const REFRESH_COOKIE = 'krz_rt';
+
+// محدودیت شدید برای مسیرهای احراز هویت (ضد brute-force)
+// ۵ درخواست در هر ۶۰ ثانیه برای هر IP
+const AUTH_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
+// محدودیت متوسط برای captcha و refresh
+const LIGHT_THROTTLE = { default: { limit: 30, ttl: 60_000 } };
 
 @ApiTags('auth')
 @Controller('auth')
@@ -39,12 +46,14 @@ export class AuthController {
 
   /** کپچای عددی برای فرم‌های حساس (ضدبات) */
   @Public()
+  @Throttle(LIGHT_THROTTLE)
   @Get('captcha')
   async captcha() {
     return { data: await this.auth.captcha.create() };
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
@@ -65,6 +74,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('login')
   async login(
@@ -88,6 +98,7 @@ export class AuthController {
 
   /** تکمیل ورود با کد دومرحله‌ای (TOTP) */
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('2fa/verify')
   async twoFactorVerify(
@@ -106,6 +117,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('otp/send')
   async otpSend(@Body() dto: OtpSendDto) {
@@ -114,6 +126,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('otp/verify')
   async otpVerify(
@@ -127,6 +140,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('forgot-password')
   async forgot(@Body() dto: OtpSendDto) {
@@ -136,6 +150,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('google')
   async googleLogin(
@@ -153,6 +168,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_THROTTLE)
   @HttpCode(200)
   @Post('reset-password')
   async reset(@Body() dto: ResetPasswordDto) {
@@ -175,6 +191,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(LIGHT_THROTTLE)
   @HttpCode(200)
   @Post('refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {

@@ -200,7 +200,7 @@ async function main() {
   run('tar', ['-czf', apiTarball, '-C', 'apps/api', 'dist', 'package.json', 'package-lock.json', '.npmrc']);
 
   log('📦', colors.cyan, 'Creating web-deploy.tar.gz...');
-  run('tar', ['-czf', webTarball, '-C', 'apps/web', '.next', 'public', 'server.js', 'package.json', 'package-lock.json', 'next.config.mjs', 'postcss.config.mjs', '.npmrc']);
+  run('tar', ['-czf', webTarball, '-C', 'apps/web', '.next', 'public', 'server.js', 'package.json', 'package-lock.json', 'next.config.mjs', 'middleware.ts', 'postcss.config.mjs', '.npmrc']);
 
   log('✅', colors.green, `API tarball: ${(fs.statSync(apiTarball).size / 1024 / 1024).toFixed(2)} MB`);
   log('✅', colors.green, `Web tarball: ${(fs.statSync(webTarball).size / 1024 / 1024).toFixed(2)} MB`);

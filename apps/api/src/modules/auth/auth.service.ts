@@ -23,7 +23,8 @@ const OTP_TTL_MIN = 2;
 const OTP_MAX_ATTEMPTS = 5;
 
 // محدودیت ورود برای جلوگیری از حملات brute-force
-const LOGIN_MAX_FAILURES = 10; // حداکثر تلاش ناموفق
+const LOGIN_MAX_FAILURES = 5; // حداکثر تلاش ناموفق (بر اساس identifier)
+const LOGIN_MAX_IP_FAILURES = 15; // حداکثر تلاش ناموفق از یک IP (بالاتر چون ممکنه چند کاربر از یک IP بیان)
 const LOGIN_WINDOW_SEC = 15 * 60; // در بازه ۱۵ دقیقه
 
 interface TokenBundle {
@@ -86,7 +87,7 @@ export class AuthService {
       this.redis.get(failKey),
       this.redis.get(ipKey),
     ]);
-    if ((idFails && Number(idFails) >= LOGIN_MAX_FAILURES) || (ipFails && Number(ipFails) >= LOGIN_MAX_FAILURES * 3)) {
+    if ((idFails && Number(idFails) >= LOGIN_MAX_FAILURES) || (ipFails && Number(ipFails) >= LOGIN_MAX_IP_FAILURES)) {
       throw new UnauthorizedException({
         code: 'LOGIN_LOCKED',
         message: 'تعداد تلاش‌های ناموفق زیاد است — چند دقیقه بعد دوباره تلاش کنید',
@@ -231,8 +232,11 @@ export class AuthService {
     if (dto.channel === 'phone') await this.notifications.sendOtpSms(target, code);
     else await this.notifications.sendOtpEmail(target, code);
 
-    // برای توسعه: کد در پاسخ هم برمی‌گردد تا بدون پنل پیامکی تست شود
-    return { sent: true, expiresInSeconds: OTP_TTL_MIN * 60, ...(env.isDev ? { devCode: code } : {}) };
+    // کد OTP فقط در development برمی‌گردد.
+    // برای جلوگیری از نشت کد در محیط‌های غیر production که اینترنت‌دسترس هستند،
+    // این فلگ فقط با DEV_OTP_LEAK=1 فعال می‌شود.
+    const devOtpLeak = !env.isProd && process.env.DEV_OTP_LEAK === '1';
+    return { sent: true, expiresInSeconds: OTP_TTL_MIN * 60, ...(devOtpLeak ? { devCode: code } : {}) };
   }
 
   async verifyOtp(dto: {
