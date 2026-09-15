@@ -172,7 +172,14 @@ function parseSmeeEvent(data) {
 
 // ── Handle webhook payload ─────────────────────────────────────────────────
 function handleWebhook(rawData) {
+  // Debug: log first 200 chars to see structure
+  const debugStr = typeof rawData === 'string' ? rawData : JSON.stringify(rawData);
+  console.log(`[debug] handleWebhook received: ${debugStr.slice(0, 200)}...`);
+
   const { event, body, signature } = parseSmeeEvent(rawData);
+
+  // Debug: log parsed result
+  console.log(`[debug] parsed: event=${event || 'null'}, body=${body ? 'yes' : 'no'}, signature=${signature ? 'yes' : 'no'}`);
 
   // Debug: log what we received (truncated)
   const eventDisplay = event || 'unknown';
