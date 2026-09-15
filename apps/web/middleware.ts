@@ -9,6 +9,10 @@ import type { NextRequest } from 'next/server';
  *
  * این کار برای جلوگیری از حملات man-in-the-middle و همچنین برای فعال‌سازی
  * صحیح HSTS لازم است.
+ *
+ * نکته: در cPanel/LiteSpeed، Next.js روی پورت داخلی (مثلاً 3000) اجرا می‌شود
+ * و LiteSpeed به‌عنوان reverse proxy عمل می‌کند. بنابراین باید از هدر host
+ * و x-forwarded-proto برای تشخیص دامنه واقعی و پروتکل استفاده کنیم.
  */
 export function middleware(request: NextRequest) {
   // فقط در production فعال است
@@ -23,8 +27,9 @@ export function middleware(request: NextRequest) {
   const isHttps = forwardedProto.includes('https') || nextUrl.protocol === 'https:';
 
   if (!isHttps) {
-    // ریدایرکت به HTTPS با کد 301 (دائمی)
-    const httpsUrl = nextUrl.toString().replace(/^http:/, 'https:');
+    // دامنه واقعی از هدر host گرفته می‌شود (نه از nextUrl که localhost:3000 است)
+    const host = headers.get('host') || headers.get('x-forwarded-host') || nextUrl.host;
+    const httpsUrl = `https://${host}${nextUrl.pathname}${nextUrl.search}`;
     return NextResponse.redirect(httpsUrl, 301);
   }
 
