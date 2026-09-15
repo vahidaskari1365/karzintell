@@ -117,8 +117,8 @@ function LoginForm() {
 
   return (
     <div>
-      <h1 className="mb-1 flex items-center gap-2 text-2xl font-black text-slate-100">
-        <KeyRound className="h-6 w-6 text-emerald-400" />
+      <h1 className="mb-1 flex items-center gap-2 text-2xl font-black text-slate-50">
+        <KeyRound className="h-6 w-6 text-teal-400" />
         ورود به حساب
       </h1>
       <p className="mb-6 text-sm text-slate-400">با رمز عبور یا کد یک‌بارمصرف وارد شوید</p>
@@ -133,14 +133,14 @@ function LoginForm() {
         {/* مرحله ورود دومرحله‌ای */}
         {tfaTicket ? (
           <>
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center text-sm text-emerald-300">
+            <div className="rounded-2xl border border-teal-500/30 bg-teal-500/10 p-4 text-center text-sm text-teal-300">
               <Smartphone className="mx-auto mb-2 h-8 w-8" />
               ورود دومرحله‌ای فعال است — کد ۶ رقمی اپلیکیشن تأیید (Google Authenticator) را وارد کنید
             </div>
             <Field label="کد تأیید هویت" required>
               <Input dir="ltr" inputMode="numeric" maxLength={6} value={tfaCode} onChange={(e) => setTfaCode(normalizeDigits(e.target.value))} className="text-center text-lg tracking-[0.5em] bg-slate-900/40 border-slate-700/50 text-slate-100" onKeyDown={(e) => e.key === 'Enter' && verifyTfa()} autoFocus />
             </Field>
-            <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={verifyTfa} loading={sending} disabled={tfaCode.length !== 6}>
+            <Button className="w-full !bg-gradient-to-r !bg-teal-500 !text-slate-900 !text-white" size="lg" onClick={verifyTfa} loading={sending} disabled={tfaCode.length !== 6}>
               تأیید و ورود
             </Button>
             <div className="text-center">
@@ -158,7 +158,7 @@ function LoginForm() {
                 <Field label="رمز عبور" required>
                   <Input dir="ltr" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLogin()} className="bg-slate-900/40 border-slate-700/50 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50" />
                 </Field>
-                <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={doLogin} loading={sending}>
+                <Button className="w-full !bg-gradient-to-r !bg-teal-500 !text-slate-900 !text-white" size="lg" onClick={doLogin} loading={sending}>
                   <KeyRound className="h-4.5 w-4.5" /> ورود
                 </Button>
                 <div className="text-center">
@@ -168,7 +168,7 @@ function LoginForm() {
             ) : otpStep === 'send' ? (
               <>
                 <CaptchaField value={captcha} onChange={setCaptcha} refreshKey={captchaRefresh} />
-                <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={sendOtp} loading={sending}>
+                <Button className="w-full !bg-gradient-to-r !bg-teal-500 !text-slate-900 !text-white" size="lg" onClick={sendOtp} loading={sending}>
                   <MessageSquare className="h-4.5 w-4.5" /> ارسال کد تأیید
                 </Button>
               </>
@@ -180,7 +180,7 @@ function LoginForm() {
             {devCode && (
               <p className="rounded-xl bg-amber-500/10 p-2.5 text-center text-xs text-amber-300">حالت توسعه — کد: <b dir="ltr">{devCode}</b></p>
             )}
-            <Button className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white" size="lg" onClick={verifyOtp} loading={sending} disabled={form.code.length !== 5}>
+            <Button className="w-full !bg-gradient-to-r !bg-teal-500 !text-slate-900 !text-white" size="lg" onClick={verifyOtp} loading={sending} disabled={form.code.length !== 5}>
               تأیید و ورود
             </Button>
             <button onClick={() => setOtpStep('send')} className="w-full text-center text-xs text-slate-400 underline hover:text-slate-200">ارسال مجدد</button>
@@ -202,7 +202,7 @@ function LoginForm() {
 
         <div className="border-t border-slate-700/50 pt-4 text-center text-sm text-slate-400">
           حساب ندارید؟{' '}
-          <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-emerald-400 underline hover:text-emerald-300">ثبت‌نام کنید</Link>
+          <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-teal-400 underline hover:text-teal-300">ثبت‌نام کنید</Link>
         </div>
       </div>
     </div>

@@ -4,71 +4,124 @@ import { BrandLockup } from '@/components/brand-logo';
 /**
  * Layout صفحات احراز هویت (login / register / forgot)
  *
- * طراحی:
- *  - پس‌زمینه گرادیان تیره با افکت‌های نوری و grain
- *  - لوگوی متحرک (logo-tilt) در بالا
- *  - کارت شیشه‌ای (glassmorphism) با border ظریف
- *  - ایمیل/گوگل تکمیل نشده (در صفحه‌های داخلی اضافه می‌شود)
+ * Design brief — Karzintell: یک فروشگاه قطعات و گجت‌های الکترونیک
+ * (موبایل، ساعت هوشمند، هدفون). کاربران علاقه‌مند به تکنولوژی.
+ *
+ * Design choice:
+ * - تم: تاریک با tint آبی-فیروزه‌ای (cyan/teal) — رنگ دنیای تکنولوژی
+ * - پس‌زمینه: گرافیک circuit board (مدار چاپی) که با موضوع قطعات الکترونیک
+ *   مرتبط است. این یک انتخاب متمایز از gradient‌های generic است.
+ * - لایه‌های گرادیان عمیق برای عمق دادن به صحنه
+ * - کارت شیشه‌ای با border ظریف
+ * - موشن فقط برای یک لحظه ارکستراسیون‌شده (نه scattered animations)
+ *
+ * Palete:
+ *   #050a0e (base — عمیق‌تر از near-black تا cyan tint)
+ *   #0a1419 (card surface)
+ *   #14b8a6 (teal — رنگ badge کارزینتل)
+ *   #06b6d4 (cyan — accent)
+ *   #f0fdfa (text high)
+ *   #94a3b8 (text muted)
+ *
+ * Type:
+ *   Vazirmatn (already loaded globally) — فونت فارسی، weights 400/500/700/900
+ *
+ * No emoji, no scattered animations, no gradient-wash SaaS cards.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#06080d] px-4 py-10">
-      {/* لایه گرادیان پایه */}
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#050a0e] px-4 py-10 text-slate-100">
+      {/* ───── لایه ۱: گرادیان عمیق پایه ───── */}
       <div
-        className="absolute inset-0 -z-30"
+        className="absolute inset-0 -z-40"
         style={{
           background:
-            'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(16, 185, 129, 0.10) 0%, transparent 60%),' +
-            'radial-gradient(ellipse 60% 50% at 80% 100%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),' +
-            'radial-gradient(ellipse 60% 50% at 20% 80%, rgba(244, 63, 94, 0.08) 0%, transparent 60%)',
+            'radial-gradient(ellipse 100% 60% at 50% 0%, rgba(20, 184, 166, 0.10) 0%, transparent 50%),' +
+            'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(6, 182, 212, 0.08) 0%, transparent 60%),' +
+            'linear-gradient(180deg, #050a0e 0%, #03070a 100%)',
         }}
       />
 
-      {/* شبکه‌بندی هندسی متحرک (motion) */}
-      <div className="absolute inset-0 -z-20 overflow-hidden opacity-40">
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-indigo-500/20 blur-3xl animate-pulse" style={{ animationDuration: '11s', animationDelay: '2s' }} />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-rose-500/15 blur-3xl animate-pulse" style={{ animationDuration: '9s', animationDelay: '1s' }} />
-      </div>
-
-      {/* خطوط نوری متحرک (motion graphics) */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <svg className="absolute left-1/2 top-0 h-[120%] w-[120%] -translate-x-1/2 opacity-30" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
-              <stop offset="50%" stopColor="#10b981" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {/* خطوط متحرک مورب */}
-          {Array.from({ length: 12 }).map((_, i) => (
-            <line
-              key={i}
-              x1={i * 70}
-              y1="0"
-              x2={i * 70 - 400}
-              y2="800"
-              stroke="url(#line-grad)"
-              strokeWidth="1"
-              className="animate-pulse"
-              style={{ animationDelay: `${i * 0.2}s`, animationDuration: '6s' }}
+      {/* ───── لایه ۲: گرافیک مدار چاپی (circuit board) ───── */}
+      {/* این گرافیک با موضوع "قطعات الکترونیک" مرتبط است — خطوط مدار،
+          پدهای لحیم، نقاط اتصال — مثل PCB موبایل. */}
+      <svg
+        className="absolute inset-0 -z-30 h-full w-full opacity-[0.18]"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid slice"
+        viewBox="0 0 1200 800"
+      >
+        <defs>
+          <pattern id="circuit-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+            {/* خطوط مدار */}
+            <path
+              d="M 0 20 L 30 20 L 30 40 L 60 40 L 60 80"
+              stroke="#14b8a6"
+              strokeWidth="0.6"
+              fill="none"
             />
-          ))}
-        </svg>
-      </div>
+            <path
+              d="M 80 0 L 80 30 L 50 30 L 50 60 L 0 60"
+              stroke="#06b6d4"
+              strokeWidth="0.6"
+              fill="none"
+            />
+            {/* پدهای لحیم */}
+            <circle cx="30" cy="20" r="1.5" fill="#14b8a6" />
+            <circle cx="30" cy="40" r="1.5" fill="#14b8a6" />
+            <circle cx="60" cy="40" r="1.5" fill="#14b8a6" />
+            <circle cx="50" cy="30" r="1.5" fill="#06b6d4" />
+            <circle cx="50" cy="60" r="1.5" fill="#06b6d4" />
+            <circle cx="80" cy="30" r="1.5" fill="#06b6d4" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#circuit-grid)" />
+      </svg>
 
-      {/* لوگو */}
-      <Link href="/" className="mb-6 transition-transform hover:scale-105">
+      {/* ───── لایه ۳: نورهای رنگی (diffuse glow) ───── */}
+      {/* یک noor فیروزه‌ای بزرگ در بالا — مثل نور آباژور تکنولوژیکی */}
+      <div
+        className="absolute left-1/2 top-0 -z-20 h-[600px] w-[800px] -translate-x-1/2"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(20, 184, 166, 0.18) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
+
+      {/* ───── لایه ۴: خطوط نوری افقی (motion) ───── */}
+      {/* یک لحظه ارکستراسیون‌شده: خط نوری از بالا می‌آید و fade می‌شود */}
+      <div
+        className="absolute inset-x-0 top-0 -z-10 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, #14b8a6 50%, transparent 100%)',
+          animation: 'auth-line-glow 4s ease-in-out infinite',
+        }}
+      />
+      <style>{`
+        @keyframes auth-line-glow {
+          0%, 100% { opacity: 0.2; transform: scaleX(0.6); }
+          50% { opacity: 0.7; transform: scaleX(1); }
+        }
+      `}</style>
+
+      {/* ───── لوگو ───── */}
+      <Link href="/" className="mb-8 transition-transform hover:scale-105">
         <BrandLockup />
       </Link>
 
-      {/* کارت شیشه‌ای */}
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-2xl backdrop-blur-xl">
+      {/* ───── کارت شیشه‌ای ───── */}
+      <div
+        className="w-full max-w-md rounded-3xl border p-8 shadow-2xl backdrop-blur-xl"
+        style={{
+          borderColor: 'rgba(20, 184, 166, 0.15)',
+          background: 'rgba(10, 20, 25, 0.6)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(20, 184, 166, 0.05) inset',
+        }}
+      >
         {children}
       </div>
 
-      <Link href="/" className="mt-6 text-sm text-slate-400 transition hover:text-slate-200">
+      <Link href="/" className="mt-6 text-sm text-slate-400 transition hover:text-teal-300">
         بازگشت به فروشگاه
       </Link>
     </div>

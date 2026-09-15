@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Cpu, Smartphone, Watch, Headphones, Zap, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Zap, ShieldCheck, Headphones } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { toast, useAuthStore } from '@/lib/auth-store';
 import { Button, Field, Input } from '@/components/ui';
@@ -13,17 +13,20 @@ import { CaptchaField, CaptchaValue } from '@/components/captcha';
 import { GoogleButton } from '@/components/google-button';
 
 /**
- * صفحه ثبت‌نام — با گرافیک ۳D کلاسیک CSS و موشن گرافیک
+ * صفحه ثبت‌نام کارزینتل
  *
- * طراحی:
- *  - کارت شیشه‌ای با border متحرک (gradient که می‌چرخد)
- *  - آیکن‌های موبایل، ساعت، هدفون، چیپ که در پس‌زمینه شناور هستند
- *  - ذرات نورانی متحرک
- *  - توضیحات موشن‌دار (سامانه امن، احراز هویت دو مرحله‌ای، پشتیبانی ۲۴ ساعته)
- *  - گزینه ورود با گوگل در بالای فرم
- *  - پیام واضح: "حساب شما پس از تأیید ادمین فعال می‌شود"
+ * Design choice: هیرو تصویری — یک قطعهٔ الکترونیک از نزدیک
+ * (چیپ مدار با padهای لحیم، خطوط trace، نور cyan/teal از زیر)
+ * به‌جای آیکن‌های شناور کلیشه‌ای. این با موضوع فروشگاه (قطعات و گجت)
+ * و لوگو (badge teal/cyan) هماهنگ است.
+ *
+ * Principles:
+ * - یک لحظه موشن (page load sequence)، نه scattered animations
+ * - Active voice در کپی، sentence case، no filler
+ * - تایپوگرافی Vazirmatn با scale واضح
+ * - CTA دقیقاً می‌گوید چه اتفاقی می‌افتد: "ثبت‌نام" → "ثبت‌نام شدید"
+ * - خطا دقیق و قابل عمل
  */
-
 function RegisterForm() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -52,9 +55,8 @@ function RegisterForm() {
         },
         auth: false,
       });
-      // چون کاربر pending است، accessToken نمی‌گیریم — پیام مناسب نمایش می‌دهیم
-      toast.success('ثبت‌نام شما انجام شد! حساب شما در انتظار تأیید مدیر است.');
-      toast.info('پس از تأیید ادمین می‌توانید وارد شوید.');
+      toast.success('ثبت‌نام شدید');
+      toast.info('پس از تأیید مدیر می‌توانید وارد شوید');
       setTimeout(() => router.replace('/login?registered=1'), 1500);
     } catch (e: any) {
       toast.error(e?.message || 'خطا در ثبت‌نام');
@@ -66,37 +68,39 @@ function RegisterForm() {
 
   return (
     <div>
-      {/* عنوان + زیرعنوان */}
+      {/* ───── هیرو: نمایش گرافیکی چیپ مدار ───── */}
+      <CircuitHero />
+
+      {/* ───── عنوان ───── */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <h1 className="flex items-center gap-2 text-2xl font-black text-slate-100">
-          <Sparkles className="h-6 w-6 text-emerald-400" />
-          ثبت‌نام در کارزینتل
-        </h1>
+        <h1 className="text-2xl font-black text-slate-50">ثبت‌نام در کارزینتل</h1>
         <p className="mt-1.5 text-sm text-slate-400">
-          در چند ثانیه حساب خود را بسازید و به دنیای گجت‌های اصل و ارسالی سریع وصل شوید.
+          حساب کاربری بسازید تا به دنیای گجت‌های اصل وصل شوید
         </p>
       </motion.div>
 
-      {/* آیکن‌های شناور — گرافیک بصری موضوع سایت (موبایل، ساعت، هدفون، چیپ) */}
-      <FloatingGadgets />
-
-      {/* پیام: نیاز به تأیید ادمین */}
+      {/* ───── پیام سیاست ───── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="mt-5 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-300"
+        transition={{ delay: 0.25 }}
+        className="mt-5 mb-4 rounded-xl border px-4 py-2.5 text-xs"
+        style={{
+          borderColor: 'rgba(245, 158, 11, 0.3)',
+          background: 'rgba(245, 158, 11, 0.08)',
+          color: '#fcd34d',
+        }}
       >
-        <span className="font-bold">نکته:</span> بعد از ثبت‌نام، حساب شما باید توسط مدیر تأیید شود. این یک سیاست امنیتی فروشگاه است.
+        بعد از ثبت‌نام، مدیر حساب شما را تأیید می‌کند. این یک سیاست امنیتی فروشگاه است.
       </motion.div>
 
-      {/* فرم ثبت‌نام */}
+      {/* ───── فرم ───── */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="space-y-4"
@@ -105,17 +109,17 @@ function RegisterForm() {
           <Input
             value={form.fullName}
             onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
             placeholder="مثلاً علی محمدی"
           />
         </Field>
-        <Field label="موبایل" hint="برای ورود با پیامک و اطلاع‌رسانی سفارش">
+        <Field label="موبایل" hint="برای اطلاع‌رسانی سفارش">
           <Input
             dir="ltr"
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
             placeholder="09xxxxxxxxx"
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
           />
         </Field>
         <Field label="ایمیل (اختیاری)">
@@ -125,7 +129,7 @@ function RegisterForm() {
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             placeholder="you@example.com"
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
           />
         </Field>
         <Field label="رمز عبور" required hint="حداقل ۸ کاراکتر">
@@ -135,12 +139,12 @@ function RegisterForm() {
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
-            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/50"
+            className="border-slate-700/50 bg-slate-900/40 text-slate-100 placeholder:text-slate-600 focus:border-teal-500/50"
           />
         </Field>
         <CaptchaField value={captcha} onChange={setCaptcha} refreshKey={captchaRefresh} />
         <Button
-          className="w-full !bg-gradient-to-r !from-emerald-500 !to-indigo-500 !text-white hover:!from-emerald-600 hover:!to-indigo-600"
+          className="w-full !bg-teal-500 !text-slate-900 hover:!bg-teal-400"
           size="lg"
           onClick={submit}
           loading={sending}
@@ -149,7 +153,7 @@ function RegisterForm() {
           ثبت‌نام
         </Button>
 
-        {/* یا با گوگل */}
+        {/* جداکننده "یا" */}
         <div className="relative my-2">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-700" />
@@ -163,70 +167,144 @@ function RegisterForm() {
 
         <div className="text-center text-sm text-slate-400">
           قبلاً ثبت‌نام کرده‌اید؟{' '}
-          <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-bold text-emerald-400 underline hover:text-emerald-300">
+          <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-bold text-teal-400 underline hover:text-teal-300">
             وارد شوید
           </Link>
         </div>
       </motion.div>
 
-      {/* توضیحات پایین — موشن‌دار */}
+      {/* ───── سه ویژگی در یک خط ───── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="mt-6 grid grid-cols-3 gap-2 text-center"
+        transition={{ delay: 0.5 }}
+        className="mt-6 flex justify-center gap-6 text-2xs text-slate-500"
       >
-        {[
-          { icon: <Cpu className="h-4 w-4" />, label: 'امنیت بالا' },
-          { icon: <Sparkles className="h-4 w-4" />, label: 'احراز ۲ مرحله‌ای' },
-          { icon: <Headphones className="h-4 w-4" />, label: 'پشتیبانی ۲۴/۷' },
-        ].map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 + i * 0.1 }}
-            className="rounded-xl border border-slate-800 bg-slate-900/40 px-2 py-2 text-2xs text-slate-400"
-          >
-            <div className="mb-1 flex justify-center text-emerald-400">{item.icon}</div>
-            {item.label}
-          </motion.div>
-        ))}
+        <span className="flex items-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5 text-teal-500" />
+          احراز ۲ مرحله‌ای
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Headphones className="h-3.5 w-3.5 text-teal-500" />
+          پشتیبانی ۲۴/۷
+        </span>
       </motion.div>
     </div>
   );
 }
 
-/** آیکن‌های شناور موبایل، ساعت، هدفون و چیپ — گرافیک بصری موشن‌دار */
-function FloatingGadgets() {
-  const gadgets = [
-    { Icon: Smartphone, className: 'top-2 -left-6 text-emerald-400/30', size: 'h-10 w-10', delay: 0, duration: 8 },
-    { Icon: Watch, className: 'top-4 -right-6 text-indigo-400/30', size: 'h-8 w-8', delay: 0.5, duration: 10 },
-    { Icon: Headphones, className: 'bottom-3 -left-4 text-rose-400/30', size: 'h-9 w-9', delay: 1, duration: 9 },
-    { Icon: Cpu, className: 'bottom-2 -right-5 text-amber-400/30', size: 'h-7 w-7', delay: 1.5, duration: 11 },
-  ];
-
+/* ───────────────────────────────────────────────────────────────────────────
+ * هیرو گرافیکی چیپ مدار
+ *
+ * یک نمایش بصری واقعی از چیپ مدار (chip on PCB) با padهای لحیم،
+ * خطوط trace، نور teal از زیر چیپ. این با موضوع "قطعات الکترونیک"
+ * فروشگاه کارزینتل مرتبط است و یک متمایزکننده از طراحی‌های generic است.
+ *
+ * فقط یک موشن: "power-on" sequence هنگام load — چیپ روشن می‌شود.
+ * ─────────────────────────────────────────────────────────────────────────── */
+function CircuitHero() {
   return (
-    <div className="pointer-events-none relative my-4 h-0">
-      {gadgets.map(({ Icon, className, size, delay, duration }, i) => (
-        <motion.div
-          key={i}
-          className={`absolute ${className}`}
-          animate={{
-            y: [0, -10, 0],
-            rotate: [0, 8, -8, 0],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration,
-            delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
+    <div className="relative mb-6 flex h-32 items-center justify-center">
+      {/* نور پس‌زمینه چیپ */}
+      <div
+        className="absolute h-24 w-32 rounded-full opacity-60 blur-2xl"
+        style={{
+          background: 'radial-gradient(ellipse, #14b8a6 0%, transparent 70%)',
+          animation: 'circuit-power-on 1.4s ease-out',
+        }}
+      />
+
+      {/* چیپ SVG */}
+      <motion.svg
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="relative h-24 w-32"
+        viewBox="0 0 160 120"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* خطوط مدار (traces) */}
+        <g stroke="#14b8a6" strokeWidth="0.8" fill="none" opacity="0.5">
+          <path d="M 20 30 L 50 30" />
+          <path d="M 110 30 L 140 30" />
+          <path d="M 20 60 L 50 60" />
+          <path d="M 110 60 L 140 60" />
+          <path d="M 20 90 L 50 90" />
+          <path d="M 110 90 L 140 90" />
+          {/* خطوط عمودی به چیپ */}
+          <path d="M 50 30 L 50 20 L 80 20 L 80 40" />
+          <path d="M 110 30 L 110 20 L 80 20" opacity="0" />
+          <path d="M 50 90 L 50 100 L 80 100 L 80 80" />
+          <path d="M 110 90 L 110 100 L 80 100" opacity="0" />
+        </g>
+
+        {/* پدهای لحیم */}
+        <g fill="#06b6d4">
+          {[
+            [20, 30], [20, 60], [20, 90],
+            [140, 30], [140, 60], [140, 90],
+          ].map(([x, y], i) => (
+            <rect key={i} x={x - 2.5} y={y - 2} width="5" height="4" rx="0.5" />
+          ))}
+        </g>
+
+        {/* خود چیپ (rect با corner cut) */}
+        <motion.path
+          d="M 50 25 L 110 25 L 115 30 L 115 90 L 110 95 L 50 95 L 45 90 L 45 30 Z"
+          fill="#0a1419"
+          stroke="#14b8a6"
+          strokeWidth="1"
+          initial={{ strokeOpacity: 0.2 }}
+          animate={{ strokeOpacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        />
+
+        {/* متن روی چیپ (نشان کیفی) */}
+        <motion.text
+          x="80"
+          y="55"
+          textAnchor="middle"
+          fontSize="7"
+          fill="#14b8a6"
+          fontFamily="monospace"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
         >
-          <Icon className={size} strokeWidth={1.5} />
-        </motion.div>
-      ))}
+          KARZ
+        </motion.text>
+        <motion.text
+          x="80"
+          y="68"
+          textAnchor="middle"
+          fontSize="5"
+          fill="#06b6d4"
+          fontFamily="monospace"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          INTELL
+        </motion.text>
+
+        {/* dotهای نقاط اتصال روی چیپ */}
+        <g fill="#14b8a6">
+          {[35, 55, 75, 95].map((y) => (
+            <circle key={y} cx="45" cy={y} r="1" />
+          ))}
+          {[35, 55, 75, 95].map((y) => (
+            <circle key={y} cx="115" cy={y} r="1" />
+          ))}
+        </g>
+      </motion.svg>
+
+      <style>{`
+        @keyframes circuit-power-on {
+          0% { opacity: 0; transform: scale(0.6); }
+          60% { opacity: 0.9; transform: scale(1.1); }
+          100% { opacity: 0.6; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
