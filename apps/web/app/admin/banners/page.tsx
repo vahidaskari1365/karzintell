@@ -104,7 +104,7 @@ export default function AdminBannersPage() {
               </div>
               <div className="p-3.5">
                 <p className="font-bold text-slate-800 dark:text-slate-200">{b.title}</p>
-                <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-400">
+                <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-300">
                   {POSITIONS.find((p) => p.value === b.position)?.label} · ترتیب {faNumber(b.sortOrder)}
                 </p>
                 <div className="mt-3 flex gap-1.5">

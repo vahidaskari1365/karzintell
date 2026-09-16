@@ -317,7 +317,7 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
                     <GripVertical className="h-4 w-4 text-slate-700 dark:text-slate-300" />
                     <ImageUpload value={img.path} onChange={(p) => set('images', s.images.map((x, i) => (i === idx ? { ...x, path: p } : x)))} />
                     <Input placeholder="متن alt (سئو)" value={img.alt} onChange={(e) => set('images', s.images.map((x, i) => (i === idx ? { ...x, alt: e.target.value } : x)))} className="text-xs" />
-                    <label className="flex shrink-0 items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-400">
+                    <label className="flex shrink-0 items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-300">
                       <input
                         type="radio"
                         name="primary-image"
@@ -332,7 +332,7 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
                     </button>
                   </div>
                 ))}
-                {s.images.length === 0 && <p className="rounded-xl bg-white dark:bg-slate-900/40 p-4 text-center text-xs text-slate-600 dark:text-slate-400">تصویری اضافه نشده — اولین تصویر، تصویر اصلی می‌شود</p>}
+                {s.images.length === 0 && <p className="rounded-xl bg-white dark:bg-slate-900/40 p-4 text-center text-xs text-slate-600 dark:text-slate-300">تصویری اضافه نشده — اولین تصویر، تصویر اصلی می‌شود</p>}
               </div>
             </div>
 
@@ -403,7 +403,7 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
                   <Field label="قیمت تمام‌شده (تومان)"><Input inputMode="numeric" value={v.costToman} onChange={(e) => updateVariant(idx, { costToman: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
                   <Field label="وزن تنوع (گرم)"><Input inputMode="numeric" value={v.weightG} onChange={(e) => updateVariant(idx, { weightG: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
                   <Field label="تنوع پیش‌فرض">
-                    <label className="flex h-11 items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <label className="flex h-11 items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                       <input
                         type="radio" name="default-variant" checked={v.isDefault}
                         onChange={() => set('variants', s.variants.map((x, i) => ({ ...x, isDefault: i === idx })))}
@@ -446,7 +446,7 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
         {/* ------------------------------ مشخصات ------------------------------ */}
         {tab === 'specs' && (
           <Card className="space-y-3 p-5">
-            <p className="text-xs text-slate-600 dark:text-slate-400">مشخصات فنی محصول — در تب «مشخصات» صفحه محصول به‌صورت گروه‌بندی‌شده نمایش داده می‌شود.</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">مشخصات فنی محصول — در تب «مشخصات» صفحه محصول به‌صورت گروه‌بندی‌شده نمایش داده می‌شود.</p>
             {s.specs.map((sp, idx) => {
               const attr = (allAttrs || []).find((a) => a.id === sp.attributeId);
               const isSelect = attr?.type === 'select' || (attr?.values?.length || 0) > 0;
@@ -543,7 +543,7 @@ function RelatedChip({ id, onRemove }: { id: number; onRemove: () => void }) {
   return (
     <span className="flex items-center gap-1.5 rounded-full bg-slate-800/40 px-3 py-1 text-xs text-slate-700 dark:text-slate-300">
       {data?.name || `#${id}`}
-      <button onClick={onRemove} className="text-slate-600 dark:text-slate-400 hover:text-rose-500"><X className="h-3 w-3" /></button>
+      <button onClick={onRemove} className="text-slate-600 dark:text-slate-300 hover:text-rose-500"><X className="h-3 w-3" /></button>
     </span>
   );
 }

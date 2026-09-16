@@ -38,7 +38,7 @@ export default function AdminOrdersPage() {
       <div className="mb-4 flex flex-wrap gap-2">
         <form onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(q); }} className="relative min-w-56 flex-1">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="کد سفارش، نام یا موبایل مشتری…" className="ps-9" />
-          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-300" />
         </form>
         <Select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }} className="max-w-48">
           <option value="">همه وضعیت‌ها</option>
@@ -71,14 +71,14 @@ export default function AdminOrdersPage() {
                     <td className={tableCls.td}><span className="font-bold" dir="ltr">{o.code}</span></td>
                     <td className={tableCls.td}>
                       <p className="font-medium">{o.customerName}</p>
-                      <p className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{o.customerPhone}</p>
+                      <p className="text-2xs text-slate-600 dark:text-slate-300" dir="ltr">{o.customerPhone}</p>
                     </td>
                     <td className={tableCls.td}>{toToman(o.grandTotal)}</td>
                     <td className={tableCls.td}><Pill status={o.status} label={o.statusLabel} /></td>
                     <td className={tableCls.td}>
                       <Pill status={o.paymentStatus} label={labelOf({ paid: 'پرداخت‌شده', unpaid: 'پرداخت‌نشده', failed: 'ناموفق', partially_refunded: 'عودت جزئی', refunded: 'عودت‌شده' }, o.paymentStatus)} />
                     </td>
-                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-400">{faDateTime(o.createdAt)}</span></td>
+                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-300">{faDateTime(o.createdAt)}</span></td>
                     <td className={`${tableCls.td} text-left`}>
                       <Link href={`/admin/orders/${o.id}`}><Button size="sm" variant="secondary">جزئیات</Button></Link>
                     </td>

@@ -73,7 +73,7 @@ export default function AdminSettingsPage() {
                   <div key={item.key} className="grid items-center gap-2 sm:grid-cols-[220px_1fr_auto]">
                     <div>
                       <p className="text-xs font-medium text-slate-700 dark:text-slate-300" dir="ltr">{item.key}</p>
-                      <p className="text-2xs text-slate-600 dark:text-slate-400">{item.type}</p>
+                      <p className="text-2xs text-slate-600 dark:text-slate-300">{item.type}</p>
                     </div>
                     {isBool ? (
                       <Switch checked={draft[item.key] === 'true'} onChange={(v) => setDraft({ ...draft, [item.key]: String(v) })} />
@@ -85,7 +85,7 @@ export default function AdminSettingsPage() {
                         className="text-sm"
                       />
                     )}
-                    <label className="flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-400" title="قابل خواندن از API عمومی">
+                    <label className="flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-300" title="قابل خواندن از API عمومی">
                       <input
                         type="checkbox"
                         checked={!!pubFlags[item.key]}

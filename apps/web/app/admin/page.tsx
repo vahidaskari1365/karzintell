@@ -48,9 +48,9 @@ export default function AdminDashboard() {
             <Card className="flex items-center gap-3 p-4">
               <span className={`rounded-2xl p-3 text-white ${k.cls}`}>{k.icon}</span>
               <div className="min-w-0">
-                <p className="text-2xs text-slate-600 dark:text-slate-400">{k.label}</p>
+                <p className="text-2xs text-slate-600 dark:text-slate-300">{k.label}</p>
                 <p className="truncate text-base font-black text-slate-900 dark:text-slate-100">{k.value}</p>
-                <p className="text-2xs text-slate-600 dark:text-slate-400">{k.sub}</p>
+                <p className="text-2xs text-slate-600 dark:text-slate-300">{k.sub}</p>
               </div>
             </Card>
           );
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
         ].map((w) => (
           <Link key={w.label} href={w.href}>
             <Card className={`flex items-center justify-between p-3.5 transition hover:border-orange-300 ${w.count > 0 ? 'border-orange-200 bg-orange-50/50' : ''}`}>
-              <span className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">{w.icon}{w.label}</span>
+              <span className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">{w.icon}{w.label}</span>
               <span className={`text-base font-black ${w.count > 0 ? 'text-orange-600' : 'text-slate-700 dark:text-slate-300'}`}>{faNumber(w.count)}</span>
             </Card>
           </Link>
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
         <Card className="p-5 lg:col-span-3">
           <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-200">فروش ۱۴ روز گذشته</p>
           {data.chart.length === 0 ? (
-            <p className="py-10 text-center text-xs text-slate-600 dark:text-slate-400">هنوز فروشی ثبت نشده است</p>
+            <p className="py-10 text-center text-xs text-slate-600 dark:text-slate-300">هنوز فروشی ثبت نشده است</p>
           ) : (
             <div className="flex h-44 items-end gap-1.5">
               {data.chart.map((c) => (
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                 <Link href={`/admin/orders/${o.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-white dark:bg-slate-900/40">
                   <div>
                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{o.code}</p>
-                    <p className="text-2xs text-slate-600 dark:text-slate-400">{o.customerName}</p>
+                    <p className="text-2xs text-slate-600 dark:text-slate-300">{o.customerName}</p>
                   </div>
                   <div className="text-left">
                     <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{toToman(o.grandTotal)}</p>

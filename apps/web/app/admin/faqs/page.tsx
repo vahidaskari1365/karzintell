@@ -78,23 +78,23 @@ export default function AdminFaqsPage() {
             <tbody>
               {items.map((f) => (
                 <tr key={f.id} className={tableCls.row}>
-                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-400">{faNumber(f.sortOrder)}</span></td>
+                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-300">{faNumber(f.sortOrder)}</span></td>
                   <td className={`${tableCls.td} max-w-64 font-bold`}><span className="line-clamp-2 text-xs">{f.question}</span></td>
-                  <td className={`${tableCls.td} max-w-80`}><span className="line-clamp-2 text-2xs text-slate-600 dark:text-slate-400">{f.answer}</span></td>
+                  <td className={`${tableCls.td} max-w-80`}><span className="line-clamp-2 text-2xs text-slate-600 dark:text-slate-300">{f.answer}</span></td>
                   <td className={tableCls.td}><Pill status={f.isActive ? 'active' : 'pending'} label={f.isActive ? 'فعال' : 'غیرفعال'} /></td>
                   <td className={`${tableCls.td} text-left`}>
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => setForm({ id: f.id, question: f.question, answer: f.answer, sortOrder: f.sortOrder, isActive: f.isActive })}
-                        className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
+                        className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
                       ><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => setDeleting(f)} className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={() => setDeleting(f)} className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-xs text-slate-600 dark:text-slate-400">
+                <tr><td colSpan={5} className="p-8 text-center text-xs text-slate-600 dark:text-slate-300">
                   <HelpCircle className="mx-auto mb-2 h-8 w-8 text-slate-700 dark:text-slate-300" /> هنوز سوالی ثبت نشده است
                 </td></tr>
               )}

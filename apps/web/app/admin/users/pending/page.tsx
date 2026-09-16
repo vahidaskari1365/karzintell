@@ -80,14 +80,14 @@ export default function AdminPendingUsersPage() {
         <PageLoading />
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 px-6 py-14 text-center">
-          <UserCheck className="h-12 w-12 text-slate-600 dark:text-slate-400" />
+          <UserCheck className="h-12 w-12 text-slate-600 dark:text-slate-300" />
           <span className="text-base font-semibold text-slate-700 dark:text-slate-300">هیچ کاربر pending‌ای وجود ندارد</span>
-          <span className="text-sm text-slate-600 dark:text-slate-400">همه کاربران تأیید شده‌اند یا در انتظار ثبت‌نام هستند</span>
+          <span className="text-sm text-slate-600 dark:text-slate-300">همه کاربران تأیید شده‌اند یا در انتظار ثبت‌نام هستند</span>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
           <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-slate-100 dark:bg-slate-900/80 text-xs text-slate-600 dark:text-slate-400">
+            <thead className="bg-slate-100 dark:bg-slate-900/80 text-xs text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="px-4 py-3 text-start font-bold">نام</th>
                 <th className="px-4 py-3 text-start font-bold">موبایل</th>
@@ -109,8 +109,8 @@ export default function AdminPendingUsersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300" dir="ltr">{faNumber(u.phone)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">{u.email || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{u.email || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
                     {new Date(u.createdAt).toLocaleDateString('fa-IR')}
                   </td>
                   <td className="px-4 py-3">

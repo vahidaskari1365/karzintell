@@ -96,9 +96,9 @@ export default function AdminBlogPage() {
               {items.map((p) => (
                 <tr key={p.id} className={tableCls.row}>
                   <td className={`${tableCls.td} font-bold`}>{p.title}</td>
-                  <td className={tableCls.td}><code className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{p.slug}</code></td>
+                  <td className={tableCls.td}><code className="text-2xs text-slate-600 dark:text-slate-300" dir="ltr">{p.slug}</code></td>
                   <td className={tableCls.td}><Pill status={p.status === 'published' ? 'active' : 'pending'} label={p.status === 'published' ? 'منتشرشده' : 'پیش‌نویس'} /></td>
-                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-400">{p.publishedAt ? faDate(p.publishedAt) : '—'}</span></td>
+                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-300">{p.publishedAt ? faDate(p.publishedAt) : '—'}</span></td>
                   <td className={`${tableCls.td} text-left`}>
                     <div className="flex justify-end gap-1">
                       <button
@@ -106,14 +106,14 @@ export default function AdminBlogPage() {
                           id: p.id, title: p.title, slug: p.slug, excerpt: p.excerpt || '', body: p.body,
                           coverPath: p.coverPath || '', status: p.status, metaTitle: p.metaTitle || '', metaDescription: p.metaDescription || '',
                         })}
-                        className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
+                        className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
                       ><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => setDeleting(p)} className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={() => setDeleting(p)} className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {items.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-xs text-slate-600 dark:text-slate-400">هنوز چیزی ثبت نشده است</td></tr>}
+              {items.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-xs text-slate-600 dark:text-slate-300">هنوز چیزی ثبت نشده است</td></tr>}
             </tbody>
           </table>
         </div>

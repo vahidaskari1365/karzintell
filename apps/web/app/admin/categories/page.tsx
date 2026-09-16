@@ -97,7 +97,7 @@ export default function AdminCategoriesPage() {
                       {c.name}
                     </span>
                   </td>
-                  <td className={tableCls.td}><code className="text-xs text-slate-600 dark:text-slate-400" dir="ltr">{c.slug}</code></td>
+                  <td className={tableCls.td}><code className="text-xs text-slate-600 dark:text-slate-300" dir="ltr">{c.slug}</code></td>
                   <td className={tableCls.td}><Pill status={(c as any).isActive === false ? 'archived' : 'active'} label={(c as any).isActive === false ? 'غیرفعال' : 'فعال'} /></td>
                   <td className={tableCls.td}>
                     <button onClick={() => setLinking(c)} className="flex items-center gap-1 text-xs text-sky-600 hover:underline">
@@ -108,11 +108,11 @@ export default function AdminCategoriesPage() {
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => setForm({ id: c.id, name: c.name, slug: c.slug, parentId: (c as any).parentId || 0, description: (c as any).description || '', sortOrder: String((c as any).sortOrder ?? 0), isActive: (c as any).isActive !== false })}
-                        className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
+                        className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setDeleting(c)} className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                      <button onClick={() => setDeleting(c)} className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -216,7 +216,7 @@ function LinkAttributesDialog({ category, onClose }: { category: CategoryNode; o
         <PageLoading />
       ) : (
         <div className="space-y-4">
-          <p className="text-xs text-slate-600 dark:text-slate-400">ویژگی‌های انتخاب‌شده در فیلتر فروشگاه می‌آیند؛ «سازنده تنوع» یعنی از آن برای ساخت تنوع محصول (مثل رنگ/حافظه) استفاده می‌شود.</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300">ویژگی‌های انتخاب‌شده در فیلتر فروشگاه می‌آیند؛ «سازنده تنوع» یعنی از آن برای ساخت تنوع محصول (مثل رنگ/حافظه) استفاده می‌شود.</p>
           <ul className="max-h-80 space-y-2 overflow-y-auto">
             {all.map((a) => {
               const cur = state[a.id];
@@ -233,14 +233,14 @@ function LinkAttributesDialog({ category, onClose }: { category: CategoryNode; o
                     }}
                     className="h-4 w-4 accent-orange-500"
                   />
-                  <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300">{a.name} <code className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">({a.code})</code></span>
+                  <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-300">{a.name} <code className="text-2xs text-slate-600 dark:text-slate-300" dir="ltr">({a.code})</code></span>
                   {cur && (
                     <>
-                      <label className="flex items-center gap-1 text-2xs text-slate-600 dark:text-slate-400">
+                      <label className="flex items-center gap-1 text-2xs text-slate-600 dark:text-slate-300">
                         <input type="checkbox" checked={cur.isVariant} onChange={(e) => setItems({ ...state, [a.id]: { ...cur, isVariant: e.target.checked } })} className="accent-sky-500" />
                         سازنده تنوع
                       </label>
-                      <label className="flex items-center gap-1 text-2xs text-slate-600 dark:text-slate-400">
+                      <label className="flex items-center gap-1 text-2xs text-slate-600 dark:text-slate-300">
                         <input type="checkbox" checked={cur.isRequired} onChange={(e) => setItems({ ...state, [a.id]: { ...cur, isRequired: e.target.checked } })} className="accent-emerald-500" />
                         اجباری
                       </label>

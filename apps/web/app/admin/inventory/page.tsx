@@ -65,7 +65,7 @@ export default function AdminInventoryPage() {
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {alerts.map((alert) => (
               <div key={alert.id} className="flex items-center justify-between rounded-xl bg-white dark:bg-slate-900/40/70 px-3 py-2 text-xs">
-                <div><b>{alert.productName}</b><span className="ms-2 text-slate-600 dark:text-slate-400" dir="ltr">{alert.sku}</span></div>
+                <div><b>{alert.productName}</b><span className="ms-2 text-slate-600 dark:text-slate-300" dir="ltr">{alert.sku}</span></div>
                 <span className="font-bold text-rose-700">{alert.alertType === 'out_of_stock' ? 'اتمام موجودی' : `قابل‌فروش: ${faNumber(alert.available)}`}</span>
               </div>
             ))}
@@ -76,7 +76,7 @@ export default function AdminInventoryPage() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <form onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(q); }} className="relative min-w-56 flex-1">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="جستجو: نام محصول، SKU…" className="ps-9" />
-          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-300" />
         </form>
         <Button variant={lowOnly ? 'primary' : 'secondary'} size="sm" onClick={() => { setPage(1); setLowOnly(!lowOnly); }}>
           <AlertTriangle className="h-4 w-4" /> فقط کم‌موجود
@@ -106,7 +106,7 @@ export default function AdminInventoryPage() {
                   <tr key={`${r.variantId}-${r.warehouseId}`} className={tableCls.row}>
                     <td className={tableCls.td}>
                       <p className="font-medium">{r.productName}</p>
-                      <p className="text-2xs text-slate-600 dark:text-slate-400" dir="ltr">{r.sku}{r.variantTitle ? ` — ${r.variantTitle}` : ''}</p>
+                      <p className="text-2xs text-slate-600 dark:text-slate-300" dir="ltr">{r.sku}{r.variantTitle ? ` — ${r.variantTitle}` : ''}</p>
                     </td>
                     <td className={tableCls.td}>{r.warehouseName}</td>
                     <td className={tableCls.td}>
@@ -120,7 +120,7 @@ export default function AdminInventoryPage() {
                         {canManage && (
                           <Button size="sm" variant="secondary" onClick={() => setAdjusting(r)}>اصلاح</Button>
                         )}
-                        <button onClick={() => setHistoryFor(r)} className="rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300" title="تاریخچه گردش">
+                        <button onClick={() => setHistoryFor(r)} className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300" title="تاریخچه گردش">
                           <History className="h-4 w-4" />
                         </button>
                       </div>
@@ -167,7 +167,7 @@ function AdjustDialog({ row, onClose }: { row: StockRow; onClose: () => void }) 
   return (
     <Dialog open onClose={onClose} title={`اصلاح موجودی — ${row.productName}`}>
       <div className="space-y-4">
-        <p className="text-xs text-slate-600 dark:text-slate-400" dir="ltr">{row.sku}</p>
+        <p className="text-xs text-slate-600 dark:text-slate-300" dir="ltr">{row.sku}</p>
         <div className="grid grid-cols-2 gap-3">
           <Field label="نوع عملیات">
             <Select value={mode} onChange={(e) => setMode(e.target.value as 'adjust' | 'set')}>
@@ -214,15 +214,15 @@ function MovementsDialog({ row, onClose }: { row: StockRow; onClose: () => void 
               <li key={m.id} className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 text-xs">
                 <div className="flex items-center justify-between">
                   <Pill status={m.type === 'out' ? 'rejected' : 'active'} label={MOVE_LABELS[m.type] || m.type} />
-                  <span className="text-slate-600 dark:text-slate-400">{faDateTime(m.createdAt)}</span>
+                  <span className="text-slate-600 dark:text-slate-300">{faDateTime(m.createdAt)}</span>
                 </div>
-                <p className="mt-1.5 text-slate-600 dark:text-slate-400">
+                <p className="mt-1.5 text-slate-600 dark:text-slate-300">
                   {faNumber(m.quantity)} عدد — موجودی: {faNumber(m.qtyBefore)} ← {faNumber(m.qtyAfter)}
                 </p>
-                {m.note && <p className="mt-1 text-slate-600 dark:text-slate-400">{m.note}</p>}
+                {m.note && <p className="mt-1 text-slate-600 dark:text-slate-300">{m.note}</p>}
               </li>
             ))}
-            {(data?.data || []).length === 0 && <p className="p-6 text-center text-xs text-slate-600 dark:text-slate-400">گردشی ثبت نشده</p>}
+            {(data?.data || []).length === 0 && <p className="p-6 text-center text-xs text-slate-600 dark:text-slate-300">گردشی ثبت نشده</p>}
           </ul>
           <Pagination page={page} limit={15} total={data?.meta?.total || 0} onPage={setPage} />
         </>
