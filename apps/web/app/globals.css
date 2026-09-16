@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Tailwind CSS 4 — فعال‌سازی dark: variant با class strategy
+   (next-themes کلاس 'dark' را روی <html> تنظیم می‌کند) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
   فونت وزیرمتن — خود میزبانی (Self-hosted) روی هاست ایران.
   وابستگی به CDN خارجی (jsdelivr/googleapis) نداریم؛ فایل‌ها در public/fonts
