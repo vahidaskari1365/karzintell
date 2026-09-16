@@ -77,21 +77,21 @@ export default function AdminUsersPage() {
       />
 
       <form onSubmit={(e) => { e.preventDefault(); setPage(1); setSearch(q); }} className="relative mb-4 max-w-md">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="نام، موبایل یا ایمیل…" className="ps-9 bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:text-slate-300" />
-        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-300" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="نام، موبایل یا ایمیل…" className="ps-9 bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:text-slate-200" />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-200" />
       </form>
 
       {isLoading ? (
         <PageLoading />
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-12 text-center text-slate-600 dark:text-slate-300">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-12 text-center text-slate-600 dark:text-slate-200">
           کاربری یافت نشد
         </div>
       ) : (
         <>
           <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <table className="w-full min-w-[760px] text-sm">
-              <thead className="bg-slate-100 dark:bg-slate-900/80 text-xs text-slate-600 dark:text-slate-300">
+              <thead className="bg-slate-100 dark:bg-slate-900/80 text-xs text-slate-600 dark:text-slate-200">
                 <tr>
                   <th className="px-4 py-3 text-start font-bold">کاربر</th>
                   <th className="px-4 py-3 text-start font-bold">تماس</th>
@@ -115,20 +115,20 @@ export default function AdminUsersPage() {
                         </div>
                         <div>
                           <div className="font-medium text-slate-900 dark:text-slate-100">{u.fullName}</div>
-                          <div className="text-2xs text-slate-600 dark:text-slate-300">شناسه: {faNumber(String(u.id))}</div>
+                          <div className="text-2xs text-slate-600 dark:text-slate-200">شناسه: {faNumber(String(u.id))}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-xs text-slate-700 dark:text-slate-300" dir="ltr">{faNumber(u.phone)}</p>
-                      {u.email && <p className="text-2xs text-slate-600 dark:text-slate-300" dir="ltr">{u.email}</p>}
+                      <p className="text-xs text-slate-700 dark:text-slate-200" dir="ltr">{faNumber(u.phone)}</p>
+                      {u.email && <p className="text-2xs text-slate-600 dark:text-slate-200" dir="ltr">{u.email}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {(u.roleNames || '').split(',').filter(Boolean).map((r) => (
                           <span key={r} className={`rounded-full px-2 py-0.5 text-2xs font-bold ${
                             r === 'super_admin' ? 'bg-rose-500/20 text-rose-300' :
-                            r === 'customer' ? 'bg-slate-500/20 text-slate-700 dark:text-slate-300' :
+                            r === 'customer' ? 'bg-slate-500/20 text-slate-700 dark:text-slate-200' :
                             'bg-indigo-500/20 text-indigo-300'
                           }`}>
                             {ROLE_TITLES[r] || r}
@@ -137,18 +137,18 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-block rounded-full border px-2.5 py-1 text-2xs font-bold ${STATUS_TONES[u.status] || 'bg-slate-500/20 text-slate-700 dark:text-slate-300'}`}>
+                      <span className={`inline-block rounded-full border px-2.5 py-1 text-2xs font-bold ${STATUS_TONES[u.status] || 'bg-slate-500/20 text-slate-700 dark:text-slate-200'}`}>
                         {STATUS_LABELS[u.status] || u.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-200">
                       {new Date(u.createdAt).toLocaleDateString('fa-IR')}
                     </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1.5">
                         <button
                           onClick={() => setDetail(u)}
-                          className="rounded-lg p-1.5 text-slate-600 dark:text-slate-300 transition hover:bg-slate-700 hover:text-slate-800 dark:text-slate-200"
+                          className="rounded-lg p-1.5 text-slate-600 dark:text-slate-200 transition hover:bg-slate-700 hover:text-slate-800 dark:text-slate-200"
                           title="مشاهده و ارسال پیام"
                         >
                           <Eye className="h-4 w-4" />
@@ -156,7 +156,7 @@ export default function AdminUsersPage() {
                         {canUpdate && (
                           <button
                             onClick={() => setEditing(u)}
-                            className="rounded-lg p-1.5 text-slate-600 dark:text-slate-300 transition hover:bg-slate-700 hover:text-blue-300"
+                            className="rounded-lg p-1.5 text-slate-600 dark:text-slate-200 transition hover:bg-slate-700 hover:text-blue-300"
                             title="ویرایش"
                           >
                             <Pencil className="h-4 w-4" />
@@ -165,7 +165,7 @@ export default function AdminUsersPage() {
                         {canDelete && (
                           <button
                             onClick={() => setConfirmDelete(u)}
-                            className="rounded-lg p-1.5 text-slate-600 dark:text-slate-300 transition hover:bg-rose-900/40 hover:text-rose-300"
+                            className="rounded-lg p-1.5 text-slate-600 dark:text-slate-200 transition hover:bg-rose-900/40 hover:text-rose-300"
                             title="حذف کاربر"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -191,10 +191,10 @@ export default function AdminUsersPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-900/40">
               <Trash2 className="h-6 w-6 text-rose-400" />
             </div>
-            <p className="text-slate-700 dark:text-slate-300">
+            <p className="text-slate-700 dark:text-slate-200">
               آیا از حذف <span className="font-bold text-rose-300">{confirmDelete.fullName}</span> مطمئن هستید؟
             </p>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600 dark:text-slate-200">
               این عملیات قابل بازگشت نیست. همه داده‌های کاربر (سفارش‌ها، آدرس‌ها، کیف پول و ...) آرشیو می‌شوند.
             </p>
             <div className="flex gap-2">
@@ -251,7 +251,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
                 {created.temporaryPassword}
                 <button
                   onClick={() => { navigator.clipboard.writeText(created.temporaryPassword!); toast.success('کپی شد'); }}
-                  className="rounded-lg p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-700"
+                  className="rounded-lg p-1.5 text-slate-600 dark:text-slate-200 hover:bg-slate-700"
                 >
                   <Copy className="h-4 w-4" />
                 </button>
@@ -274,7 +274,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
           <Field label="نقش‌ها">
             <div className="flex flex-wrap gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-3">
               {(roles || []).map((r) => (
-                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${form.roleIds.includes(r.id) ? 'bg-slate-200 text-slate-900 dark:text-slate-100' : 'bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-600'}`}>
+                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${form.roleIds.includes(r.id) ? 'bg-slate-200 text-slate-900 dark:text-slate-100' : 'bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-600'}`}>
                   <input
                     type="checkbox" className="hidden"
                     checked={form.roleIds.includes(r.id)}
@@ -372,7 +372,7 @@ function EditUserDialog({ user: u, canAssign, onClose }: { user: UserRow; canAss
           <Field label="نقش‌ها">
             <div className="flex flex-wrap gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-3">
               {(roles || []).map((r) => (
-                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${selRoles.includes(r.id) ? 'bg-slate-200 text-slate-900 dark:text-slate-100' : 'bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-600'}`}>
+                <label key={r.id} className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition ${selRoles.includes(r.id) ? 'bg-slate-200 text-slate-900 dark:text-slate-100' : 'bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-600'}`}>
                   <input
                     type="checkbox" className="hidden"
                     checked={selRoles.includes(r.id)}
@@ -386,17 +386,17 @@ function EditUserDialog({ user: u, canAssign, onClose }: { user: UserRow; canAss
 
           <div>
             <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-200"><ShieldCheck className="h-4 w-4" /> override دسترسی برای همین کاربر</p>
-            <p className="mb-3 text-2xs text-slate-600 dark:text-slate-300">پیش‌فرض = بر اساس نقش‌ها · «اجازه» دسترسی اضافه می‌کند · «ممنوع» حتی با داشتن نقش هم دسترسی را می‌گیرد.</p>
+            <p className="mb-3 text-2xs text-slate-600 dark:text-slate-200">پیش‌فرض = بر اساس نقش‌ها · «اجازه» دسترسی اضافه می‌کند · «ممنوع» حتی با داشتن نقش هم دسترسی را می‌گیرد.</p>
             <div className="max-h-64 space-y-3 overflow-y-auto pe-1">
               {[...groups.entries()].map(([g, list]) => (
                 <div key={g}>
-                  <p className="mb-1.5 text-2xs font-bold text-slate-600 dark:text-slate-300">{g}</p>
+                  <p className="mb-1.5 text-2xs font-bold text-slate-600 dark:text-slate-200">{g}</p>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     {list.map((p) => {
                       const cur = selOverrides[p.key];
                       return (
                         <div key={p.key} className="flex items-center justify-between rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 px-2.5 py-1.5">
-                          <span className="text-2xs text-slate-700 dark:text-slate-300">{p.title}</span>
+                          <span className="text-2xs text-slate-700 dark:text-slate-200">{p.title}</span>
                           <Select
                             value={cur || ''}
                             onChange={(e) => {
@@ -461,10 +461,10 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
       <aside className="w-full max-w-md overflow-y-auto bg-[#121518] border-slate-200 dark:border-slate-800 shadow-2xl" dir="rtl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-[#121518]/95 px-5 py-4 backdrop-blur">
           <h3 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
-            <Eye className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+            <Eye className="h-5 w-5 text-slate-600 dark:text-slate-200" />
             جزئیات کاربر
           </h3>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-600 dark:text-slate-300 transition hover:bg-slate-800 hover:text-slate-800 dark:text-slate-200">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-600 dark:text-slate-200 transition hover:bg-slate-800 hover:text-slate-800 dark:text-slate-200">
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -476,7 +476,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
               {u.fullName.charAt(0)}
             </div>
             <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">{u.fullName}</h4>
-            <span className={`mt-1.5 inline-block rounded-full border px-2.5 py-1 text-2xs font-bold ${STATUS_TONES[u.status] || 'bg-slate-500/20 text-slate-700 dark:text-slate-300'}`}>
+            <span className={`mt-1.5 inline-block rounded-full border px-2.5 py-1 text-2xs font-bold ${STATUS_TONES[u.status] || 'bg-slate-500/20 text-slate-700 dark:text-slate-200'}`}>
               {STATUS_LABELS[u.status] || u.status}
             </span>
           </div>
@@ -484,21 +484,21 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
           {/* Contact info */}
           <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-600 dark:text-slate-300">موبایل</span>
+              <span className="text-xs text-slate-600 dark:text-slate-200">موبایل</span>
               <span className="text-sm text-slate-800 dark:text-slate-200" dir="ltr">{faNumber(u.phone)}</span>
             </div>
             {u.email && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-600 dark:text-slate-300">ایمیل</span>
+                <span className="text-xs text-slate-600 dark:text-slate-200">ایمیل</span>
                 <span className="text-sm text-slate-800 dark:text-slate-200" dir="ltr">{u.email}</span>
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-600 dark:text-slate-300">شناسه</span>
+              <span className="text-xs text-slate-600 dark:text-slate-200">شناسه</span>
               <span className="text-sm text-slate-800 dark:text-slate-200">#{faNumber(String(u.id))}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-600 dark:text-slate-300">تاریخ ثبت‌نام</span>
+              <span className="text-xs text-slate-600 dark:text-slate-200">تاریخ ثبت‌نام</span>
               <span className="text-sm text-slate-800 dark:text-slate-200">{new Date(u.createdAt).toLocaleDateString('fa-IR')}</span>
             </div>
           </div>
@@ -506,12 +506,12 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
           {/* Roles */}
           {(u.roleNames || detail?.roles) && (
             <div>
-              <p className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">نقش‌ها</p>
+              <p className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-200">نقش‌ها</p>
               <div className="flex flex-wrap gap-1.5">
                 {(u.roleNames || detail?.roles?.map((r: any) => r.name).join(',') || '').split(',').filter(Boolean).map((r: string) => (
                   <span key={r} className={`rounded-full px-2.5 py-1 text-2xs font-bold ${
                     r === 'super_admin' ? 'bg-rose-500/20 text-rose-300' :
-                    r === 'customer' ? 'bg-slate-500/20 text-slate-700 dark:text-slate-300' :
+                    r === 'customer' ? 'bg-slate-500/20 text-slate-700 dark:text-slate-200' :
                     'bg-indigo-500/20 text-indigo-300'
                   }`}>
                     {ROLE_TITLES[r] || r}
@@ -523,22 +523,22 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
 
           {/* Loading more details */}
           {isLoading && (
-            <div className="py-4 text-center text-xs text-slate-600 dark:text-slate-300">در حال بارگذاری...</div>
+            <div className="py-4 text-center text-xs text-slate-600 dark:text-slate-200">در حال بارگذاری...</div>
           )}
 
           {/* Order stats (if detail loaded) */}
           {detail && (
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-3 text-center">
-                <p className="text-xs text-slate-600 dark:text-slate-300">سفارش‌ها</p>
+                <p className="text-xs text-slate-600 dark:text-slate-200">سفارش‌ها</p>
                 <p className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">{faNumber(String(detail.orderCount || 0))}</p>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-3 text-center">
-                <p className="text-xs text-slate-600 dark:text-slate-300">موجودی کیف پول</p>
+                <p className="text-xs text-slate-600 dark:text-slate-200">موجودی کیف پول</p>
                 <p className="mt-1 text-lg font-bold text-emerald-300">{faNumber(String(detail.walletBalance || 0))}</p>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-3 text-center">
-                <p className="text-xs text-slate-600 dark:text-slate-300">آخرین ورود</p>
+                <p className="text-xs text-slate-600 dark:text-slate-200">آخرین ورود</p>
                 <p className="mt-1 text-xs text-slate-800 dark:text-slate-200">
                   {detail.lastLoginAt ? new Date(detail.lastLoginAt).toLocaleDateString('fa-IR') : '—'}
                 </p>
@@ -564,7 +564,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
                     value={msg.title}
                     onChange={(e) => setMsg({ ...msg, title: e.target.value })}
                     placeholder="مثلاً: سفارش شما ارسال شد"
-                    className="bg-slate-100 dark:bg-slate-900/80 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:text-slate-300"
+                    className="bg-slate-100 dark:bg-slate-900/80 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:text-slate-200"
                   />
                 </Field>
                 <Field label="متن پیام (اختیاری)">
@@ -573,7 +573,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
                     onChange={(e) => setMsg({ ...msg, body: e.target.value })}
                     placeholder="متن کامل پیام..."
                     rows={3}
-                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/80 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:text-slate-300 focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/80 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-600 dark:text-slate-200 focus:border-indigo-500 focus:outline-none"
                   />
                 </Field>
                 <Button
@@ -586,7 +586,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
                   <Mail className="h-4 w-4" />
                   ارسال پیام
                 </Button>
-                <p className="text-2xs text-slate-600 dark:text-slate-300">
+                <p className="text-2xs text-slate-600 dark:text-slate-200">
                   پیام در بخش «اعلان‌های» کاربر نمایش داده می‌شود.
                 </p>
               </div>

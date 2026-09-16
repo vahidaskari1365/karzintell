@@ -64,11 +64,11 @@ export default function AdminAuditLogsPage() {
               <tbody>
                 {items.map((l) => (
                   <tr key={l.id} className={tableCls.row}>
-                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-300">{faDateTime(l.createdAt)}</span></td>
+                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-200">{faDateTime(l.createdAt)}</span></td>
                     <td className={tableCls.td}>{l.userName || (l.userId != null ? `#${faNumber(l.userId)}` : 'سیستم')}</td>
                     <td className={tableCls.td}><code className="rounded bg-slate-800/40 px-2 py-0.5 text-2xs" dir="ltr">{l.action}</code></td>
-                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-300" dir="ltr">{l.subjectType || '—'}{l.subjectId != null ? `#${l.subjectId}` : ''}</span></td>
-                    <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-300" dir="ltr">{l.ip || '—'}</span></td>
+                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-200" dir="ltr">{l.subjectType || '—'}{l.subjectId != null ? `#${l.subjectId}` : ''}</span></td>
+                    <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-200" dir="ltr">{l.ip || '—'}</span></td>
                     <td className={tableCls.td}>
                       {(l.newValues || l.oldValues) && (
                         <details className="max-w-64">

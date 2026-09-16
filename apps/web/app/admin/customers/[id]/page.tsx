@@ -24,12 +24,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div>
       <div className="mb-5 flex items-center gap-3">
-        <Link href="/admin/customers" className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100">
+        <Link href="/admin/customers" className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:text-slate-100">
           <ArrowRight className="h-4.5 w-4.5" />
         </Link>
         <div>
           <h1 className="text-xl font-black text-slate-900 dark:text-slate-100">{user.fullName}</h1>
-          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300" dir="ltr">{user.phone}{user.email ? ` · ${user.email}` : ''}</p>
+          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-200" dir="ltr">{user.phone}{user.email ? ` · ${user.email}` : ''}</p>
         </div>
         <Pill status={user.status} label={labelOf({ active: 'فعال', pending: 'در انتظار', suspended: 'معلق' }, user.status)} />
       </div>
@@ -43,7 +43,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             { label: 'دیدگاه‌ها', value: faNumber(d.stats.reviewsCount ?? 0), icon: <Star className="h-4 w-4" /> },
           ].map((k) => (
             <Card key={k.label} className="p-4">
-              <p className="mb-1 flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-300">{k.icon}{k.label}</p>
+              <p className="mb-1 flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-200">{k.icon}{k.label}</p>
               <p className="text-base font-black text-slate-900 dark:text-slate-100">{k.value}</p>
             </Card>
           ))}
@@ -61,11 +61,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     <td className={tableCls.td}><Link href={`/admin/orders/${o.id}`} className="font-bold text-orange-600" dir="ltr">{o.code}</Link></td>
                     <td className={tableCls.td}><Pill status={o.status} label={ORDER_STATUS_LABELS[o.status] || o.statusLabel || o.status} /></td>
                     <td className={tableCls.td}>{toToman(o.grandTotal)}</td>
-                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-300">{faDateTime(o.createdAt)}</span></td>
+                    <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-200">{faDateTime(o.createdAt)}</span></td>
                   </tr>
                 ))}
                 {(d.orders || d.recentOrders || []).length === 0 && (
-                  <tr><td className="p-6 text-center text-xs text-slate-600 dark:text-slate-300">سفارشی ندارد</td></tr>
+                  <tr><td className="p-6 text-center text-xs text-slate-600 dark:text-slate-200">سفارشی ندارد</td></tr>
                 )}
               </tbody>
             </table>
@@ -75,20 +75,20 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         <Card className="p-5">
           <p className="mb-3 flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-slate-200"><MapPin className="h-4 w-4" /> آدرس‌ها</p>
           {(d.addresses || []).length === 0 ? (
-            <p className="text-xs text-slate-600 dark:text-slate-300">آدرسی ثبت نشده</p>
+            <p className="text-xs text-slate-600 dark:text-slate-200">آدرسی ثبت نشده</p>
           ) : (
-            <ul className="space-y-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
+            <ul className="space-y-2 text-xs leading-6 text-slate-600 dark:text-slate-200">
               {d.addresses.map((a: any) => (
                 <li key={a.id} className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
-                  <p className="font-bold text-slate-700 dark:text-slate-300">{a.title}</p>
+                  <p className="font-bold text-slate-700 dark:text-slate-200">{a.title}</p>
                   <p>{a.province}، {a.city} — {a.address}</p>
-                  <p className="text-slate-600 dark:text-slate-300" dir="ltr">{a.receiverPhone}</p>
+                  <p className="text-slate-600 dark:text-slate-200" dir="ltr">{a.receiverPhone}</p>
                 </li>
               ))}
             </ul>
           )}
-          <p className="mt-4 border-t border-slate-200 dark:border-slate-800 pt-3 text-2xs text-slate-600 dark:text-slate-300">عضویت: {faDate(user.createdAt)}</p>
-          {user.lastLoginAt && <p className="text-2xs text-slate-600 dark:text-slate-300">آخرین ورود: {faDateTime(user.lastLoginAt)}</p>}
+          <p className="mt-4 border-t border-slate-200 dark:border-slate-800 pt-3 text-2xs text-slate-600 dark:text-slate-200">عضویت: {faDate(user.createdAt)}</p>
+          {user.lastLoginAt && <p className="text-2xs text-slate-600 dark:text-slate-200">آخرین ورود: {faDateTime(user.lastLoginAt)}</p>}
         </Card>
       </div>
     </div>

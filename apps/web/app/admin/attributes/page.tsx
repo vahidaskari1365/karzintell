@@ -72,15 +72,15 @@ export default function AdminAttributesPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-bold text-slate-800 dark:text-slate-200">{a.name}</p>
-                <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-300">
+                <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-200">
                   <code dir="ltr">{a.code}</code>
                   {a.unit && ` · واحد: ${a.unit}`}
                   {a.groupName && ` · گروه: ${a.groupName}`}
                 </p>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => setForm({ ...a, unit: a.unit || '', groupName: a.groupName || '' })} className="rounded-lg px-2 py-1.5 text-2xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40">ویرایش</button>
-                <button onClick={() => remove.mutate(a.id)} className="rounded-lg p-1.5 text-slate-700 dark:text-slate-300 hover:text-rose-500"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => setForm({ ...a, unit: a.unit || '', groupName: a.groupName || '' })} className="rounded-lg px-2 py-1.5 text-2xs text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40">ویرایش</button>
+                <button onClick={() => remove.mutate(a.id)} className="rounded-lg p-1.5 text-slate-700 dark:text-slate-200 hover:text-rose-500"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -144,12 +144,12 @@ function ValuesDialog({ attr, onClose }: { attr: Attr; onClose: () => void }) {
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">
           {attr.values.map((v) => (
-            <span key={v.id} className="flex items-center gap-1.5 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300">
+            <span key={v.id} className="flex items-center gap-1.5 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200">
               {v.value}
-              <button onClick={() => removeValue.mutate(v.id)} className="text-slate-600 dark:text-slate-300 hover:text-rose-500"><X className="h-3 w-3" /></button>
+              <button onClick={() => removeValue.mutate(v.id)} className="text-slate-600 dark:text-slate-200 hover:text-rose-500"><X className="h-3 w-3" /></button>
             </span>
           ))}
-          {attr.values.length === 0 && <p className="text-xs text-slate-600 dark:text-slate-300">مقداری تعریف نشده</p>}
+          {attr.values.length === 0 && <p className="text-xs text-slate-600 dark:text-slate-200">مقداری تعریف نشده</p>}
         </div>
         <div className="flex gap-2">
           <Input value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder="مقدار جدید: مشکی، ۱۲۸ گیگابایت…" />

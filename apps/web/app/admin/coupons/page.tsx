@@ -129,7 +129,7 @@ function CategoryPicker({ value, onChange }: { value: number[]; onChange: (ids: 
 
   return (
     <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-300 dark:border-slate-700 p-2">
-      {flat.length === 0 && <p className="p-2 text-xs text-slate-600 dark:text-slate-300">دسته‌ای یافت نشد</p>}
+      {flat.length === 0 && <p className="p-2 text-xs text-slate-600 dark:text-slate-200">دسته‌ای یافت نشد</p>}
       {flat.map((c) => (
         <label key={c.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-white dark:bg-slate-900/40" style={{ paddingRight: `${(c.depth || 0) * 14 + 8}px` }}>
           <input
@@ -218,7 +218,7 @@ export default function AdminCouponsPage() {
                 <tr key={c.id} className={tableCls.row}>
                   <td className={tableCls.td}>
                     <code className="rounded bg-slate-800/40 px-2 py-1 text-xs font-black" dir="ltr">{c.code}</code>
-                    {c.title && <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-300">{c.title}</p>}
+                    {c.title && <p className="mt-0.5 text-2xs text-slate-600 dark:text-slate-200">{c.title}</p>}
                     {c.campaign && <p className="mt-0.5 text-2xs font-bold text-fuchsia-600">کمپین: {c.campaign}</p>}
                     {(c.productIds?.length || c.categoryIds?.length) ? (
                       <p className="mt-0.5 text-2xs text-blue-600">
@@ -228,15 +228,15 @@ export default function AdminCouponsPage() {
                   </td>
                   <td className={tableCls.td}>
                     {c.type === 'percent' ? `${faNumber(c.value)}٪` : `${toToman(c.value)} تومان`}
-                    {c.type === 'percent' && c.maxDiscount ? <p className="text-2xs text-slate-600 dark:text-slate-300">سقف {toToman(c.maxDiscount)} تومان</p> : null}
+                    {c.type === 'percent' && c.maxDiscount ? <p className="text-2xs text-slate-600 dark:text-slate-200">سقف {toToman(c.maxDiscount)} تومان</p> : null}
                   </td>
                   <td className={tableCls.td}>{faNumber(c.usedCount)}{c.usageLimit ? ` / ${faNumber(c.usageLimit)}` : ''}</td>
-                  <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-300">{c.expiresAt ? faDate(c.expiresAt) : 'بدون انقضا'}</span></td>
+                  <td className={tableCls.td}><span className="text-xs text-slate-600 dark:text-slate-200">{c.expiresAt ? faDate(c.expiresAt) : 'بدون انقضا'}</span></td>
                   <td className={tableCls.td}><Pill status={c.isActive ? 'active' : 'archived'} label={c.isActive ? 'فعال' : 'غیرفعال'} /></td>
                   <td className={`${tableCls.td} text-left`}>
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => setForm(toForm(c))} className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-300"><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => setDeleting(c)} className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={() => setForm(toForm(c))} className="rounded-lg p-2 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:text-slate-200"><Pencil className="h-4 w-4" /></button>
+                      <button onClick={() => setDeleting(c)} className="rounded-lg p-2 text-slate-600 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </td>
                 </tr>
