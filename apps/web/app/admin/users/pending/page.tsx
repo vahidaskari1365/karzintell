@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CheckCircle, XCircle, Clock, UserCheck } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
-import { faNumber } from '@/lib/format';
+import { faDate, faNumber } from '@/lib/format';
 import { hasPermission, toast, useAuthStore } from '@/lib/auth-store';
 import { Button, PageLoading } from '@/components/ui';
 import { Pagination } from '@/components/display';
@@ -111,7 +111,7 @@ export default function AdminPendingUsersPage() {
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200" dir="ltr">{faNumber(u.phone)}</td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-200">{u.email || '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-200">
-                    {new Date(u.createdAt).toLocaleDateString('fa-IR')}
+                    {faDate(u.createdAt)}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-block rounded-full border px-2.5 py-1 text-2xs font-bold ${STATUS_LABELS[u.status]?.color || STATUS_LABELS.pending.color}`}>

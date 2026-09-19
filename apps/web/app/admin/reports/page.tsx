@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { api, qs } from '@/lib/api-client';
-import { faNumber, toToman } from '@/lib/format';
+import { faDate, faNumber, toToman } from '@/lib/format';
 import { Button, Card, Field, Input, PageLoading, Select } from '@/components/ui';
 import { PageHeader, tableCls, Pill } from '../_shared';
 
@@ -198,7 +198,7 @@ export default function AdminReportsPage() {
                   <td className={tableCls.td}><span className="text-xs font-medium">{c.fullName}</span><br /><span className="text-2xs text-slate-600 dark:text-slate-200" dir="ltr">{c.phone}</span></td>
                   <td className={tableCls.td}>{faNumber(c.ordersCount)} سفارش</td>
                   <td className={`${tableCls.td} font-bold`}>{toToman(c.totalSpent)} تومان</td>
-                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-200">{c.lastOrderAt ? new Date(c.lastOrderAt).toLocaleDateString('fa-IR') : '—'}</span></td>
+                  <td className={tableCls.td}><span className="text-2xs text-slate-600 dark:text-slate-200">{c.lastOrderAt ? faDate(c.lastOrderAt) : '—'}</span></td>
                 </tr>
               ))}
               {(topCustomers || []).length === 0 && <tr><td colSpan={5} className="p-6 text-center text-xs text-slate-600 dark:text-slate-200">داده‌ای نیست</td></tr>}

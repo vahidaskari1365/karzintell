@@ -7,7 +7,7 @@ import {
   Mail, MessageSquare, CheckCircle, XCircle, Eye, X,
 } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
-import { faNumber } from '@/lib/format';
+import { faDate, faNumber } from '@/lib/format';
 import { hasPermission, toast, useAuthStore } from '@/lib/auth-store';
 import { Button, Field, Input, PageLoading, Select } from '@/components/ui';
 import { Dialog } from '@/components/dialog';
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-200">
-                      {new Date(u.createdAt).toLocaleDateString('fa-IR')}
+                      {faDate(u.createdAt)}
                     </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1.5">
@@ -499,7 +499,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-600 dark:text-slate-200">تاریخ ثبت‌نام</span>
-              <span className="text-sm text-slate-800 dark:text-slate-200">{new Date(u.createdAt).toLocaleDateString('fa-IR')}</span>
+              <span className="text-sm text-slate-800 dark:text-slate-200">{faDate(u.createdAt)}</span>
             </div>
           </div>
 
@@ -540,7 +540,7 @@ function UserDetailDrawer({ user: u, onClose }: { user: UserRow; onClose: () => 
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-3 text-center">
                 <p className="text-xs text-slate-600 dark:text-slate-200">آخرین ورود</p>
                 <p className="mt-1 text-xs text-slate-800 dark:text-slate-200">
-                  {detail.lastLoginAt ? new Date(detail.lastLoginAt).toLocaleDateString('fa-IR') : '—'}
+                  {detail.lastLoginAt ? faDate(detail.lastLoginAt) : '—'}
                 </p>
               </div>
             </div>

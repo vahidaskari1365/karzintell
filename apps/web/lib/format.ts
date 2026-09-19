@@ -19,13 +19,53 @@ export const rialToToman = (rial: number | string | null | undefined): number =>
 
 export const faDate = (d: string | Date | null | undefined, withTime = false): string => {
   if (!d) return '—';
-  return new Intl.DateTimeFormat('fa-IR', {
-    dateStyle: 'medium',
-    ...(withTime ? { timeStyle: 'short' } : {}),
-  }).format(new Date(d));
+  try {
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '—';
+
+    // قالب شمسی: ۱۴۰۳/۰۶/۲۵ یا ۱۴۰۳/۰۶/۲۵ - ۱۴:۳۰
+    const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
+    });
+    return formatter.format(date);
+  } catch {
+    return '—';
+  }
 };
 
 export const faDateTime = (d: string | Date | null | undefined): string => faDate(d, true);
+
+/** تاریخ شمسی طولانی: ۲۵ شهریور ۱۴۰۳ */
+export const faDateLong = (d: string | Date | null | undefined): string => {
+  if (!d) return '—';
+  try {
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      dateStyle: 'long',
+    }).format(date);
+  } catch {
+    return '—';
+  }
+};
+
+/** تاریخ شمسی کامل: ۲۵ شهریور ۱۴۰۳، ۱۴:۳۰ */
+export const faDateTimeLong = (d: string | Date | null | undefined): string => {
+  if (!d) return '—';
+  try {
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    }).format(date);
+  } catch {
+    return '—';
+  }
+};
 
 export const percentOff = (price: number, compareAt?: number | null): number => {
   if (!compareAt || compareAt <= price) return 0;
