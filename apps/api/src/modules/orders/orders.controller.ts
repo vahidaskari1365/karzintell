@@ -27,7 +27,7 @@ class CheckoutDto {
 
 class ChangeStatusDto {
   @IsEnum(ORDER_STATUSES as readonly string[])
-  to: OrderStatus;
+  status: OrderStatus;
 
   @IsOptional() @IsString() @MaxLength(500)
   note?: string;
@@ -124,7 +124,7 @@ export class OrdersController {
     @Body() dto: ChangeStatusDto,
     @CurrentUser() admin: AuthUser,
   ) {
-    return { data: await this.orders.changeStatus(id, dto.to, dto.note, admin.id) };
+    return { data: await this.orders.changeStatus(id, dto.status, dto.note, admin.id) };
   }
 
   @Post('admin/orders/:id/cancel')

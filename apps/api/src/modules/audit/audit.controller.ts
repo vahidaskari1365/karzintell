@@ -13,7 +13,7 @@ export class AuditController {
   async list(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('user_id') userId?: string,
+    @Query('userId') userId?: string,
     @Query('action') action?: string,
   ) {
     const r = await this.audit.list({ page, limit, userId, action });

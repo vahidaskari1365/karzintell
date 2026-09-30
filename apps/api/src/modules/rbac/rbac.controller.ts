@@ -22,8 +22,8 @@ export class RbacController {
 
   @Get("permissions")
   @RequirePermissions("roles.view")
-  listPermissions() {
-    return { permissions: this.rbac.allPermissions(), groups: PERMISSION_GROUPS };
+  async listPermissions() {
+    return { permissions: await this.rbac.allPermissions(), groups: PERMISSION_GROUPS };
   }
 
   @Get("roles")
