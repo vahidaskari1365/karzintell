@@ -98,7 +98,7 @@ export function Footer() {
               src="https://trustseal.enamad.ir/logo.aspx?id=774302&Code=msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
               alt="نماد اعتماد الکترونیکی"
               style={{ cursor: 'pointer' }}
-              code="msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
+              data-code="msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
             />
           </a>
         </div>
