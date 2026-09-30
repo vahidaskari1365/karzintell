@@ -81,8 +81,27 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/10 py-4 text-center text-xs text-slate-400">
-        © {new Date().getFullYear()} {brand.name}. تمامی حقوق محفوظ است.
+      <div className="border-t border-white/10 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4">
+          <p className="text-xs text-slate-400">
+            © {new Date().getFullYear()} {brand.name}. تمامی حقوق محفوظ است.
+          </p>
+          {/* نماد اعتماد الکترونیکی (اینماد) */}
+          <a
+            referrerPolicy="origin"
+            target="_blank"
+            href="https://trustseal.enamad.ir/?id=774302&Code=msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
+            className="transition hover:opacity-80"
+          >
+            <img
+              referrerPolicy="origin"
+              src="https://trustseal.enamad.ir/logo.aspx?id=774302&Code=msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
+              alt="نماد اعتماد الکترونیکی"
+              style={{ cursor: 'pointer' }}
+              code="msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
+            />
+          </a>
+        </div>
       </div>
     </footer>
   );
