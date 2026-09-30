@@ -79,29 +79,25 @@ export function Footer() {
             )}
             <li>support@karzintell.ir</li>
           </ul>
-        </div>
-      </div>
-      <div className="border-t border-white/10 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4">
-          <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} {brand.name}. تمامی حقوق محفوظ است.
-          </p>
-          {/* نماد اعتماد الکترونیکی (اینماد) */}
+          {/* نماد اعتماد الکترونیکی (اینماد) — روبروی ارتباط با ما */}
           <a
             referrerPolicy="origin"
             target="_blank"
             href="https://trustseal.enamad.ir/?id=774302&Code=msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
-            className="transition hover:opacity-80"
+            className="mt-4 inline-block transition hover:opacity-80"
           >
             <img
               src="/enamad-logo.png"
               alt="نماد اعتماد الکترونیکی"
-              width={100}
-              height={109}
+              width={80}
+              height={87}
               style={{ cursor: 'pointer' }}
             />
           </a>
         </div>
+      </div>
+      <div className="border-t border-white/10 py-4 text-center text-xs text-slate-400">
+        © {new Date().getFullYear()} {brand.name}. تمامی حقوق محفوظ است.
       </div>
     </footer>
   );
