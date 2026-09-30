@@ -108,14 +108,20 @@ export class AdminUsersService {
     const phone = dto.phone.trim();
     const email = dto.email?.trim().toLowerCase() || null;
 
-    // بررسی تکراری بودن موبایل
-    const phoneClash = await this.users.findOne({ where: { phone } });
+    // بررسی تکراری بودن موبایل (فقط کاربران حذف‌نشده)
+    const phoneClash = await this.users.createQueryBuilder('u')
+      .where('u.phone = :phone', { phone })
+      .andWhere('u.deleted_at IS NULL')
+      .getOne();
     if (phoneClash)
       throw new ConflictException({ code: 'PHONE_TAKEN', message: 'این شماره موبایل قبلاً ثبت شده است' });
 
-    // بررسی تکراری بودن ایمیل
+    // بررسی تکراری بودن ایمیل (فقط کاربران حذف‌نشده)
     if (email) {
-      const emailClash = await this.users.findOne({ where: { email } });
+      const emailClash = await this.users.createQueryBuilder('u')
+        .where('u.email = :email', { email })
+        .andWhere('u.deleted_at IS NULL')
+        .getOne();
       if (emailClash)
         throw new ConflictException({ code: 'EMAIL_TAKEN', message: 'این ایمیل قبلاً ثبت شده است' });
     }
@@ -141,13 +147,17 @@ export class AdminUsersService {
 
       return {
         user: { id: user.id, fullName: user.fullName, phone: user.phone, email: user.email },
-        // فقط همین‌یک‌بار نمایش داده می‌شود تا ادمین به کاربر اطلاع دهد
         temporaryPassword: dto.password ? undefined : plainPassword,
       };
     } catch (e) {
-      // اگر خطای ConflictException باشد، همان را پرتاب کن
       if (e instanceof ConflictException) throw e;
-      // در غیر این صورت، خطای داخلی سرور با پیام واضح
+      // اگر خطای unique constraint بود (مثلاً race condition)
+      if (e && (e as any).code === 'ER_DUP_ENTRY') {
+        throw new ConflictException({
+          code: 'DUPLICATE_ENTRY',
+          message: 'این موبایل یا ایمیل قبلاً ثبت شده است',
+        });
+      }
       throw new ConflictException({
         code: 'CREATE_FAILED',
         message: 'خطا در ایجاد کاربر — ممکن است موبایل یا ایمیل تکراری باشد',
@@ -186,8 +196,17 @@ export class AdminUsersService {
       throw new ForbiddenException({ code: 'FORBIDDEN', message: 'حذف super_admin مجاز نیست' });
     if (id === admin.id)
       throw new DomainException('BAD_REQUEST', 'نمی‌توانید حساب خودتان را حذف کنید', 400);
-    await this.users.softDelete(id);
-    await this.rbac.invalidateUser(id);
+
+    // حذف نقش‌ها و overrideهای دسترسی
+    await this.roleUsers.delete({ userId: id });
+    await this.permUsers.delete({ userId: id });
+
+    // حذف refresh token ها
+    await this.users.manager.query('DELETE FROM refresh_tokens WHERE user_id = ?', [id]);
+
+    // حذف کامل (hard delete) — نه soft delete
+    await this.users.delete(id);
+
     return { deleted: true };
   }
 
