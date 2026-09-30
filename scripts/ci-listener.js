@@ -298,16 +298,28 @@ function connectToSmee() {
 
     res.on('data', (chunk) => {
       buffer += chunk.toString();
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // Keep incomplete line
+      
+      // SSE events با \n\n جدا می‌شوند
+      const events = buffer.split('\n\n');
+      buffer = events.pop(); // Keep incomplete event
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            handleWebhook(data);
-          } catch (e) {
-            // Not valid JSON, ignore
+      for (const evt of events) {
+        // هر event ممکن است چند خط داشته باشد (id:, event:, data:)
+        // ما فقط خط data: را می‌خواهیم
+        const lines = evt.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr || jsonStr === '{}') {
+              // این ready event خالی است — نادیده بگیر
+              continue;
+            }
+            try {
+              const data = JSON.parse(jsonStr);
+              handleWebhook(data);
+            } catch (e) {
+              // Not valid JSON, ignore
+            }
           }
         }
       }
