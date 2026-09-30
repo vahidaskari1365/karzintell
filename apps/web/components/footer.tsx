@@ -77,7 +77,7 @@ export function Footer() {
                 <Phone className="h-3.5 w-3.5" />
               </li>
             )}
-            <li>support@karzintell.ir</li>
+            <li>support@karzintell.com</li>
           </ul>
           {/* نماد اعتماد الکترونیکی (اینماد) — روبروی ارتباط با ما */}
           <a
