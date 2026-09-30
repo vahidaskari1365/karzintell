@@ -94,11 +94,11 @@ export function Footer() {
             className="transition hover:opacity-80"
           >
             <img
-              referrerPolicy="origin"
-              src="https://trustseal.enamad.ir/logo.aspx?id=774302&Code=msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
+              src="/enamad-logo.png"
               alt="نماد اعتماد الکترونیکی"
+              width={100}
+              height={109}
               style={{ cursor: 'pointer' }}
-              data-code="msZuGa5rlrqbnIvWfxx6JwIefKZGzhvG"
             />
           </a>
         </div>
