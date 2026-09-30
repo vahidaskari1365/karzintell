@@ -107,33 +107,52 @@ export class AdminUsersService {
   async create(dto: AdminCreateUserDto, admin: AuthUser) {
     const phone = dto.phone.trim();
     const email = dto.email?.trim().toLowerCase() || null;
-    const clash = await this.users.findOne({ where: [{ phone }, ...(email ? [{ email }] : [])] });
-    if (clash)
-      throw new ConflictException({ code: 'PHONE_TAKEN', message: 'موبایل یا ایمیل تکراری است' });
 
-    const plainPassword = dto.password || tempPassword();
-    const user = await this.users.save(
-      this.users.create({
-        fullName: dto.fullName,
-        phone,
-        email,
-        passwordHash: await bcrypt.hash(plainPassword, env.bcryptRounds),
-        status: 'active',
-        mustChangePassword: true,
-      } as Partial<User>),
-    );
+    // بررسی تکراری بودن موبایل
+    const phoneClash = await this.users.findOne({ where: { phone } });
+    if (phoneClash)
+      throw new ConflictException({ code: 'PHONE_TAKEN', message: 'این شماره موبایل قبلاً ثبت شده است' });
 
-    if (dto.roleIds?.length) {
-      const roles = await this.roles.findBy({ id: In(dto.roleIds) });
-      this.assertNoSuperGrant(roles.map((r) => r.name), admin);
-      await this.rbac.assignRoles(user.id, roles.map((r) => r.id), admin.id);
+    // بررسی تکراری بودن ایمیل
+    if (email) {
+      const emailClash = await this.users.findOne({ where: { email } });
+      if (emailClash)
+        throw new ConflictException({ code: 'EMAIL_TAKEN', message: 'این ایمیل قبلاً ثبت شده است' });
     }
 
-    return {
-      user: { id: user.id, fullName: user.fullName, phone: user.phone, email: user.email },
-      // فقط همین‌یک‌بار نمایش داده می‌شود تا ادمین به کاربر اطلاع دهد
-      temporaryPassword: dto.password ? undefined : plainPassword,
-    };
+    const plainPassword = dto.password || tempPassword();
+    try {
+      const user = await this.users.save(
+        this.users.create({
+          fullName: dto.fullName,
+          phone,
+          email,
+          passwordHash: await bcrypt.hash(plainPassword, env.bcryptRounds),
+          status: 'active',
+          mustChangePassword: true,
+        } as Partial<User>),
+      );
+
+      if (dto.roleIds?.length) {
+        const roles = await this.roles.findBy({ id: In(dto.roleIds) });
+        this.assertNoSuperGrant(roles.map((r) => r.name), admin);
+        await this.rbac.assignRoles(user.id, roles.map((r) => r.id), admin.id);
+      }
+
+      return {
+        user: { id: user.id, fullName: user.fullName, phone: user.phone, email: user.email },
+        // فقط همین‌یک‌بار نمایش داده می‌شود تا ادمین به کاربر اطلاع دهد
+        temporaryPassword: dto.password ? undefined : plainPassword,
+      };
+    } catch (e) {
+      // اگر خطای ConflictException باشد، همان را پرتاب کن
+      if (e instanceof ConflictException) throw e;
+      // در غیر این صورت، خطای داخلی سرور با پیام واضح
+      throw new ConflictException({
+        code: 'CREATE_FAILED',
+        message: 'خطا در ایجاد کاربر — ممکن است موبایل یا ایمیل تکراری باشد',
+      });
+    }
   }
 
   async update(id: number, dto: AdminUpdateUserDto, admin: AuthUser) {
