@@ -55,6 +55,8 @@ export interface ProductFormState {
   warrantyMonths: string;
   metaTitle: string;
   metaDescription: string;
+  /** ویدیوها به‌صورت متن ساده — هر خط یک URL (YouTube/Aparat) یا مسیر فایل آپلودشده */
+  videosInput: string;
   tagsInput: string; // جداشده با ویرگول
   relatedProductIds: number[];
   images: ImageForm[];
@@ -68,7 +70,7 @@ export const emptyState: ProductFormState = {
   name: '', slug: '', code: '', categoryId: 0, brandId: 0, status: 'draft',
   shortDescription: '', description: '', features: '',
   weightG: '', lengthCm: '', widthCm: '', heightCm: '', warrantyMonths: '',
-  metaTitle: '', metaDescription: '', tagsInput: '', relatedProductIds: [],
+  metaTitle: '', metaDescription: '', videosInput: '', tagsInput: '', relatedProductIds: [],
   images: [], videos: [], specs: [],
   variants: [{
     sku: '', barcode: '', title: '', priceToman: '', compareAtToman: '', costToman: '',
@@ -113,8 +115,9 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
   const qc = useQueryClient();
   const { user } = useAuthStore();
   const [s, setS] = useState<ProductFormState>(initial || emptyState);
-  // بخش «جزئیات بیشتر» به‌صورت پیش‌فرض جمع است
+  // بخش‌های «جزئیات محصول» و «سئو و متادیتا» به‌صورت پیش‌فرض جمع هستند
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [seoOpen, setSeoOpen] = useState(false);
 
   const set = <K extends keyof ProductFormState>(k: K, v: ProductFormState[K]) =>
     setS((p) => ({ ...p, [k]: v }));
@@ -224,12 +227,25 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
         images: s.images
           .filter((i) => i.path)
           .map((i, idx) => ({ path: i.path, alt: i.alt || undefined, sortOrder: idx, isPrimary: idx === 0 })),
-        videos: s.videos
-          .filter((v) => v.sourceUrl)
-          .map((v, idx) => ({
-            title: v.title || undefined, provider: v.provider, sourceUrl: v.sourceUrl,
-            posterPath: v.posterPath || undefined, sortOrder: idx,
-          })),
+        // ویدیوها از فیلد متنی ساده (هر خط یک URL) ساخته می‌شوند.
+        // Provider بر اساس دامنه URL تشخیص داده می‌شود؛ در غیر این صورت upload فرض می‌شود.
+        videos: s.videosInput
+          .split('\n')
+          .map((u) => u.trim())
+          .filter(Boolean)
+          .map((url, idx) => {
+            const isYouTube = /youtube\.com|youtu\.be/i.test(url);
+            const isAparat = /aparat\.com/i.test(url);
+            const provider: 'youtube' | 'aparat' | 'upload' =
+              isYouTube ? 'youtube' : isAparat ? 'aparat' : 'upload';
+            return {
+              title: undefined,
+              provider,
+              sourceUrl: url,
+              posterPath: undefined,
+              sortOrder: idx,
+            };
+          }),
         specs: s.specs.filter((sp) => sp.attributeId),
         // فقط تنوع پیش‌فرض را با مقادیر فیلدهای ساده‌شده ذخیره کن
         variants: [{
@@ -311,6 +327,10 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
               ))}
             </Select>
           </Field>
+        </div>
+
+        {/* قیمت / قیمت قبل تخفیف / موجودی — شبکه‌ای ۳‌ستونه روی دسکتاپ */}
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label="قیمت (تومان)" required>
             <Input
               inputMode="numeric"
@@ -318,6 +338,18 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
               value={defaultVariant.priceToman}
               onChange={(e) => updateDefaultVariant({ priceToman: e.target.value.replace(/[^0-9]/g, '') })}
               placeholder="0"
+            />
+          </Field>
+          <Field
+            label="قیمت قبل تخفیف (تومان)"
+            hint="قیمت قبل از تخفیف — برای نمایش درصد تخفیف"
+          >
+            <Input
+              inputMode="numeric"
+              dir="ltr"
+              value={defaultVariant.compareAtToman}
+              onChange={(e) => updateDefaultVariant({ compareAtToman: e.target.value.replace(/[^0-9]/g, '') })}
+              placeholder="0 (اختیاری)"
             />
           </Field>
           <Field label="موجودی">
@@ -358,7 +390,7 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
         </Field>
       </Card>
 
-      {/* ----------------------- بخش ۲: جزئیات بیشتر ----------------------- */}
+      {/* ----------------------- بخش ۲: جزئیات محصول ----------------------- */}
       <div className="mt-4">
         <button
           type="button"
@@ -368,7 +400,7 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
         >
           <span className="flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">۲</span>
-            جزئیات بیشتر (اختیاری)
+            جزئیات محصول (اختیاری)
           </span>
           <ChevronDown
             className={`h-4 w-4 text-slate-500 transition-transform dark:text-slate-300 ${detailsOpen ? 'rotate-180' : ''}`}
@@ -387,14 +419,50 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
               />
             </Field>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field label="مدت گارانتی (ماه)">
+                <Input
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={s.warrantyMonths}
+                  onChange={(e) => set('warrantyMonths', e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="مثلاً ۱۸"
+                />
+              </Field>
               <Field label="وزن (گرم)">
                 <Input
                   inputMode="numeric"
                   dir="ltr"
                   value={s.weightG}
-                  onChange={(e) => set('weightG', e.target.value)}
+                  onChange={(e) => set('weightG', e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="مثلاً 450"
+                />
+              </Field>
+              <Field label="طول (سانتی‌متر)">
+                <Input
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={s.lengthCm}
+                  onChange={(e) => set('lengthCm', e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="مثلاً 15"
+                />
+              </Field>
+              <Field label="عرض (سانتی‌متر)">
+                <Input
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={s.widthCm}
+                  onChange={(e) => set('widthCm', e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="مثلاً 7"
+                />
+              </Field>
+              <Field label="ارتفاع (سانتی‌متر)">
+                <Input
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={s.heightCm}
+                  onChange={(e) => set('heightCm', e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="مثلاً 1"
                 />
               </Field>
             </div>
@@ -431,6 +499,60 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
                   <Plus className="h-4 w-4" /> افزودن تصویر
                 </Button>
               </div>
+            </Field>
+          </Card>
+        )}
+      </div>
+
+      {/* ----------------------- بخش ۳: سئو و متادیتا ----------------------- */}
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setSeoOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100 dark:hover:bg-slate-800/40"
+          aria-expanded={seoOpen}
+        >
+          <span className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">۳</span>
+            سئو و متادیتا (اختیاری)
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 text-slate-500 transition-transform dark:text-slate-300 ${seoOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {seoOpen && (
+          <Card className="mt-3 space-y-5 p-5 sm:p-6">
+            <Field label="عنوان سئو" hint="اختیاری — در صورت خالی بودن، نام محصول استفاده می‌شود">
+              <Input
+                dir="rtl"
+                value={s.metaTitle}
+                onChange={(e) => set('metaTitle', e.target.value)}
+                placeholder="عنوان برای موتورهای جستجو"
+              />
+            </Field>
+
+            <Field label="توضیحات سئو" hint="اختیاری — توضیح کوتاه برای موتورهای جستجو (تا ۱۶۰ کاراکتر)">
+              <Textarea
+                rows={3}
+                dir="rtl"
+                value={s.metaDescription}
+                onChange={(e) => set('metaDescription', e.target.value)}
+                placeholder="توضیح متا برای موتورهای جستجو"
+              />
+            </Field>
+
+            <Field
+              label="ویدیوها"
+              hint="هر خط یک URL از YouTube یا Aparat (یا مسیر فایل آپلودشده)"
+            >
+              <Textarea
+                rows={4}
+                dir="ltr"
+                value={s.videosInput}
+                onChange={(e) => set('videosInput', e.target.value)}
+                placeholder={'https://www.youtube.com/watch?v=...\nhttps://www.aparat.com/v/...'}
+              />
             </Field>
           </Card>
         )}
@@ -475,6 +597,11 @@ export function stateFromApi(p: any): ProductFormState {
     warrantyMonths: p.warrantyMonths != null ? String(p.warrantyMonths) : '',
     metaTitle: p.metaTitle || '',
     metaDescription: p.metaDescription || '',
+    // ویدیوها به‌صورت متن ساده برای ویرایش — هر خط یک URL
+    videosInput: (p.videos || [])
+      .map((v: any) => (v.provider === 'upload' ? pathFromUrl(v.url) : v.url || ''))
+      .filter(Boolean)
+      .join('\n'),
     tagsInput: (p.tags || []).map((t: any) => t.name).join('، '),
     relatedProductIds: (p.related || []).map((r: any) => r.id),
     images: (p.images || []).map((i: any) => ({ path: pathFromUrl(i.url), alt: i.alt || '', isPrimary: !!i.isPrimary })),
