@@ -3,17 +3,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { GripVertical, Plus, Save, Trash2, X } from 'lucide-react';
-import { api, qs } from '@/lib/api-client';
-import { faNumber, rialToToman, tomanToRial } from '@/lib/format';
+import { ChevronDown, Plus, Save, Trash2 } from 'lucide-react';
+import { api } from '@/lib/api-client';
+import { rialToToman, tomanToRial } from '@/lib/format';
 import { CategoryNode, PRODUCT_STATUS_LABELS } from '@/lib/types';
 import { toast, hasPermission, useAuthStore } from '@/lib/auth-store';
-import { Button, Card, Field, Input, Select, Tabs, Textarea, Switch } from '@/components/ui';
+import { Button, Card, Field, Input, Select, Textarea } from '@/components/ui';
 import { ImageUpload } from '@/components/image-upload';
 import { PageHeader } from '../_shared';
 
 /* ------------------------------------------------------------------ */
-/* انواع                                                                */
+/* انواع — ساختار اصلی برای سازگاری با API حفظ شده                       */
 /* ------------------------------------------------------------------ */
 
 export interface VariantForm {
@@ -36,6 +36,8 @@ interface ImageForm { path: string; alt: string; isPrimary: boolean }
 interface VideoForm { title: string; provider: 'upload' | 'youtube' | 'aparat'; sourceUrl: string; posterPath: string }
 interface SpecForm { attributeId: number; attributeValueId?: number; customValue?: string }
 
+/** تمام فیلدها نگه داشته شده‌اند تا save همان ساختار payload را بسازد —
+ *  فیلدهایی که در UI ساده‌شده نمایش داده نمی‌شوند با مقدار پیش‌فرض ارسال می‌گردند. */
 export interface ProductFormState {
   name: string;
   slug: string;
@@ -61,6 +63,7 @@ export interface ProductFormState {
   specs: SpecForm[];
 }
 
+/** state خالی برای ایجاد محصول جدید — تنها یک تنوع پیش‌فرض */
 export const emptyState: ProductFormState = {
   name: '', slug: '', code: '', categoryId: 0, brandId: 0, status: 'draft',
   shortDescription: '', description: '', features: '',
@@ -73,20 +76,11 @@ export const emptyState: ProductFormState = {
   }],
 };
 
+/** تنوع خالی (برای سازگاری با کدهای احتمالی دیگر) */
 export const blankVariant = (): VariantForm => ({
   sku: '', barcode: '', title: '', priceToman: '', compareAtToman: '', costToman: '',
   stock: '0', weightG: '', isDefault: false, isActive: true, options: [],
 });
-
-interface AttrLite {
-  id: number; name: string; code: string; type: string; unit: string | null;
-  values?: Array<{ id: number; value: string }>;
-}
-
-const num = (s: string): number | undefined => {
-  const n = Number(s.replace(/[^0-9.]/g, ''));
-  return s === '' || !Number.isFinite(n) ? undefined : n;
-};
 
 /** تبدیل URL کامل (محلی /uploads یا S3) به مسیر نسبی برای ویرایش در فرم */
 export const pathFromUrl = (url?: string | null): string => {
@@ -105,18 +99,27 @@ export const pathFromUrl = (url?: string | null): string => {
   return url;
 };
 
+const num = (s: string): number | undefined => {
+  const n = Number(s.replace(/[^0-9.]/g, ''));
+  return s === '' || !Number.isFinite(n) ? undefined : n;
+};
+
 /* ------------------------------------------------------------------ */
-/* فرم اصلی                                                             */
+/* فرم ساده‌شده — تک‌صفحه‌ای با دو بخش                                     */
 /* ------------------------------------------------------------------ */
 
 export function ProductForm({ productId, initial }: { productId?: number; initial?: ProductFormState }) {
   const router = useRouter();
   const qc = useQueryClient();
   const { user } = useAuthStore();
-  const [tab, setTab] = useState('general');
   const [s, setS] = useState<ProductFormState>(initial || emptyState);
-  const set = <K extends keyof ProductFormState>(k: K, v: ProductFormState[K]) => setS((p) => ({ ...p, [k]: v }));
+  // بخش «جزئیات بیشتر» به‌صورت پیش‌فرض جمع است
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
+  const set = <K extends keyof ProductFormState>(k: K, v: ProductFormState[K]) =>
+    setS((p) => ({ ...p, [k]: v }));
+
+  // کوئری دسته‌ها و برندها (سازگار با فرم قبلی)
   const { data: catTree } = useQuery({
     queryKey: ['categories-tree'],
     queryFn: async () => (await api<CategoryNode[]>('/categories')).data,
@@ -125,11 +128,6 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
   const { data: brands } = useQuery({
     queryKey: ['brands'],
     queryFn: async () => (await api<Array<{ id: number; name: string }>>('/brands')).data,
-    staleTime: 300_000,
-  });
-  const { data: allAttrs } = useQuery({
-    queryKey: ['admin-attributes'],
-    queryFn: async () => (await api<AttrLite[]>('/admin/attributes')).data,
     staleTime: 300_000,
   });
 
@@ -146,28 +144,65 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
     return out;
   }, [catTree]);
 
-  const selectedCatSlug = flatCats.find((c) => c.id === s.categoryId)?.slug;
+  // گزینه‌های وضعیت — فقط پیش‌نویس / منتشر شده + وضعیت فعلی (در صورت غیرمعروف بودن)
+  const statusOptions = useMemo(() => {
+    const base: Array<{ value: string; label: string }> = [
+      { value: 'draft', label: PRODUCT_STATUS_LABELS.draft },
+      { value: 'published', label: PRODUCT_STATUS_LABELS.published },
+    ];
+    if (s.status && !['draft', 'published'].includes(s.status)) {
+      base.push({ value: s.status, label: PRODUCT_STATUS_LABELS[s.status] || s.status });
+    }
+    return base;
+  }, [s.status]);
 
-  /** ویژگی‌های دسته انتخابی (از endpoint عمومی دسته) */
-  const { data: catFilters } = useQuery({
-    queryKey: ['category-filters', selectedCatSlug],
-    queryFn: async () =>
-      (await api<{ filters: Array<{ id: number; name: string; code: string; type: string; isVariant: boolean; values: Array<{ id: number; value: string }> }> }>(`/categories/${selectedCatSlug}`)).data.filters,
-    enabled: !!selectedCatSlug,
-  });
-  const variantAttrs = (catFilters || []).filter((a) => a.isVariant);
+  // تنوع پیش‌فرض — تنها تنوعی که در فرم ساده مدیریت می‌شود
+  const defaultVariantIdx = s.variants.findIndex((v) => v.isDefault);
+  const dvIdx = defaultVariantIdx === -1 ? 0 : defaultVariantIdx;
+  const defaultVariant = s.variants[dvIdx];
+  const updateDefaultVariant = (patch: Partial<VariantForm>) =>
+    set('variants', s.variants.map((v, i) => (i === dvIdx ? { ...v, ...patch } : v)));
 
-  /* جستجوی محصول مرتبط */
-  const [relQ, setRelQ] = useState('');
-  const { data: relResults } = useQuery({
-    queryKey: ['related-search', relQ],
-    queryFn: async () =>
-      (await api<{ items: Array<{ id: number; name: string }> }>(`/admin/products${qs({ q: relQ, limit: 6 })}`)).data.items,
-    enabled: relQ.trim().length >= 2,
-  });
+  // مقدار «کد محصول/SKU» هم به code و هم به sku تنوع پیش‌فرض ست می‌شود
+  const setCodeAndSku = (val: string) => {
+    setS((p) => {
+      const idx = p.variants.findIndex((v) => v.isDefault);
+      const i = idx === -1 ? 0 : idx;
+      return {
+        ...p,
+        code: val,
+        variants: p.variants.map((v, k) => (k === i ? { ...v, sku: val } : v)),
+      };
+    });
+  };
 
+  // تصویر اصلی = اولین عضو images (که با isPrimary=true علامت‌گذاری می‌شود)
+  const primaryImage = s.images[0]?.path || '';
+  const setPrimaryImage = (path: string) => {
+    setS((p) => {
+      if (p.images.length === 0) {
+        return { ...p, images: [{ path, alt: '', isPrimary: true }] };
+      }
+      return { ...p, images: p.images.map((img, i) => (i === 0 ? { ...img, path, isPrimary: true } : { ...img, isPrimary: false })) };
+    });
+  };
+
+  // تصاویر بیشتر = همه تصاویر به‌جز اولی
+  const extraImages = s.images.slice(1);
+  const addExtraImage = () =>
+    set('images', [...s.images, { path: '', alt: '', isPrimary: false }]);
+  const updateExtraImage = (idx: number, path: string) =>
+    set('images', s.images.map((img, i) => (i === idx + 1 ? { ...img, path } : img)));
+  const removeExtraImage = (idx: number) =>
+    set('images', s.images.filter((_, i) => i !== idx + 1));
+
+  // ذخیره — همان endpoint و همان ساختار payload فرم قبلی
   const save = useMutation({
     mutationFn: async () => {
+      // اگر کد/SKU خالی بود، یک SKU پیش‌فرض تولید کن تا اعتبارسنجی backend رد نشود
+      const skuVal = (defaultVariant.sku || '').trim();
+      const finalSku = skuVal || `prod-${Date.now()}`;
+
       const payload = {
         name: s.name.trim(),
         slug: s.slug.trim() || undefined,
@@ -185,30 +220,37 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
         metaDescription: s.metaDescription || undefined,
         tags: s.tagsInput.split(/[,،]/).map((t) => t.trim()).filter(Boolean),
         relatedProductIds: s.relatedProductIds,
-        images: s.images.filter((i) => i.path).map((i, idx) => ({ path: i.path, alt: i.alt || undefined, sortOrder: idx, isPrimary: i.isPrimary })),
-        videos: s.videos.filter((v) => v.sourceUrl).map((v, idx) => ({
-          title: v.title || undefined, provider: v.provider, sourceUrl: v.sourceUrl,
-          posterPath: v.posterPath || undefined, sortOrder: idx,
-        })),
+        // اولین تصویر معتبر به‌عنوان تصویر اصلی در نظر گرفته می‌شود
+        images: s.images
+          .filter((i) => i.path)
+          .map((i, idx) => ({ path: i.path, alt: i.alt || undefined, sortOrder: idx, isPrimary: idx === 0 })),
+        videos: s.videos
+          .filter((v) => v.sourceUrl)
+          .map((v, idx) => ({
+            title: v.title || undefined, provider: v.provider, sourceUrl: v.sourceUrl,
+            posterPath: v.posterPath || undefined, sortOrder: idx,
+          })),
         specs: s.specs.filter((sp) => sp.attributeId),
-        variants: s.variants.map((v) => ({
-          id: v.id,
-          sku: v.sku.trim(),
-          barcode: v.barcode || undefined,
-          title: v.title || undefined,
-          price: tomanToRial(Number(v.priceToman || 0)),
-          compareAtPrice: v.compareAtToman ? tomanToRial(Number(v.compareAtToman)) : undefined,
-          costPrice: v.costToman ? tomanToRial(Number(v.costToman)) : undefined,
-          stock: Number(v.stock || 0),
-          weightG: num(v.weightG),
-          isDefault: v.isDefault,
-          isActive: v.isActive,
-          options: v.options,
-        })),
+        // فقط تنوع پیش‌فرض را با مقادیر فیلدهای ساده‌شده ذخیره کن
+        variants: [{
+          id: defaultVariant.id,
+          sku: finalSku,
+          barcode: defaultVariant.barcode || undefined,
+          title: defaultVariant.title || undefined,
+          price: tomanToRial(Number(defaultVariant.priceToman || 0)),
+          compareAtPrice: defaultVariant.compareAtToman ? tomanToRial(Number(defaultVariant.compareAtToman)) : undefined,
+          costPrice: defaultVariant.costToman ? tomanToRial(Number(defaultVariant.costToman)) : undefined,
+          stock: Number(defaultVariant.stock || 0),
+          weightG: num(defaultVariant.weightG),
+          isDefault: true,
+          isActive: true,
+          options: defaultVariant.options,
+        }],
       };
+      if (!payload.name.trim()) throw new Error('نام محصول الزامی است');
       if (!payload.categoryId) throw new Error('دسته‌بندی را انتخاب کنید');
-      if (!payload.variants.length || payload.variants.some((v) => !v.sku || !v.price)) {
-        throw new Error('برای هر تنوع، SKU و قیمت الزامی است');
+      if (!payload.variants[0].price || payload.variants[0].price <= 0) {
+        throw new Error('قیمت را وارد کنید');
       }
       return productId
         ? api(`/admin/products/${productId}`, { method: 'PATCH', body: JSON.stringify(payload) })
@@ -222,333 +264,199 @@ export function ProductForm({ productId, initial }: { productId?: number; initia
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const updateVariant = (idx: number, patch: Partial<VariantForm>) =>
-    set('variants', s.variants.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
-
   return (
     <div>
-      <PageHeader
-        title={productId ? 'ویرایش محصول' : 'محصول جدید'}
-        action={
-          <Button onClick={() => save.mutate()} loading={save.isPending}>
-            <Save className="h-4 w-4" /> ذخیره محصول
-          </Button>
-        }
-      />
+      <PageHeader title={productId ? 'ویرایش محصول' : 'محصول جدید'} />
 
-      <Tabs
-        active={tab}
-        onChange={setTab}
-        tabs={[
-          { key: 'general', label: 'اطلاعات اصلی' },
-          { key: 'media', label: `تصاویر و ویدئو (${s.images.length + s.videos.length})` },
-          { key: 'variants', label: `تنوع‌ها و قیمت (${s.variants.length})` },
-          { key: 'specs', label: `مشخصات فنی (${s.specs.length})` },
-          { key: 'seo', label: 'سئو، تگ و مرتبط' },
-        ]}
-      />
+      {/* ----------------------- بخش ۱: اطلاعات اصلی ----------------------- */}
+      <Card className="space-y-5 p-5 sm:p-6">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-600 dark:text-emerald-300">۱</span>
+          <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">اطلاعات اصلی</h2>
+          <span className="text-xs text-rose-500 dark:text-rose-400">*</span>
+        </div>
 
-      <div className="mt-5">
-        {/* ------------------------------ عمومی ------------------------------ */}
-        {tab === 'general' && (
-          <Card className="space-y-4 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="نام محصول" required>
-                <Input value={s.name} onChange={(e) => set('name', e.target.value)} placeholder="مثلاً: گوشی سامسونگ گلکسی S25" />
-              </Field>
-              <Field label="اسلاگ (اختیاری — خودکار ساخته می‌شود)">
-                <Input dir="ltr" value={s.slug} onChange={(e) => set('slug', e.target.value.toLowerCase())} placeholder="galaxy-s25" />
-              </Field>
-              <Field label="کد محصول">
-                <Input dir="ltr" value={s.code} onChange={(e) => set('code', e.target.value)} placeholder="P-1001" />
-              </Field>
-              <Field label="وضعیت انتشار">
-                <Select value={s.status} onChange={(e) => set('status', e.target.value)} disabled={!hasPermission(user, 'products.publish') && s.status !== 'published'}>
-                  {Object.entries(PRODUCT_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </Select>
-              </Field>
-              <Field label="دسته‌بندی" required>
-                <Select value={s.categoryId || ''} onChange={(e) => set('categoryId', Number(e.target.value) || 0)}>
-                  <option value="">انتخاب کنید…</option>
-                  {flatCats.map((c) => (
-                    <option key={c.id} value={c.id}>{'— '.repeat(c.depth)}{c.name}</option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="برند">
-                <Select value={s.brandId || ''} onChange={(e) => set('brandId', Number(e.target.value) || 0)}>
-                  <option value="">بدون برند</option>
-                  {(brands || []).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </Select>
-              </Field>
-            </div>
-            <Field label="توضیح کوتاه">
-              <Textarea rows={2} value={s.shortDescription} onChange={(e) => set('shortDescription', e.target.value)} />
-            </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="نام محصول" required>
+            <Input
+              value={s.name}
+              onChange={(e) => set('name', e.target.value)}
+              placeholder="مثلاً: گوشی سامسونگ گلکسی S25"
+            />
+          </Field>
+          <Field label="کد محصول / SKU">
+            <Input
+              dir="ltr"
+              value={s.code}
+              onChange={(e) => setCodeAndSku(e.target.value)}
+              placeholder="P-1001 (اختیاری — خودکار ساخته می‌شود)"
+            />
+          </Field>
+          <Field label="دسته‌بندی" required>
+            <Select value={s.categoryId || ''} onChange={(e) => set('categoryId', Number(e.target.value) || 0)}>
+              <option value="">انتخاب کنید…</option>
+              {flatCats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {'— '.repeat(c.depth)}
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="برند">
+            <Select value={s.brandId || ''} onChange={(e) => set('brandId', Number(e.target.value) || 0)}>
+              <option value="">بدون برند</option>
+              {(brands || []).map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="قیمت (تومان)" required>
+            <Input
+              inputMode="numeric"
+              dir="ltr"
+              value={defaultVariant.priceToman}
+              onChange={(e) => updateDefaultVariant({ priceToman: e.target.value.replace(/[^0-9]/g, '') })}
+              placeholder="0"
+            />
+          </Field>
+          <Field label="موجودی">
+            <Input
+              inputMode="numeric"
+              dir="ltr"
+              value={defaultVariant.stock}
+              onChange={(e) => updateDefaultVariant({ stock: e.target.value.replace(/[^0-9]/g, '') || '0' })}
+              placeholder="0"
+            />
+          </Field>
+        </div>
+
+        {/* تصویر اصلی — آپلود تک‌تکی */}
+        <Field label="تصویر اصلی">
+          <ImageUpload value={primaryImage} onChange={setPrimaryImage} />
+        </Field>
+
+        <Field label="توضیحات کوتاه">
+          <Textarea
+            rows={2}
+            value={s.shortDescription}
+            onChange={(e) => set('shortDescription', e.target.value)}
+            placeholder="معرفی کوتاه محصول که در کارت محصول نمایش داده می‌شود"
+          />
+        </Field>
+
+        <Field label="وضعیت">
+          <Select
+            value={s.status}
+            onChange={(e) => set('status', e.target.value)}
+            disabled={!hasPermission(user, 'products.publish') && s.status !== 'published'}
+          >
+            {statusOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </Select>
+        </Field>
+      </Card>
+
+      {/* ----------------------- بخش ۲: جزئیات بیشتر ----------------------- */}
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100 dark:hover:bg-slate-800/40"
+          aria-expanded={detailsOpen}
+        >
+          <span className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-200">۲</span>
+            جزئیات بیشتر (اختیاری)
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 text-slate-500 transition-transform dark:text-slate-300 ${detailsOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {detailsOpen && (
+          <Card className="mt-3 space-y-5 p-5 sm:p-6">
             <Field label="توضیحات کامل (HTML مجاز)">
-              <Textarea rows={8} dir="rtl" value={s.description} onChange={(e) => set('description', e.target.value)} placeholder="<p>توضیحات کامل محصول…</p>" />
+              <Textarea
+                rows={6}
+                dir="rtl"
+                value={s.description}
+                onChange={(e) => set('description', e.target.value)}
+                placeholder="<p>توضیحات کامل محصول…</p>"
+              />
             </Field>
-            <Field label="ویژگی‌های کلیدی (هر خط یک مورد)" hint="در کارت ویژگی‌های صفحه محصول نمایش داده می‌شود">
-              <Textarea rows={4} value={s.features} onChange={(e) => set('features', e.target.value)} placeholder={'گارانتی ۱۸ ماهه\nارسال سریع\nاصالت کالا'} />
-            </Field>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-              <Field label="وزن (گرم)"><Input inputMode="numeric" value={s.weightG} onChange={(e) => set('weightG', e.target.value)} /></Field>
-              <Field label="طول (cm)"><Input inputMode="decimal" value={s.lengthCm} onChange={(e) => set('lengthCm', e.target.value)} /></Field>
-              <Field label="عرض (cm)"><Input inputMode="decimal" value={s.widthCm} onChange={(e) => set('widthCm', e.target.value)} /></Field>
-              <Field label="ارتفاع (cm)"><Input inputMode="decimal" value={s.heightCm} onChange={(e) => set('heightCm', e.target.value)} /></Field>
-              <Field label="گارانتی (ماه)"><Input inputMode="numeric" value={s.warrantyMonths} onChange={(e) => set('warrantyMonths', e.target.value)} /></Field>
-            </div>
-          </Card>
-        )}
 
-        {/* ------------------------------ رسانه ------------------------------ */}
-        {tab === 'media' && (
-          <Card className="space-y-5 p-5">
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">تصاویر ({faNumber(s.images.length)})</p>
-                <Button size="sm" variant="secondary" onClick={() => set('images', [...s.images, { path: '', alt: '', isPrimary: s.images.length === 0 }])}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="وزن (گرم)">
+                <Input
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={s.weightG}
+                  onChange={(e) => set('weightG', e.target.value)}
+                  placeholder="مثلاً 450"
+                />
+              </Field>
+            </div>
+
+            <Field label="تگ‌ها / ویژگی‌ها (هر خط یک مورد)" hint="در بخش ویژگی‌های صفحه محصول نمایش داده می‌شود">
+              <Textarea
+                rows={4}
+                value={s.features}
+                onChange={(e) => set('features', e.target.value)}
+                placeholder={'گارانتی ۱۸ ماهه\nارسال سریع\nاصالت کالا'}
+              />
+            </Field>
+
+            {/* تصاویر بیشتر — آپلود چندتایی (اختیاری) */}
+            <Field label="تصاویر بیشتر">
+              <div className="space-y-2">
+                {extraImages.map((img, idx) => (
+                  <div key={idx} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2 dark:border-slate-800">
+                    <ImageUpload
+                      value={img.path}
+                      onChange={(p) => updateExtraImage(idx, p)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExtraImage(idx)}
+                      className="p-1.5 text-slate-700 hover:text-rose-500 dark:text-slate-200"
+                      aria-label="حذف تصویر"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addExtraImage}>
                   <Plus className="h-4 w-4" /> افزودن تصویر
                 </Button>
-              </div>
-              <div className="space-y-2">
-                {s.images.map((img, idx) => (
-                  <div key={idx} className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-2">
-                    <GripVertical className="h-4 w-4 text-slate-700 dark:text-slate-200" />
-                    <ImageUpload value={img.path} onChange={(p) => set('images', s.images.map((x, i) => (i === idx ? { ...x, path: p } : x)))} />
-                    <Input placeholder="متن alt (سئو)" value={img.alt} onChange={(e) => set('images', s.images.map((x, i) => (i === idx ? { ...x, alt: e.target.value } : x)))} className="text-xs" />
-                    <label className="flex shrink-0 items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-200">
-                      <input
-                        type="radio"
-                        name="primary-image"
-                        checked={img.isPrimary}
-                        onChange={() => set('images', s.images.map((x, i) => ({ ...x, isPrimary: i === idx })))}
-                        className="accent-orange-500"
-                      />
-                      اصلی
-                    </label>
-                    <button onClick={() => set('images', s.images.filter((_, i) => i !== idx))} className="p-1.5 text-slate-700 dark:text-slate-200 hover:text-rose-500">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                {s.images.length === 0 && <p className="rounded-xl bg-white dark:bg-slate-900/40 p-4 text-center text-xs text-slate-600 dark:text-slate-200">تصویری اضافه نشده — اولین تصویر، تصویر اصلی می‌شود</p>}
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">ویدئوها ({faNumber(s.videos.length)})</p>
-                <Button size="sm" variant="secondary" onClick={() => set('videos', [...s.videos, { title: '', provider: 'upload', sourceUrl: '', posterPath: '' }])}>
-                  <Plus className="h-4 w-4" /> افزودن ویدئو
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {s.videos.map((v, idx) => (
-                  <div key={idx} className="grid gap-2 rounded-xl border border-slate-200 dark:border-slate-800 p-3 sm:grid-cols-[1fr_140px_2fr_auto]">
-                    <Input placeholder="عنوان ویدئو" value={v.title} onChange={(e) => set('videos', s.videos.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x)))} />
-                    <Select value={v.provider} onChange={(e) => set('videos', s.videos.map((x, i) => (i === idx ? { ...x, provider: e.target.value as VideoForm['provider'] } : x)))}>
-                      <option value="upload">آپلود</option>
-                      <option value="youtube">یوتیوب</option>
-                      <option value="aparat">آپارات</option>
-                    </Select>
-                    {v.provider === 'upload' ? (
-                      <div className="flex items-center gap-2">
-                        <ImageUpload kind="video" value={v.sourceUrl} onChange={(p) => set('videos', s.videos.map((x, i) => (i === idx ? { ...x, sourceUrl: p } : x)))} />
-                        <Input dir="ltr" placeholder="یا مسیر فایل" value={v.sourceUrl} onChange={(e) => set('videos', s.videos.map((x, i) => (i === idx ? { ...x, sourceUrl: e.target.value } : x)))} className="text-xs" />
-                      </div>
-                    ) : (
-                      <Input dir="ltr" placeholder="https://…" value={v.sourceUrl} onChange={(e) => set('videos', s.videos.map((x, i) => (i === idx ? { ...x, sourceUrl: e.target.value } : x)))} />
-                    )}
-                    <button onClick={() => set('videos', s.videos.filter((_, i) => i !== idx))} className="self-center p-1.5 text-slate-700 dark:text-slate-200 hover:text-rose-500">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* ------------------------------ تنوع‌ها ------------------------------ */}
-        {tab === 'variants' && (
-          <div className="space-y-4">
-            {variantAttrs.length > 0 && (
-              <p className="rounded-xl bg-sky-50 px-4 py-2.5 text-xs text-sky-700">
-                ویژگی‌های سازنده تنوع برای این دسته: {variantAttrs.map((a) => a.name).join('، ')} — برای هر تنوع مقدارشان را انتخاب کنید.
-              </p>
-            )}
-            {s.variants.map((v, idx) => (
-              <Card key={idx} className="space-y-3 p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-200">تنوع {faNumber(idx + 1)} {v.isDefault && <span className="ms-1 rounded bg-emerald-50 px-1.5 py-0.5 text-2xs text-emerald-600">پیش‌فرض</span>}</p>
-                  <div className="flex items-center gap-3">
-                    <Switch label="فعال" checked={v.isActive} onChange={(b) => updateVariant(idx, { isActive: b })} />
-                    {s.variants.length > 1 && (
-                      <button onClick={() => set('variants', s.variants.filter((_, i) => i !== idx))} className="p-1.5 text-slate-700 dark:text-slate-200 hover:text-rose-500">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <Field label="SKU" required><Input dir="ltr" value={v.sku} onChange={(e) => updateVariant(idx, { sku: e.target.value })} placeholder="S25-BLK-128" /></Field>
-                  <Field label="بارکد"><Input dir="ltr" value={v.barcode} onChange={(e) => updateVariant(idx, { barcode: e.target.value })} /></Field>
-                  <Field label="عنوان"><Input value={v.title} onChange={(e) => updateVariant(idx, { title: e.target.value })} placeholder="مشکی / ۱۲۸ گیگ" /></Field>
-                  <Field label="قیمت (تومان)" required><Input inputMode="numeric" value={v.priceToman} onChange={(e) => updateVariant(idx, { priceToman: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
-                  <Field label="قیمت قبل از تخفیف"><Input inputMode="numeric" value={v.compareAtToman} onChange={(e) => updateVariant(idx, { compareAtToman: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
-                  <Field label="موجودی"><Input inputMode="numeric" value={v.stock} onChange={(e) => updateVariant(idx, { stock: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Field label="قیمت تمام‌شده (تومان)"><Input inputMode="numeric" value={v.costToman} onChange={(e) => updateVariant(idx, { costToman: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
-                  <Field label="وزن تنوع (گرم)"><Input inputMode="numeric" value={v.weightG} onChange={(e) => updateVariant(idx, { weightG: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
-                  <Field label="تنوع پیش‌فرض">
-                    <label className="flex h-11 items-center gap-2 text-sm text-slate-600 dark:text-slate-200">
-                      <input
-                        type="radio" name="default-variant" checked={v.isDefault}
-                        onChange={() => set('variants', s.variants.map((x, i) => ({ ...x, isDefault: i === idx })))}
-                        className="accent-orange-500"
-                      />
-                      پیش‌فرض فروشگاه
-                    </label>
-                  </Field>
-                </div>
-                {variantAttrs.length > 0 && (
-                  <div className="grid gap-3 border-t border-slate-200 dark:border-slate-800 pt-3 sm:grid-cols-3">
-                    {variantAttrs.map((attr) => {
-                      const opt = v.options.find((o) => o.attributeId === attr.id);
-                      return (
-                        <Field key={attr.id} label={attr.name}>
-                          <Select
-                            value={opt?.attributeValueId || ''}
-                            onChange={(e) => {
-                              const valId = Number(e.target.value) || 0;
-                              const rest = v.options.filter((o) => o.attributeId !== attr.id);
-                              updateVariant(idx, { options: valId ? [...rest, { attributeId: attr.id, attributeValueId: valId }] : rest });
-                            }}
-                          >
-                            <option value="">انتخاب…</option>
-                            {(attr.values || []).map((val) => <option key={val.id} value={val.id}>{val.value}</option>)}
-                          </Select>
-                        </Field>
-                      );
-                    })}
-                  </div>
-                )}
-              </Card>
-            ))}
-            <Button variant="secondary" onClick={() => set('variants', [...s.variants, blankVariant()])}>
-              <Plus className="h-4 w-4" /> افزودن تنوع
-            </Button>
-          </div>
-        )}
-
-        {/* ------------------------------ مشخصات ------------------------------ */}
-        {tab === 'specs' && (
-          <Card className="space-y-3 p-5">
-            <p className="text-xs text-slate-600 dark:text-slate-200">مشخصات فنی محصول — در تب «مشخصات» صفحه محصول به‌صورت گروه‌بندی‌شده نمایش داده می‌شود.</p>
-            {s.specs.map((sp, idx) => {
-              const attr = (allAttrs || []).find((a) => a.id === sp.attributeId);
-              const isSelect = attr?.type === 'select' || (attr?.values?.length || 0) > 0;
-              return (
-                <div key={idx} className="grid gap-2 sm:grid-cols-[240px_1fr_auto]">
-                  <Select
-                    value={sp.attributeId || ''}
-                    onChange={(e) => set('specs', s.specs.map((x, i) => (i === idx ? { attributeId: Number(e.target.value) } : x)))}
-                  >
-                    <option value="">انتخاب ویژگی…</option>
-                    {(allAttrs || []).map((a) => <option key={a.id} value={a.id}>{a.name}{a.unit ? ` (${a.unit})` : ''}</option>)}
-                  </Select>
-                  {isSelect ? (
-                    <Select
-                      value={sp.attributeValueId || ''}
-                      onChange={(e) => set('specs', s.specs.map((x, i) => (i === idx ? { ...x, attributeValueId: Number(e.target.value) || undefined, customValue: undefined } : x)))}
-                    >
-                      <option value="">انتخاب مقدار…</option>
-                      {(attr?.values || []).map((val) => <option key={val.id} value={val.id}>{val.value}</option>)}
-                    </Select>
-                  ) : (
-                    <Input
-                      placeholder="مقدار (متن آزاد)"
-                      value={sp.customValue || ''}
-                      onChange={(e) => set('specs', s.specs.map((x, i) => (i === idx ? { ...x, customValue: e.target.value, attributeValueId: undefined } : x)))}
-                    />
-                  )}
-                  <button onClick={() => set('specs', s.specs.filter((_, i) => i !== idx))} className="self-center p-1.5 text-slate-700 dark:text-slate-200 hover:text-rose-500">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
-            <Button variant="secondary" size="sm" onClick={() => set('specs', [...s.specs, { attributeId: 0 }])}>
-              <Plus className="h-4 w-4" /> افزودن مشخصه
-            </Button>
-          </Card>
-        )}
-
-        {/* ------------------------------ سئو/تگ/مرتبط ------------------------------ */}
-        {tab === 'seo' && (
-          <Card className="space-y-4 p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="عنوان متا (SEO)"><Input value={s.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} /></Field>
-              <Field label="توضیح متا"><Input value={s.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} /></Field>
-            </div>
-            <Field label="تگ‌ها (با ویرگول جدا کنید)" hint="مثلاً: گوشی، سامسونگ، پرچمدار">
-              <Input value={s.tagsInput} onChange={(e) => set('tagsInput', e.target.value)} />
-            </Field>
-            <Field label="محصولات مرتبط" hint="در بخش «محصولات مرتبط» صفحه محصول نمایش داده می‌شوند">
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-1.5">
-                  {s.relatedProductIds.map((id) => (
-                    <RelatedChip key={id} id={id} onRemove={() => set('relatedProductIds', s.relatedProductIds.filter((x) => x !== id))} />
-                  ))}
-                </div>
-                <Input value={relQ} onChange={(e) => setRelQ(e.target.value)} placeholder="جستجوی نام محصول برای افزودن…" />
-                {!!relResults?.length && (
-                  <ul className="divide-y divide-slate-100 rounded-xl border border-slate-300 dark:border-slate-700">
-                    {relResults.filter((r) => r.id !== productId && !s.relatedProductIds.includes(r.id)).map((r) => (
-                      <li key={r.id}>
-                        <button
-                          onClick={() => { set('relatedProductIds', [...s.relatedProductIds, r.id]); setRelQ(''); }}
-                          className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-white dark:bg-slate-900/40"
-                        >
-                          {r.name}
-                          <Plus className="h-3.5 w-3.5 text-emerald-500" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
             </Field>
           </Card>
         )}
       </div>
 
+      {/* دکمه ذخیره — استیکی در پایین صفحه */}
       <div className="sticky bottom-4 mt-6">
-        <Button className="w-full shadow-lg" size="lg" onClick={() => save.mutate()} loading={save.isPending}>
-          <Save className="h-4.5 w-4.5" /> {productId ? 'ذخیره تغییرات' : 'ایجاد محصول'}
+        <Button
+          className="w-full shadow-lg"
+          size="lg"
+          onClick={() => save.mutate()}
+          loading={save.isPending}
+        >
+          <Save className="h-5 w-5" />
+          {productId ? 'ذخیره تغییرات' : 'ایجاد محصول'}
         </Button>
       </div>
     </div>
   );
 }
 
-function RelatedChip({ id, onRemove }: { id: number; onRemove: () => void }) {
-  const { data } = useQuery({
-    queryKey: ['product-mini', id],
-    queryFn: async () => (await api<{ name: string }>(`/admin/products/${id}`)).data,
-    staleTime: 300_000,
-  });
-  return (
-    <span className="flex items-center gap-1.5 rounded-full bg-slate-800/40 px-3 py-1 text-xs text-slate-700 dark:text-slate-200">
-      {data?.name || `#${id}`}
-      <button onClick={onRemove} className="text-slate-600 dark:text-slate-200 hover:text-rose-500"><X className="h-3 w-3" /></button>
-    </span>
-  );
-}
-
-/** تبدیل محصول موجود (خروجی assemble ادمین) به state فرم */
+/* ------------------------------------------------------------------ */
+/* تبدیل محصول موجود (خروجی assemble ادمین) به state فرم                  */
+/* تمام فیلدها نگه داشته شده‌اند تا ویرایش محصولات قدیمی بدون از دست دادن  */
+/* داده‌ها (ویدئوها، specs، تنوع‌های بیشتر، تگ‌ها و …) کار کند.            */
+/* ------------------------------------------------------------------ */
 export function stateFromApi(p: any): ProductFormState {
   return {
     name: p.name || '',
