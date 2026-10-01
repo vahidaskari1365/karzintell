@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Save } from 'lucide-react';
+import { RefreshCw, Save } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { toast } from '@/lib/auth-store';
 import { Button, Card, Field, Input, PageLoading, Switch } from '@/components/ui';
@@ -52,6 +52,13 @@ export default function AdminSettingsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // بازنمایه‌سازی موتور جستجو — POST /admin/search/reindex
+  const reindex = useMutation({
+    mutationFn: async () => api<{ ok?: boolean }>('/admin/search/reindex', { method: 'POST' }),
+    onSuccess: () => toast.success('بازنمایه‌سازی جستجو آغاز/تکمیل شد'),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (isLoading) return <PageLoading />;
 
   return (
@@ -61,6 +68,21 @@ export default function AdminSettingsPage() {
         subtitle="تغییرات بلافاصله روی API و کش اعمال می‌شود"
         action={<Button size="sm" onClick={() => save.mutate()} loading={save.isPending}><Save className="h-4 w-4" /> ذخیره همه</Button>}
       />
+
+      {/* کارت بازنمایه‌سازی جستجو — بالاتر از سایر تنظیمات */}
+      <Card className="mb-5 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">بازنمایه‌سازی موتور جستجو</p>
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-200">
+              همهٔ محصولات دوباره در ایندکس Meilisearch (یا فallback دیتابیس) قرار می‌گیرند. در صورت به‌روزرسانی مستقیم دیتابیس، این عملیات را اجرا کنید.
+            </p>
+          </div>
+          <Button size="sm" variant="secondary" loading={reindex.isPending} onClick={() => reindex.mutate()}>
+            <RefreshCw className="h-4 w-4" /> بازنمایه‌سازی
+          </Button>
+        </div>
+      </Card>
 
       <div className="space-y-4">
         {(groups || []).map((g) => (

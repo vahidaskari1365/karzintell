@@ -30,6 +30,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [refundOpen, setRefundOpen] = useState(false);
+  const [refundNote, setRefundNote] = useState('');
   const [shipmentOpen, setShipmentOpen] = useState(false);
   const [ship, setShip] = useState({ provider: 'post', method: '', trackingCode: '', status: 'pending' });
   const [adminNote, setAdminNote] = useState<string | null>(null);
@@ -53,9 +54,11 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // عودت وجه واقعی از طریق درگاه پرداخت — POST /admin/orders/:id/refund
+  // (بدل از تغییر وضعیت در /admin/orders/:id/status که صرفاً پرچم را عوض می‌کرد)
   const refund = useMutation({
-    mutationFn: async () => api(`/admin/orders/${id}/status`, { method: 'POST', body: JSON.stringify({ status: 'refunded' }) }),
-    onSuccess: () => { toast.success('عودت وجه ثبت شد'); setRefundOpen(false); invalidate(); },
+    mutationFn: async () => api(`/admin/orders/${id}/refund`, { method: 'POST', body: JSON.stringify({ note: refundNote || undefined }) }),
+    onSuccess: () => { toast.success('عودت وجه از طریق درگاه ثبت شد'); setRefundOpen(false); setRefundNote(''); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -247,10 +250,16 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         }
       />
       <ConfirmDialog
-        open={refundOpen} onClose={() => setRefundOpen(false)}
+        open={refundOpen} onClose={() => { setRefundOpen(false); setRefundNote(''); }}
         onConfirm={() => refund.mutate()} loading={refund.isPending}
         title="عودت وجه"
-        message="وضعیت به «عودت وجه‌شده» تغییر می‌کند. (برگشت پول به کیف پول/درگاه طبق تنظیمات انجام می‌شود)"
+        confirmLabel="ثبت عودت وجه"
+        message={
+          <div className="space-y-2">
+            <p>درگاه پرداخت به درخواست عودت وجه واقعی فراخوانی می‌شود و مبلغ به مشتری بازمی‌گردد.</p>
+            <Input value={refundNote} onChange={(e) => setRefundNote(e.target.value)} placeholder="یادداشت عودت (اختیاری)" />
+          </div>
+        }
       />
     </div>
   );

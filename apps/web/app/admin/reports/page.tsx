@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Download } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { faDate, faNumber, toToman } from '@/lib/format';
 import { Button, Card, Field, Input, PageLoading, Select } from '@/components/ui';
@@ -10,6 +11,36 @@ import { PageHeader, tableCls, Pill } from '../_shared';
 interface SalesReport {
   series: Array<{ period: string; total: number; discount: number; orders: number }>;
   totals: { total: number; orders: number; discount: number; tax: number };
+}
+
+/** دانلود دادهٔ جدولی به‌صورت CSV در سمت کلاینت (با BOM برای پشتیبانی Excel فارسی) */
+function exportCsv(filename: string, headers: string[], rows: Array<Array<string | number>>) {
+  const escape = (v: string | number) => {
+    const s = String(v ?? '');
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+  const csv = [headers.map(escape).join(','), ...rows.map((r) => r.map(escape).join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/** دکمهٔ یکپارچهٔ خروجی CSV */
+function CsvButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <Button size="sm" variant="secondary" onClick={onClick} disabled={disabled} className="shrink-0">
+      <Download className="h-4 w-4" /> خروجی CSV
+    </Button>
+  );
 }
 
 export default function AdminReportsPage() {
@@ -89,7 +120,17 @@ export default function AdminReportsPage() {
           </div>
 
           <Card className="mb-5 p-5">
-            <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-200">روند ({groupBy === 'day' ? 'روزانه' : 'ماهانه'})</p>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">روند ({groupBy === 'day' ? 'روزانه' : 'ماهانه'})</p>
+              <CsvButton
+                disabled={!data || data.series.length === 0}
+                onClick={() => exportCsv(
+                  `sales-series-${from}_${to}.csv`,
+                  ['دوره', 'فروش (تومان)', 'تخفیف (تومان)', 'تعداد سفارش'],
+                  (data?.series || []).map((s) => [s.period, Math.round(s.total / 10), Math.round(s.discount / 10), s.orders]),
+                )}
+              />
+            </div>
             {data.series.length === 0 ? (
               <p className="py-8 text-center text-xs text-slate-600 dark:text-slate-200">در این بازه فروشی ثبت نشده</p>
             ) : (
@@ -112,7 +153,17 @@ export default function AdminReportsPage() {
 
           {/* گزارش سود ناخالص */}
           <Card className="mb-5 p-5">
-            <p className="mb-4 text-sm font-bold text-slate-800 dark:text-slate-200">سود ناخالص (فروش − بهای تمام‌شده)</p>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">سود ناخالص (فروش − بهای تمام‌شده)</p>
+              <CsvButton
+                disabled={!profit || profit.length === 0}
+                onClick={() => exportCsv(
+                  `profit-${from}_${to}.csv`,
+                  ['دوره', 'تعداد سفارش', 'درآمد (تومان)', 'بهای تمام‌شده (تومان)', 'سود (تومان)'],
+                  (profit || []).map((p) => [p.bucket, p.orders, Math.round(p.revenue / 10), Math.round(p.cost / 10), Math.round(p.profit / 10)]),
+                )}
+              />
+            </div>
             <div className="mb-5 grid grid-cols-3 gap-3">
               {[
                 { label: 'درآمد خالص اقلام', value: profitTotals.revenue, cls: 'text-sky-700' },
@@ -146,7 +197,17 @@ export default function AdminReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* پرفروش‌ترین‌ها */}
         <div className={tableCls.wrap}>
-          <p className="border-b border-slate-200 dark:border-slate-800 px-5 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">پرفروش‌ترین محصولات</p>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-5 py-4">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">پرفروش‌ترین محصولات</p>
+            <CsvButton
+              disabled={topItems.length === 0}
+              onClick={() => exportCsv(
+                'top-products.csv',
+                ['#', 'محصول', 'تعداد فروش', 'درآمد (تومان)'],
+                topItems.map((t: any, i: number) => [i + 1, t.productName || t.name || '', t.qty || t.sold || 0, t.revenue != null ? Math.round(t.revenue / 10) : '']),
+              )}
+            />
+          </div>
           <table className={tableCls.table}>
             <tbody>
               {topItems.map((t: any, i: number) => (
@@ -164,7 +225,17 @@ export default function AdminReportsPage() {
 
         {/* کم‌موجودی */}
         <div className={tableCls.wrap}>
-          <p className="border-b border-slate-200 dark:border-slate-800 px-5 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">اقلام کم‌موجود انبار</p>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-5 py-4">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">اقلام کم‌موجود انبار</p>
+            <CsvButton
+              disabled={lowItems.length === 0}
+              onClick={() => exportCsv(
+                'low-stock.csv',
+                ['محصول', 'SKU', 'موجودی قابل‌فروش'],
+                lowItems.map((l: any) => [l.productName || '', l.sku || '', l.available ?? l.quantity ?? 0]),
+              )}
+            />
+          </div>
           <table className={tableCls.table}>
             <tbody>
               {lowItems.slice(0, 10).map((l: any, i: number) => (
@@ -180,7 +251,17 @@ export default function AdminReportsPage() {
 
         {/* مشتریان برتر */}
         <div className={`${tableCls.wrap} lg:col-span-2`}>
-          <p className="border-b border-slate-200 dark:border-slate-800 px-5 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">مشتریان برتر (بر اساس مبلغ خرید)</p>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-5 py-4">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">مشتریان برتر (بر اساس مبلغ خرید)</p>
+            <CsvButton
+              disabled={!topCustomers || topCustomers.length === 0}
+              onClick={() => exportCsv(
+                'top-customers.csv',
+                ['#', 'نام', 'موبایل', 'تعداد سفارش', 'مجموع خرید (تومان)', 'آخرین خرید'],
+                (topCustomers || []).map((c: any, i: number) => [i + 1, c.fullName || '', c.phone || '', c.ordersCount || 0, Math.round((c.totalSpent || 0) / 10), c.lastOrderAt ? faDate(c.lastOrderAt) : '']),
+              )}
+            />
+          </div>
           <table className={tableCls.table}>
             <thead className={tableCls.thead}>
               <tr>

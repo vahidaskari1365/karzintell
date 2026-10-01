@@ -1,21 +1,39 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { use } from 'react';
-import { ArrowRight, MapPin, ShoppingBag, Star, Wallet as WalletIcon } from 'lucide-react';
+import { ArrowRight, Ban, CheckCircle2, MapPin, ShoppingBag, Star, Wallet as WalletIcon } from 'lucide-react';
 import { api, qs } from '@/lib/api-client';
 import { faDate, faDateTime, faNumber, toToman } from '@/lib/format';
 import { ORDER_STATUS_LABELS } from '@/lib/types';
-import { Card, PageLoading } from '@/components/ui';
+import { hasPermission, toast, useAuthStore } from '@/lib/auth-store';
+import { Button, Card, PageLoading } from '@/components/ui';
 import { PageHeader, tableCls, Pill, labelOf } from '../../_shared';
 
 /** پرونده ۳۶۰ درجه مشتری */
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const qc = useQueryClient();
+  const { user: me } = useAuthStore();
+  const canSuspend = hasPermission(me, 'users.update');
+
   const { data: d, isLoading } = useQuery({
     queryKey: ['admin-customer', id],
     queryFn: async () => (await api<any>(`/admin/customers/${id}`)).data,
+  });
+
+  // تعلیق/فعال‌سازی مشتری از طریق PATCH /admin/users/:id با فیلد status
+  const setStatus = useMutation({
+    mutationFn: async (status: 'suspended' | 'active') =>
+      api(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    onSuccess: (_d, status) => {
+      toast.success(status === 'suspended' ? 'مشتری معلق شد' : 'مشتری فعال شد');
+      qc.invalidateQueries({ queryKey: ['admin-customer', id] });
+      qc.invalidateQueries({ queryKey: ['admin-customers'] });
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   if (isLoading || !d) return <PageLoading />;
@@ -23,15 +41,25 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div>
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <Link href="/admin/customers" className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 text-slate-600 dark:text-slate-200 hover:text-slate-900 dark:text-slate-100">
           <ArrowRight className="h-4.5 w-4.5" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-black text-slate-900 dark:text-slate-100">{user.fullName}</h1>
           <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-200" dir="ltr">{user.phone}{user.email ? ` · ${user.email}` : ''}</p>
         </div>
         <Pill status={user.status} label={labelOf({ active: 'فعال', pending: 'در انتظار', suspended: 'معلق' }, user.status)} />
+        {canSuspend && user.status !== 'suspended' && (
+          <Button size="sm" variant="danger" loading={setStatus.isPending} onClick={() => setStatus.mutate('suspended')}>
+            <Ban className="h-4 w-4" /> تعلیق
+          </Button>
+        )}
+        {canSuspend && user.status === 'suspended' && (
+          <Button size="sm" variant="success" loading={setStatus.isPending} onClick={() => setStatus.mutate('active')}>
+            <CheckCircle2 className="h-4 w-4" /> فعال‌سازی
+          </Button>
+        )}
       </div>
 
       {d.stats && (

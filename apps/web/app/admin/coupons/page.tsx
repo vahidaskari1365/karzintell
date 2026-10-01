@@ -11,14 +11,14 @@ import { Dialog, ConfirmDialog } from '@/components/dialog';
 import { PageHeader, tableCls, Pill } from '../_shared';
 
 interface Coupon {
-  id: number; code: string; title: string | null; type: 'percent' | 'fixed'; value: number;
+  id: number; code: string; title: string | null; type: 'percent' | 'fixed' | 'free_shipping'; value: number;
   maxDiscount: number | null; minCartAmount: number; usageLimit: number | null; perUserLimit: number;
   usedCount: number; startsAt: string | null; expiresAt: string | null; isActive: boolean;
   campaign?: string | null; productIds?: number[] | null; categoryIds?: number[] | null;
 }
 
 interface CouponForm {
-  id?: number; code: string; title: string; type: 'percent' | 'fixed';
+  id?: number; code: string; title: string; type: 'percent' | 'fixed' | 'free_shipping';
   valueToman: string; maxDiscountToman: string; minCartToman: string;
   usageLimit: string; perUserLimit: string; startsAt: string; expiresAt: string; isActive: boolean;
   campaign: string; productIds: number[]; categoryIds: number[];
@@ -32,7 +32,7 @@ const emptyForm: CouponForm = {
 
 const toForm = (c: Coupon): CouponForm => ({
   id: c.id, code: c.code, title: c.title || '', type: c.type,
-  valueToman: c.type === 'fixed' ? String(Math.round(c.value / 10)) : String(c.value),
+  valueToman: c.type === 'free_shipping' ? '' : c.type === 'fixed' ? String(Math.round(c.value / 10)) : String(c.value),
   maxDiscountToman: c.maxDiscount ? String(Math.round(c.maxDiscount / 10)) : '',
   minCartToman: c.minCartAmount ? String(Math.round(c.minCartAmount / 10)) : '0',
   usageLimit: c.usageLimit ? String(c.usageLimit) : '',
@@ -160,7 +160,8 @@ export default function AdminCouponsPage() {
     mutationFn: async (f: CouponForm) => {
       const payload = {
         code: f.code.trim().toUpperCase(), title: f.title || undefined, type: f.type,
-        value: f.type === 'fixed' ? Number(f.valueToman || 0) * 10 : Number(f.valueToman || 0),
+        // برای ارسال رایگان مقدار تخفیف معنی ندارد — صفر ارسال می‌شود
+        value: f.type === 'free_shipping' ? 0 : f.type === 'fixed' ? Number(f.valueToman || 0) * 10 : Number(f.valueToman || 0),
         maxDiscount: f.type === 'percent' && f.maxDiscountToman ? Number(f.maxDiscountToman) * 10 : null,
         minCartAmount: Number(f.minCartToman || 0) * 10,
         usageLimit: f.usageLimit ? Number(f.usageLimit) : null,
@@ -227,7 +228,9 @@ export default function AdminCouponsPage() {
                     ) : null}
                   </td>
                   <td className={tableCls.td}>
-                    {c.type === 'percent' ? `${faNumber(c.value)}٪` : `${toToman(c.value)} تومان`}
+                    {c.type === 'free_shipping' ? (
+                      <span className="font-bold text-teal-600">ارسال رایگان</span>
+                    ) : c.type === 'percent' ? `${faNumber(c.value)}٪` : `${toToman(c.value)} تومان`}
                     {c.type === 'percent' && c.maxDiscount ? <p className="text-2xs text-slate-600 dark:text-slate-200">سقف {toToman(c.maxDiscount)} تومان</p> : null}
                   </td>
                   <td className={tableCls.td}>{faNumber(c.usedCount)}{c.usageLimit ? ` / ${faNumber(c.usageLimit)}` : ''}</td>
@@ -253,14 +256,17 @@ export default function AdminCouponsPage() {
               <Field label="کد (انگلیسی)" required><Input dir="ltr" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '') })} placeholder="WELCOME10" /></Field>
               <Field label="عنوان"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
               <Field label="نوع تخفیف">
-                <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as 'percent' | 'fixed' })}>
+                <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as 'percent' | 'fixed' | 'free_shipping' })}>
                   <option value="percent">درصدی (٪)</option>
                   <option value="fixed">مبلغ ثابت (تومان)</option>
+                  <option value="free_shipping">ارسال رایگان</option>
                 </Select>
               </Field>
-              <Field label={form.type === 'percent' ? 'درصد' : 'مبلغ (تومان)'} required>
-                <Input inputMode="numeric" value={form.valueToman} onChange={(e) => setForm({ ...form, valueToman: e.target.value.replace(/[^0-9]/g, '') })} />
-              </Field>
+              {form.type !== 'free_shipping' && (
+                <Field label={form.type === 'percent' ? 'درصد' : 'مبلغ (تومان)'} required>
+                  <Input inputMode="numeric" value={form.valueToman} onChange={(e) => setForm({ ...form, valueToman: e.target.value.replace(/[^0-9]/g, '') })} />
+                </Field>
+              )}
               {form.type === 'percent' && (
                 <Field label="سقف تخفیف (تومان)"><Input inputMode="numeric" value={form.maxDiscountToman} onChange={(e) => setForm({ ...form, maxDiscountToman: e.target.value.replace(/[^0-9]/g, '') })} /></Field>
               )}
@@ -280,7 +286,7 @@ export default function AdminCouponsPage() {
               <CategoryPicker value={form.categoryIds} onChange={(ids) => setForm({ ...form, categoryIds: ids })} />
             </Field>
             <Switch label="فعال" checked={form.isActive} onChange={(v) => setForm({ ...form, isActive: v })} />
-            <Button className="w-full" loading={save.isPending} disabled={!form.code || !form.valueToman} onClick={() => save.mutate(form)}>
+            <Button className="w-full" loading={save.isPending} disabled={!form.code || (form.type !== 'free_shipping' && !form.valueToman)} onClick={() => save.mutate(form)}>
               ذخیره کد تخفیف
             </Button>
           </div>

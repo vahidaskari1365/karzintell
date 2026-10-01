@@ -6,7 +6,7 @@ import { ReactNode, useState } from 'react';
 import {
   Award, BarChart3, Boxes, FileText, FolderTree, HelpCircle, Image as ImageIcon, LayoutDashboard,
   ListChecks, Menu, Newspaper, Package, ScrollText, Settings, ShieldCheck, ShoppingBag, Star,
-  Store, Ticket, TicketPercent, Truck, UserCheck, UserCog, Users, X,
+  Store, Ticket, TicketPercent, Truck, UserCheck, UserCog, Users, Wallet, Warehouse, X,
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth-guard';
 import { BrandMark } from '@/components/brand-logo';
@@ -23,6 +23,7 @@ const MENU: MenuItem[] = [
   { href: '/admin/brands', label: 'برندها', icon: <Award className="h-4.5 w-4.5" />, perm: 'brands.manage' },
   { href: '/admin/attributes', label: 'ویژگی‌ها', icon: <ListChecks className="h-4.5 w-4.5" />, perm: 'attributes.manage' },
   { href: '/admin/inventory', label: 'موجودی انبار', icon: <Boxes className="h-4.5 w-4.5" />, perm: 'inventory.view' },
+  { href: '/admin/warehouses', label: 'انبارها', icon: <Warehouse className="h-4.5 w-4.5" />, perm: 'inventory.view' },
   { href: '/admin/orders', label: 'سفارش‌ها', icon: <ShoppingBag className="h-4.5 w-4.5" />, perm: 'orders.view' },
   { href: '/admin/shipping', label: 'حمل‌ونقل', icon: <Truck className="h-4.5 w-4.5" />, perm: 'settings.manage' },
   { href: '/admin/customers', label: 'مشتریان', icon: <Users className="h-4.5 w-4.5" />, perm: 'customers.view' },
@@ -36,6 +37,7 @@ const MENU: MenuItem[] = [
   { href: '/admin/faqs', label: 'سوالات متداول', icon: <HelpCircle className="h-4.5 w-4.5" />, perm: 'pages.manage' },
   { href: '/admin/reviews', label: 'دیدگاه‌ها و پرسش‌ها', icon: <Star className="h-4.5 w-4.5" />, perm: 'reviews.moderate' },
   { href: '/admin/tickets', label: 'تیکت‌ها', icon: <Ticket className="h-4.5 w-4.5" />, perm: 'tickets.view' },
+  { href: '/admin/wallet/withdrawals', label: 'درخواست برداشت کیف پول', icon: <Wallet className="h-4.5 w-4.5" />, perm: 'payments.view' },
   { href: '/admin/reports', label: 'گزارش فروش', icon: <BarChart3 className="h-4.5 w-4.5" />, perm: 'reports.view' },
   { href: '/admin/settings', label: 'تنظیمات', icon: <Settings className="h-4.5 w-4.5" />, perm: 'settings.manage' },
   { href: '/admin/audit-logs', label: 'لاگ عملیات', icon: <ScrollText className="h-4.5 w-4.5" />, perm: 'audit.view' },
